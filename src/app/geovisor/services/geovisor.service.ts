@@ -1037,23 +1037,23 @@ export class GeovisorSharedService {
       }
     }
 
-              //*Widget para ANALISIS ESPACIAL CON BPP-SERFOR
-              const uploadEl6 = document.createElement('div');
-              uploadEl6.className = 'file-upload-widget p-2 bg-white rounded shadow';
-              // Título
-              const titleEl = document.createElement('div');
-              titleEl.textContent = 'Selecciona capas para superposición:';
-              titleEl.className = 'mb-2 font-semibold';
-              uploadEl6.appendChild(titleEl);
+    //*Widget para ANALISIS ESPACIAL CON BPP-SERFOR
+    const uploadEl6 = document.createElement('div');
+    uploadEl6.className = 'file-upload-widget p-2 bg-white rounded shadow';
+    // Título
+    const titleEl = document.createElement('div');
+    titleEl.textContent = 'Selecciona capas para superposición:';
+    titleEl.className = 'mb-2 font-semibold';
+    uploadEl6.appendChild(titleEl);
 
-              const selectEl = document.createElement('select');
-              selectEl.multiple = true;
-              selectEl.className = 'w-full p-1 border rounded mb-2';
-              uploadEl6.appendChild(selectEl);
-              // Botón analizar
-              const buttonEl = document.createElement('button');
-              buttonEl.textContent = '🔎 Analizar superposición';
-              buttonEl.className = `
+    const selectEl = document.createElement('select');
+    selectEl.multiple = true;
+    selectEl.className = 'w-full p-1 border rounded mb-2';
+    uploadEl6.appendChild(selectEl);
+    // Botón analizar
+    const buttonEl = document.createElement('button');
+    buttonEl.textContent = '🔎 Analizar superposición';
+    buttonEl.className = `
                   px-4 py-1
                   bg-blue-600 hover:bg-blue-700
                   text-white font-semibold rounded
@@ -1062,75 +1062,75 @@ export class GeovisorSharedService {
                   mx-auto
                   block
                 `;
-              uploadEl6.appendChild(buttonEl);
-              const capasVisibles: __esri.FeatureLayer[] = [];
-              this.mapa.layers.forEach((lyr) => {
-                const layerType = (lyr as any).type;
-                if (layerType === 'feature' && lyr.visible) {
-                  capasVisibles.push(lyr as __esri.FeatureLayer);
-                  const opt = document.createElement('option');
-                  opt.value = lyr.id;
-                  opt.text = (lyr as any).title || (lyr as any).name || lyr.id;
-                  selectEl.appendChild(opt);
-                } else if (layerType === 'map-image' && lyr.visible) {
-                  const mapImg = lyr as __esri.MapImageLayer;
-                  mapImg.sublayers?.forEach((sub) => {
-                    if (sub.visible && 'queryFeatures' in sub) {
-                      const fl = sub as unknown as __esri.FeatureLayer;
-                      capasVisibles.push(fl);
-                      const opt = document.createElement('option');
-                      opt.value = fl.id.toString();
-                      opt.text =
-                        (sub as any).title || (sub as any).name || `${mapImg.title}`;
-                      selectEl.appendChild(opt);
-                    }
-                  });
-                }
-              });
-              buttonEl.onclick = async () => {
-                try {
-                  await this.analizarSuperposicion();
-                } catch (err) {
-                  console.error('Error en el análisis:', err);
-                }
-              };
-              const expandAnalisis = new Expand({
-                view: this.view,
-                content: uploadEl6,
-                expandTooltip: 'Analizar superposición',
-                expandIcon: 'analysis',
-              });
-              this.view.ui.add(expandAnalisis, { position: 'top-right', index: 6 });
-              function toggleAnalisisWidget() {
-                if (!expandAnalisis.container) return;
-                if (window.innerWidth < 768) {
-                  expandAnalisis.container.style.display = 'none'; // ocultar en móvil
-                  expandAnalisis.collapse(); // asegurar que esté cerrado
-                } else {
-                  expandAnalisis.container.style.display = 'block'; // mostrar en desktop
-                }
-              }
+    uploadEl6.appendChild(buttonEl);
+    const capasVisibles: __esri.FeatureLayer[] = [];
+    this.mapa.layers.forEach((lyr) => {
+      const layerType = (lyr as any).type;
+      if (layerType === 'feature' && lyr.visible) {
+        capasVisibles.push(lyr as __esri.FeatureLayer);
+        const opt = document.createElement('option');
+        opt.value = lyr.id;
+        opt.text = (lyr as any).title || (lyr as any).name || lyr.id;
+        selectEl.appendChild(opt);
+      } else if (layerType === 'map-image' && lyr.visible) {
+        const mapImg = lyr as __esri.MapImageLayer;
+        mapImg.sublayers?.forEach((sub) => {
+          if (sub.visible && 'queryFeatures' in sub) {
+            const fl = sub as unknown as __esri.FeatureLayer;
+            capasVisibles.push(fl);
+            const opt = document.createElement('option');
+            opt.value = fl.id.toString();
+            opt.text =
+              (sub as any).title || (sub as any).name || `${mapImg.title}`;
+            selectEl.appendChild(opt);
+          }
+        });
+      }
+    });
+    buttonEl.onclick = async () => {
+      try {
+        await this.analizarSuperposicion();
+      } catch (err) {
+        console.error('Error en el análisis:', err);
+      }
+    };
+    const expandAnalisis = new Expand({
+      view: this.view,
+      content: uploadEl6,
+      expandTooltip: 'Analizar superposición',
+      expandIcon: 'analysis',
+    });
+    this.view.ui.add(expandAnalisis, { position: 'top-right', index: 6 });
+    function toggleAnalisisWidget() {
+      if (!expandAnalisis.container) return;
+      if (window.innerWidth < 768) {
+        expandAnalisis.container.style.display = 'none'; // ocultar en móvil
+        expandAnalisis.collapse(); // asegurar que esté cerrado
+      } else {
+        expandAnalisis.container.style.display = 'block'; // mostrar en desktop
+      }
+    }
 
 
 
-            //*Widget para ANALISIS ESPACIAL CON POLIGONOS DE CULTIVO
-            const uploadEl7 = document.createElement('div');
-            uploadEl7.id = 'analisis-cultivo-widget';
-            uploadEl7.className = 'p-2 bg-white rounded shadow';
-            // Título
-            const titleCultivoEl = document.createElement('div');
-            titleCultivoEl.textContent = 'Selecciona capas para superposición:';
-            titleCultivoEl.className = 'mb-2 font-semibold';
-            uploadEl7.appendChild(titleCultivoEl);
+    //*Widget para ANALISIS ESPACIAL CON POLIGONOS DE CULTIVO
+    const uploadEl7 = document.createElement('div');
+    uploadEl7.id = 'analisis-cultivo-widget';
+    uploadEl7.className = 'p-2 bg-white rounded shadow';
+    // Título
+    const titleCultivoEl = document.createElement('div');
+    titleCultivoEl.textContent = 'Selecciona capas para superposición:';
+    titleCultivoEl.className = 'mb-2 font-semibold';
+    uploadEl7.appendChild(titleCultivoEl);
 
-            const selectCultivoEl = document.createElement('select');
-            selectCultivoEl.multiple = true; // Asumo selección simple para análisis
-            selectCultivoEl.className = 'w-full p-1 border rounded mb-2';
-            uploadEl7.appendChild(selectCultivoEl);
+    const selectCultivoEl = document.createElement('select');
+    selectCultivoEl.multiple = true; // Asumo selección simple para análisis
+    selectCultivoEl.className = 'w-full p-1 border rounded mb-2';
+    uploadEl7.appendChild(selectCultivoEl);
 
-            const buttonCultivoEl = document.createElement('button');
-            buttonCultivoEl.textContent = '🔎 Analizar superposición';
-            buttonCultivoEl.className = `
+    const buttonCultivoEl = document.createElement('button');
+    buttonCultivoEl.textContent = '🔎 Analizar superposición';
+    buttonCultivoEl.className = `
               px-4 py-1
               bg-blue-600 hover:bg-blue-700
               text-white font-semibold rounded
@@ -1139,60 +1139,60 @@ export class GeovisorSharedService {
               mx-auto
               block
             `;
-            uploadEl7.appendChild(buttonCultivoEl);
-            const capasVisiblesCultivo: __esri.FeatureLayer[] = [];
-            this.mapa.layers.forEach((lyr) => {
-              const layerType = (lyr as any).type;
-              if (layerType === 'feature' && lyr.visible) {
-                capasVisiblesCultivo.push(lyr as __esri.FeatureLayer);
-                const opt = document.createElement('option');
-                opt.value = lyr.id;
-                opt.text = (lyr as any).title || (lyr as any).name || lyr.id;
-                selectEl.appendChild(opt);
-              } else if (layerType === 'map-image' && lyr.visible) {
-                const mapImg = lyr as __esri.MapImageLayer;
-                mapImg.sublayers?.forEach((sub) => {
-                  if (sub.visible && 'queryFeatures' in sub) {
-                    const fl = sub as unknown as __esri.FeatureLayer;
-                    capasVisiblesCultivo.push(fl);
-                    const opt = document.createElement('option');
-                    opt.value = fl.id.toString();
-                    opt.text =
-                      (sub as any).title || (sub as any).name || `${mapImg.title}`;
-                    selectEl.appendChild(opt);
-                  }
-                });
-              }
-            });
-            buttonCultivoEl.onclick = async () => {
-              try {
-                  await this.analizarSuperposicionCultivo();
-              } catch (err) {
-                  console.error('Error en el análisis:', err);
-              }
-            };
-            const expandAnalisisCultivo = new Expand({
-              view: this.view,
-              content: uploadEl7,
-              expandTooltip: 'Analizar superposición',
-              expandIcon: 'globe',
-            });
-            this.view.ui.add(expandAnalisisCultivo, { position: 'top-right', index: 7 });
-            function toggleAnalisisCultivoWidget() {
-              if (!expandAnalisisCultivo.container) return;
-              if (window.innerWidth < 768) {
-                  expandAnalisisCultivo.container.style.display = 'none'; // ocultar en móvil
-                  expandAnalisisCultivo.collapse(); // asegurar que esté cerrado
-              } else {
-                  expandAnalisisCultivo.container.style.display = 'block'; // mostrar en desktop
-              }
-            }
-            toggleUploadWidget();
-            window.addEventListener('resize', toggleUploadWidget);
-            toggleAnalisisWidget();
-            window.addEventListener('resize', toggleAnalisisWidget);
-            toggleAnalisisCultivoWidget();
-            window.addEventListener('resize', toggleAnalisisCultivoWidget);
+    uploadEl7.appendChild(buttonCultivoEl);
+    const capasVisiblesCultivo: __esri.FeatureLayer[] = [];
+    this.mapa.layers.forEach((lyr) => {
+      const layerType = (lyr as any).type;
+      if (layerType === 'feature' && lyr.visible) {
+        capasVisiblesCultivo.push(lyr as __esri.FeatureLayer);
+        const opt = document.createElement('option');
+        opt.value = lyr.id;
+        opt.text = (lyr as any).title || (lyr as any).name || lyr.id;
+        selectEl.appendChild(opt);
+      } else if (layerType === 'map-image' && lyr.visible) {
+        const mapImg = lyr as __esri.MapImageLayer;
+        mapImg.sublayers?.forEach((sub) => {
+          if (sub.visible && 'queryFeatures' in sub) {
+            const fl = sub as unknown as __esri.FeatureLayer;
+            capasVisiblesCultivo.push(fl);
+            const opt = document.createElement('option');
+            opt.value = fl.id.toString();
+            opt.text =
+              (sub as any).title || (sub as any).name || `${mapImg.title}`;
+            selectEl.appendChild(opt);
+          }
+        });
+      }
+    });
+    buttonCultivoEl.onclick = async () => {
+      try {
+        await this.analizarSuperposicionCultivo();
+      } catch (err) {
+        console.error('Error en el análisis:', err);
+      }
+    };
+    const expandAnalisisCultivo = new Expand({
+      view: this.view,
+      content: uploadEl7,
+      expandTooltip: 'Analizar superposición',
+      expandIcon: 'globe',
+    });
+    this.view.ui.add(expandAnalisisCultivo, { position: 'top-right', index: 7 });
+    function toggleAnalisisCultivoWidget() {
+      if (!expandAnalisisCultivo.container) return;
+      if (window.innerWidth < 768) {
+        expandAnalisisCultivo.container.style.display = 'none'; // ocultar en móvil
+        expandAnalisisCultivo.collapse(); // asegurar que esté cerrado
+      } else {
+        expandAnalisisCultivo.container.style.display = 'block'; // mostrar en desktop
+      }
+    }
+    toggleUploadWidget();
+    window.addEventListener('resize', toggleUploadWidget);
+    toggleAnalisisWidget();
+    window.addEventListener('resize', toggleAnalisisWidget);
+    toggleAnalisisCultivoWidget();
+    window.addEventListener('resize', toggleAnalisisCultivoWidget);
 
 
 
@@ -1916,20 +1916,26 @@ export class GeovisorSharedService {
     }
   }
   //*Funcion para analizar la superposicion en la capa Cultivo
-  async analizarSuperposicionCultivo(): Promise<void> {
-    if (!this.view || !this.mapa) return;
-    this.highlightLayer.removeAll();
 
-    let overlayAnalisisCultivo = document.getElementById("loading-overlay-cultivo") as HTMLDivElement | null;
-    if (!overlayAnalisisCultivo) {
-      overlayAnalisisCultivo = document.createElement("div");
-      overlayAnalisisCultivo.id = "loading-overlay-cultivo";
-      Object.assign(overlayAnalisisCultivo.style, {
+  async analizarSuperposicionCultivo(): Promise<void> {
+    console.log("🔍 Iniciando analizarSuperposicionCultivo...");
+
+    if (!this.view || !this.mapa) {
+      console.log("⛔ No hay view o mapa inicializado.");
+      return;
+    }
+    this.highlightLayer.removeAll();
+    console.log("✅ highlightLayer limpiado.");
+
+    // --- Overlay ---
+    let overlay = document.getElementById("loading-overlay-cultivo") as HTMLDivElement | null;
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "loading-overlay-cultivo";
+      Object.assign(overlay.style, {
         position: "absolute",
-        top: "0",
-        left: "0",
-        width: "100%",
-        height: "100%",
+        top: "0", left: "0",
+        width: "100%", height: "100%",
         backgroundColor: "rgba(0,0,0,0.3)",
         display: "flex",
         justifyContent: "center",
@@ -1945,210 +1951,158 @@ export class GeovisorSharedService {
       spinner.className = "animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white";
       const text = document.createElement("div");
       text.id = "progress-text-cultivo";
-      text.textContent = "Analizando superposición de Cultivo, por favor espere...";
+      text.textContent = "Analizando superposición de Cultivo...";
       text.style.marginLeft = "10px";
       container.appendChild(spinner);
       container.appendChild(text);
-      overlayAnalisisCultivo.appendChild(container);
-      document.body.appendChild(overlayAnalisisCultivo);
+      overlay.appendChild(container);
+      document.body.appendChild(overlay);
     }
-    overlayAnalisisCultivo.style.display = "flex";
+    overlay.style.display = "flex";
+    const progressText = document.getElementById("progress-text-cultivo")!;
 
-    const progressTextCultivo = document.getElementById("progress-text-cultivo")!;
-    let overlapsCultivo: __esri.Graphic[] = [];
-    let intersectadosCapaB: __esri.Graphic[] = []; // <-- Array de polígonos intersectados
-    let capaBSelTitle = "la capa seleccionada";
+    let overlaps: __esri.Graphic[] = [];
+    let intersectados: __esri.Graphic[] = [];
+    let capaBSelTitle = "capa seleccionada";
 
     try {
-      // --- Cargar capa DEVIDA ---
-      progressTextCultivo.textContent = "🔹Cargando la capa Límites PIRDAIS (DEVIDA)...!";
+      console.log("📡 Cargando capa PIRDAIS...");
       const capaDevida = new FeatureLayer({
         url: "https://siscod.devida.gob.pe/server/rest/services/DPM_LIMITES_PIRDAIS/MapServer/0"
       });
       await capaDevida.load();
 
-      const featuresCapaA: __esri.Graphic[] = [];
-      const numBloque = 2000;
-      for (let startA = 0; ; startA += numBloque) {
-        const res = await capaDevida.queryFeatures({
-          where: "1=1",
-          outFields: ["*"],
-          returnGeometry: true,
-          start: startA,
-          num: numBloque,
-        });
-        featuresCapaA.push(...res.features);
-        if (res.features.length < numBloque) break;
-      }
-
-      const validGeometriesCapaA = featuresCapaA
-        .map(f => f.geometry)
-        .filter((g): g is __esri.Polygon => !!g && ["polygon", "multipolygon"].includes(g.type.toLowerCase()));
-
-      if (!validGeometriesCapaA.length) {
-        this.showToast("⚠️ No hay geometrías válidas en Límites PIRDAIS.", "error");
-        overlayAnalisisCultivo.style.display = "none";
-        return;
-      }
-
-      const geomUnionA = await geometryEngineAsync.union(validGeometriesCapaA) as __esri.GeometryUnion;
-      if (!geomUnionA) {
-        this.showToast("⚠️ No se pudieron unir las geometrías de DEVIDA.", "error");
-        overlayAnalisisCultivo.style.display = "none";
-        return;
-      }
-
-      // --- Obtener capa seleccionada ---
-      const selectElCultivo = document.querySelector<HTMLSelectElement>(".analisis-cultivo-widget select");
-      if (!selectElCultivo) { overlayAnalisisCultivo.style.display = "none"; return; }
-      const selectedIdB = selectElCultivo.value;
-      if (!selectedIdB) {
+      // --- Capa seleccionada ---
+      const selectEl = document.querySelector<HTMLSelectElement>("#analisis-cultivo-widget select");
+      if (!selectEl?.value) {
         this.showToast("⚠️ Selecciona una capa para analizar.", "error");
-        overlayAnalisisCultivo.style.display = "none";
+        overlay.style.display = "none";
         return;
       }
 
-      let capaBSel: __esri.Layer | undefined = this.mapa.layers.find(l => l.id === selectedIdB);
+      let capaBSel: __esri.Layer | undefined = this.mapa.layers.find(l => l.id === selectEl.value);
       if (!capaBSel) {
         for (const l of this.mapa.layers.toArray()) {
           if (l.type === "map-image") {
-            const mapImg = l as __esri.MapImageLayer;
-            const sub = mapImg.sublayers?.find(s => s.id.toString() === selectedIdB);
+            const sub = (l as __esri.MapImageLayer).sublayers?.find(s => s.id.toString() === selectEl.value);
             if (sub) { capaBSel = sub as unknown as __esri.Layer; break; }
           }
         }
       }
-
       if (!capaBSel) {
-        this.showToast("⚠️ No se encontró la capa seleccionada en el mapa.", "error");
-        overlayAnalisisCultivo.style.display = "none";
+        this.showToast("⚠️ No se encontró la capa seleccionada.", "error");
+        overlay.style.display = "none";
         return;
       }
-
       capaBSelTitle = capaBSel.title || capaBSel.id;
-      progressTextCultivo.textContent = `⏳ Analizando superposición con la capa: ${capaBSelTitle}`;
       await capaBSel.load?.();
 
-
-      let featuresCapaB: __esri.Graphic[] = [];
+      // --- Obtener features de la capa seleccionada ---
+      let featuresB: __esri.Graphic[] = [];
       if ("queryFeatures" in capaBSel) {
-        console.log("🔍 Leyendo capa como FeatureLayer o GeoJSONLayer:", capaBSel.type);
-        for (let startB = 0; ; startB += numBloque) {
-          const resB = await (capaBSel as __esri.FeatureLayer).queryFeatures({
-            where: "1=1",
-            outFields: ["*"],
-            returnGeometry: true,
-            start: startB,
-            num: numBloque
-          });
-          featuresCapaB.push(...resB.features);
-          if (resB.features.length < numBloque) break;
-        }
+        const res = await (capaBSel as __esri.FeatureLayer).queryFeatures({
+          where: "1=1",
+          outFields: ["*"],
+          returnGeometry: true
+        });
+        featuresB = res.features;
       } else if ("source" in capaBSel) {
-        featuresCapaB = ((capaBSel as any).source as __esri.Collection<__esri.Graphic>).toArray();
+        featuresB = ((capaBSel as any).source as __esri.Collection<__esri.Graphic>).toArray();
       }
 
-      if (!featuresCapaB.length) {
-        this.showToast("⚠️ La capa seleccionada no contiene geometrías.", "error");
-        overlayAnalisisCultivo.style.display = "none";
+      if (!featuresB.length) {
+        this.showToast("⚠️ La capa seleccionada no tiene geometrías.", "error");
+        overlay.style.display = "none";
         return;
       }
 
+      // --- Analizar superposición polígono por polígono ---
       const tamBloque = 25;
-      overlapsCultivo = [];
-      intersectadosCapaB = [];
-      for (let i = 0; i < featuresCapaB.length; i += tamBloque) {
-        const block = featuresCapaB.slice(i, i + tamBloque);
-        const promises = block.map(fB => (async () => {
+      overlaps = [];
+      intersectados = [];
+
+      for (let i = 0; i < featuresB.length; i += tamBloque) {
+        const block = featuresB.slice(i, i + tamBloque);
+        const promises = block.map(async (fB) => {
           if (!fB.geometry || !["polygon", "multipolygon"].includes(fB.geometry.type.toLowerCase())) return null;
-          const intersecta = await geometryEngineAsync.intersects(fB.geometry as __esri.Polygon, geomUnionA);
-          if (intersecta) {
-            intersectadosCapaB.push(fB);
+
+          const res = await capaDevida.queryFeatures({
+            geometry: fB.geometry,
+            spatialRelationship: "intersects",
+            returnGeometry: false,
+            outFields: ["*"]
+          });
+
+          if (res.features.length > 0) {
+            intersectados.push(fB);
             return new Graphic({
               geometry: fB.geometry,
-              attributes: { capaA: "Poligonos de Cultivo", capaB: capaBSel.title || capaBSel.id, ...fB.attributes },
-              symbol: { type: "simple-fill", color: [0, 150, 255, 0.4], outline: { color: [255, 0, 0], width: 2 } } as any,
+              attributes: { ...fB.attributes, capa: capaBSelTitle },
+              symbol: {
+                type: "simple-fill",
+                color: [0, 150, 255, 0.4],
+                outline: { color: [255, 0, 0], width: 2 }
+              } as any,
               popupTemplate: {
                 title: "Superposición detectada",
-                content: `Polígono de <b>${capaBSel.title || capaBSel.id}</b> se superpone con <b>Poligonos de Cultivo</b>.`
+                content: `Polígono de <b>${capaBSelTitle}</b> se superpone con PIRDAIS.`
               }
             });
           }
           return null;
-        })());
+        });
+
         const results = await Promise.all(promises);
-        overlapsCultivo.push(...results.filter(r => r !== null) as __esri.Graphic[]);
-        progressTextCultivo.innerHTML = `Procesadas ${Math.min(i + tamBloque, featuresCapaB.length)} de ${featuresCapaB.length} features<br>Superposiciones detectadas: ${overlapsCultivo.length}`;
+        overlaps.push(...results.filter(r => r !== null) as __esri.Graphic[]);
+        progressText.innerHTML = `Procesadas ${Math.min(i + tamBloque, featuresB.length)} de ${featuresB.length} features<br>Superposiciones: ${overlaps.length}`;
         await new Promise(r => setTimeout(r, 0));
       }
 
-      this.highlightLayer.addMany(overlapsCultivo);
+      this.highlightLayer.addMany(overlaps);
 
-    } catch (error) {
-      console.error("Error analizando superposiciones de Cultivo:", error);
-      this.showToast("❌ Ocurrió un error al analizar superposiciones de Cultivo.", "error");
+    } catch (err) {
+      console.error("💥 Error en analizarSuperposicionCultivo:", err);
+      this.showToast("❌ Error en análisis de superposición.", "error");
     } finally {
-        const overlapsCountCultivos = overlapsCultivo.length;
+      overlay.style.display = "none";
+      const overlapsCount = overlaps.length;
 
-        if (overlayAnalisisCultivo) overlayAnalisisCultivo.style.display = "none";
+      // 🔹 Modal interactivo con exportación CSV
+      const modal = document.createElement("div");
+      modal.id = "resultado-modal-cultivo";
+      Object.assign(modal.style, {
+        position: "fixed",
+        top: "0", left: "0",
+        width: "100%", height: "100%",
+        backgroundColor: "rgba(0,0,0,0.5)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: "10001",
+      });
 
-        const modal = document.createElement("div");
-        modal.id = "resultado-modal";
-        Object.assign(modal.style, {
-          position: "fixed",
-          top: "0", left: "0",
-          width: "100%", height: "100%",
-          backgroundColor: "rgba(0,0,0,0.5)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: "10001",
-        });
-        const csvButton = intersectadosCapaB.length > 0
-        ? `<button id="export-csv"
-            style="
-              margin-top:10px;
-              padding:6px 12px;
-              background-color:#16A34A;
-              color:white;
-              border:none;
-              border-radius:6px;
-              font-weight:bold;
-              cursor:pointer;
-              transition: background-color 0.3s;
-            "
-            onmouseover="this.style.backgroundColor='#15803D'"
-            onmouseout="this.style.backgroundColor='#16A34A'">
-            Exportar CSV
-          </button>`
+      const csvButton = intersectados.length > 0
+        ? `<button id="export-csv-cultivo"
+                    style="margin-top:10px;padding:6px 12px;background-color:#16A34A;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;">
+                    Exportar CSV
+                  </button>`
         : '';
 
       modal.innerHTML = `
-        <div style="background:white;padding:20px;border-radius:8px;max-width:450px;text-align:center;">
-          <h2>Resultado del análisis</h2>
-          <p>${overlapsCountCultivos > 0 ? `Se encontraron ${overlapsCountCultivos} superposiciones en ${capaBSelTitle}.` : `No se encontraron superposiciones.`}</p>
-          ${csvButton}
-          <button id="modal-close"
-              style="
-                margin-top:10px;
-                padding:6px 12px;
-                background-color:#2563EB;
-                color:white;
-                border:none;
-                border-radius:6px;
-                font-weight:bold;
-                cursor:pointer;
-                transition: background-color 0.3s;
-              "
-              onmouseover="this.style.backgroundColor='#1D4ED8'"
-              onmouseout="this.style.backgroundColor='#2563EB'">
-              Cerrar
-          </button>
-        </div>
-      `;
+                <div style="background:white;padding:20px;border-radius:8px;max-width:450px;text-align:center;">
+                  <h2>Resultado del análisis</h2>
+                  <p>${overlapsCount > 0 ? `Se encontraron ${overlapsCount} superposiciones en ${capaBSelTitle}.` : `No se encontraron superposiciones.`}</p>
+                  ${csvButton}
+                  <button id="modal-close-cultivo"
+                      style="margin-top:10px;padding:6px 12px;background-color:#2563EB;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;">
+                      Cerrar
+                  </button>
+                </div>
+              `;
       document.body.appendChild(modal);
 
-      const closeBtn = modal.querySelector<HTMLButtonElement>("#modal-close");
+      // Cerrar modal
+      const closeBtn = modal.querySelector<HTMLButtonElement>("#modal-close-cultivo");
       if (closeBtn) {
         closeBtn.addEventListener("click", () => {
           modal.remove();
@@ -2156,15 +2110,15 @@ export class GeovisorSharedService {
         });
       }
 
-      const exportBtn = modal.querySelector<HTMLButtonElement>("#export-csv");
+      // Exportar CSV
+      const exportBtn = modal.querySelector<HTMLButtonElement>("#export-csv-cultivo");
       if (exportBtn) {
         exportBtn.addEventListener("click", () => {
-          if (!intersectadosCapaB.length) return;
-
-          const keys = Object.keys(intersectadosCapaB[0].attributes);
+          if (!intersectados.length) return;
+          const keys = Object.keys(intersectados[0].attributes);
           const csvContent = [
             keys.join(","), // encabezado
-            ...intersectadosCapaB.map(f =>
+            ...intersectados.map(f =>
               keys.map(k => `"${(f.attributes[k] ?? '').toString().replace(/"/g, '""')}"`).join(",")
             )
           ].join("\n");
@@ -2180,69 +2134,68 @@ export class GeovisorSharedService {
       }
 
       // 🔹 Toast resumen
-      const toastMessage = overlapsCountCultivos > 0
-        ? `✅ Se encontraron ${overlapsCountCultivos} superposiciones en ${capaBSelTitle}.`
-        : `✅ No se encontraron superposiciones en la capa seleccionada.`;
-      this.showToast(toastMessage, "success", false);
-
-
+      const resumenMsg = overlapsCount > 0
+        ? `✅ Se encontraron ${overlapsCount} superposiciones en ${capaBSelTitle}.`
+        : `✅ No se encontraron superposiciones en ${capaBSelTitle}.`;
+      this.showToast(resumenMsg, "success", false);
     }
   }
 
- //*Funcion para actualizar las capas del Visor
- actualizarSelectCapas() {
-  const selectEl = document.querySelector<HTMLSelectElement>(
-    '.file-upload-widget select'
-  );
-  const selectElCultivo = document.querySelector<HTMLSelectElement>(
-    '#analisis-cultivo-widget select'
-  );
 
-  if (!selectEl && !selectElCultivo) return;
+  //*Funcion para actualizar las capas del Visor
+  actualizarSelectCapas() {
+    const selectEl = document.querySelector<HTMLSelectElement>(
+      '.file-upload-widget select'
+    );
+    const selectElCultivo = document.querySelector<HTMLSelectElement>(
+      '#analisis-cultivo-widget select'
+    );
 
-  // Limpiar opciones en ambos selects (si existen)
-  if (selectEl) selectEl.innerHTML = '';
-  if (selectElCultivo) selectElCultivo.innerHTML = '';
+    if (!selectEl && !selectElCultivo) return;
 
-  const capasExcluir = [
-    'DISTRITO',
-    'PROVINCIA',
-    'DEPARTAMENTO',
-    'PERU',
-    'OFICINAS ZONALES',
-    'BPP-BOSQUE DE PRODUCCION PERMANENTE',
-    'ANP - AREAS NATURALES PROTEGIDAS',
-    'MONITOREO DEFORESTACION',
-    'COMUNIDADES NATIVAS',
-    'ZA-ZONAS DE AMORTIGUAMIENTO',
-    'ACR-AREAS DE CONSERVACION REGIONAL',
-    'VISITAS DE MONITOREO',
-    'POLIGONOS DE CULTIVO' // excluido solo si no quieres analizarlo
-  ];
+    // Limpiar opciones en ambos selects (si existen)
+    if (selectEl) selectEl.innerHTML = '';
+    if (selectElCultivo) selectElCultivo.innerHTML = '';
 
-  this.mapa.layers.toArray().forEach((lyr) => {
-    const tituloLyr = lyr.title?.toUpperCase() || '';
-    if (capasExcluir.includes(tituloLyr)) return;
+    const capasExcluir = [
+      'DISTRITO',
+      'PROVINCIA',
+      'DEPARTAMENTO',
+      'PERU',
+      'OFICINAS ZONALES',
+      'BPP-BOSQUE DE PRODUCCION PERMANENTE',
+      'ANP - AREAS NATURALES PROTEGIDAS',
+      'MONITOREO DEFORESTACION',
+      'COMUNIDADES NATIVAS',
+      'ZA-ZONAS DE AMORTIGUAMIENTO',
+      'ACR-AREAS DE CONSERVACION REGIONAL',
+      'VISITAS DE MONITOREO',
+      'POLIGONOS DE CULTIVO' // excluido solo si no quieres analizarlo
+    ];
 
-    if (
-      lyr.type === 'feature' ||
-      lyr.type === 'geojson' ||
-      lyr.type === 'csv'
-    ) {
-      const opt = document.createElement('option');
-      opt.value = lyr.id;
-      opt.text = lyr.title || lyr.id;
-      if (selectEl) selectEl.appendChild(opt.cloneNode(true));
-      if (selectElCultivo) selectElCultivo.appendChild(opt);
-    } else if (lyr.type === 'map-image') {
-      (lyr as __esri.MapImageLayer).sublayers?.forEach((sub) => {
-        const tituloSub = (sub as any).title?.toUpperCase() || '';
-        if (capasExcluir.includes(tituloSub)) return;
+    this.mapa.layers.toArray().forEach((lyr) => {
+      const tituloLyr = lyr.title?.toUpperCase() || '';
+      if (capasExcluir.includes(tituloLyr)) return;
+
+      if (
+        lyr.type === 'feature' ||
+        lyr.type === 'geojson' ||
+        lyr.type === 'csv'
+      ) {
         const opt = document.createElement('option');
-        opt.value = sub.id.toString();
-        opt.text = (sub as any).title || `${lyr.title}`;
+        opt.value = lyr.id;
+        opt.text = lyr.title || lyr.id;
         if (selectEl) selectEl.appendChild(opt.cloneNode(true));
         if (selectElCultivo) selectElCultivo.appendChild(opt);
+      } else if (lyr.type === 'map-image') {
+        (lyr as __esri.MapImageLayer).sublayers?.forEach((sub) => {
+          const tituloSub = (sub as any).title?.toUpperCase() || '';
+          if (capasExcluir.includes(tituloSub)) return;
+          const opt = document.createElement('option');
+          opt.value = sub.id.toString();
+          opt.text = (sub as any).title || `${lyr.title}`;
+          if (selectEl) selectEl.appendChild(opt.cloneNode(true));
+          if (selectElCultivo) selectElCultivo.appendChild(opt);
         });
       }
     });
