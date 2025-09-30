@@ -99,14 +99,14 @@ export class DashboardComponent implements AfterViewInit {
     const query = layer.createQuery();
     query.where = '1=1';
     query.outStatistics = [statDef];
-    query.groupByFieldsForStatistics = ['cultivo'];
+    query.groupByFieldsForStatistics = ['tipo_cultivo']; // CAMBIO: 'cultivo' -> 'tipo_cultivo'
     query.returnGeometry = false;
 
     try {
       const result = await layer.queryFeatures(query);
 
       const data = result.features.map((f) => ({
-        cultivo: f.attributes['cultivo'],
+        cultivo: f.attributes['tipo_cultivo'], // CAMBIO: 'cultivo' -> 'tipo_cultivo'
         total_area: f.attributes['total_area'],
       }));
 
@@ -170,6 +170,7 @@ export class DashboardComponent implements AfterViewInit {
             callbacks: {
               label: (context) => {
                 const value = context.raw as number;
+                // CAMBIO: Se asegura de usar 0 decimales para el valor
                 return `${context.label}: ${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
               }
             }
@@ -179,6 +180,7 @@ export class DashboardComponent implements AfterViewInit {
             font: { weight: 'bold', size: 30 },
             formatter: (value) => {
               const porcentaje = (value as number / meta) * 100;
+              // CAMBIO: Se asegura de usar 0 decimales para el porcentaje
               return `${porcentaje.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%`;
             }
           }
@@ -205,8 +207,9 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Paginación para traer TODOS los registros
     while (hasMore) {
+      // CAMBIO: 'org' -> 'oficina_zonal'
       const url =
-        `${baseUrl}?where=1%3D1&outFields=org,area_cultivo` +
+        `${baseUrl}?where=1%3D1&outFields=oficina_zonal,area_cultivo` +
         `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
 
       const res = await fetch(url);
@@ -222,7 +225,7 @@ export class DashboardComponent implements AfterViewInit {
     }
 
     const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.org,
+      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
       area_cultivo: feat.attributes.area_cultivo,
     }));
 
@@ -280,8 +283,9 @@ export class DashboardComponent implements AfterViewInit {
           x: {
             beginAtZero: true,
             ticks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
-                `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -303,7 +307,8 @@ export class DashboardComponent implements AfterViewInit {
             callbacks: {
               label: (ctx) => {
                 const value = ctx.raw as number;
-                return `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
+                // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
+                return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
               },
             },
           },
@@ -312,8 +317,9 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
+            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
+              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
           },
         },
       },
@@ -334,8 +340,9 @@ export class DashboardComponent implements AfterViewInit {
     let hasMore = true;
 
     while (hasMore) {
+      // CAMBIO: 'cultivo' -> 'tipo_cultivo', 'org' -> 'oficina_zonal'
       const url =
-        `${baseUrl}?where=cultivo='CAFE'&outFields=org,area_cultivo,cultivo` +
+        `${baseUrl}?where=tipo_cultivo='CAFE'&outFields=oficina_zonal,area_cultivo,tipo_cultivo` +
         `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
       const res = await fetch(url);
       const data = await res.json();
@@ -349,9 +356,9 @@ export class DashboardComponent implements AfterViewInit {
     }
 
     const rawData: Cultivo[] = allFeatures.map(feat => ({
-      org: feat.attributes.org,
+      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
       area_cultivo: feat.attributes.area_cultivo,
-      cultivo: feat.attributes.cultivo,
+      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
     }));
 
     const agrupado: Record<string, number> = {};
@@ -412,8 +419,9 @@ export class DashboardComponent implements AfterViewInit {
               align: 'end',
               color: '#000',
               font: { weight: 'bold', size: 12 },
+              // CAMBIO: 2 decimales -> 0 decimales
               formatter: (v: number) =>
-                `${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`,
+                `${v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
             },
           },
           {
@@ -471,9 +479,11 @@ export class DashboardComponent implements AfterViewInit {
                 const value = ctx.raw as number;
                 const meta = metaValues[ctx.dataIndex];
                 if (ctx.dataset.label === 'Área cultivada de CAFE (ha)') {
-                  return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`;
+                  // CAMBIO: 2 decimales -> 0 decimales
+                  return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
                 }
-                return `Meta: ${Number(meta).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`;
+                // CAMBIO: 2 decimales -> 0 decimales
+                return `Meta: ${Number(meta).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
               },
             },
           },
@@ -496,8 +506,9 @@ export class DashboardComponent implements AfterViewInit {
     let hasMore = true;
 
     while (hasMore) {
+      // CAMBIO: 'cultivo' -> 'tipo_cultivo', 'org' -> 'oficina_zonal'
       const url =
-        `${baseUrl}?where=cultivo='CACAO'&outFields=org,area_cultivo,cultivo` +
+        `${baseUrl}?where=tipo_cultivo='CACAO'&outFields=oficina_zonal,area_cultivo,tipo_cultivo` +
         `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
       const res = await fetch(url);
       const data = await res.json();
@@ -511,9 +522,9 @@ export class DashboardComponent implements AfterViewInit {
     }
 
     const rawData: Cultivo[] = allFeatures.map(feat => ({
-      org: feat.attributes.org,
+      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
       area_cultivo: feat.attributes.area_cultivo,
-      cultivo: feat.attributes.cultivo,
+      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
     }));
 
     const agrupado: Record<string, number> = {};
@@ -574,8 +585,9 @@ export class DashboardComponent implements AfterViewInit {
               align: 'end',
               color: '#000',
               font: { weight: 'bold', size: 12 },
+              // CAMBIO: 'es-PE' -> 'en-US' y 2 decimales -> 0 decimales
               formatter: (v: number) =>
-                `${v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`,
+                `${v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
             },
           },
           {
@@ -633,9 +645,11 @@ export class DashboardComponent implements AfterViewInit {
                 const value = ctx.raw as number;
                 const meta = metaValues[ctx.dataIndex];
                 if (ctx.dataset.label === 'Área cultivada de CACAO (ha)') {
-                  return `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`;
+                  // CAMBIO: 'es-PE' -> 'en-US' y 2 decimales -> 0 decimales
+                  return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
                 }
-                return `Meta: ${Number(meta).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha`;
+                // CAMBIO: 'es-PE' -> 'en-US' y 2 decimales -> 0 decimales
+                return `Meta: ${Number(meta).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
               },
             },
           },
@@ -644,7 +658,6 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [ChartDataLabels],
     });
   }
-
 
 
   //*FIN Grafico sobre la Meta por Oficina Zonal - CACAO
@@ -662,14 +675,14 @@ export class DashboardComponent implements AfterViewInit {
       while (fetched < total) {
         const result = await layer.queryFeatures({
           where: '1=1',
-          outFields: ['dni'],
+          outFields: ['dni_participante'], // CAMBIO: 'dni' -> 'dni_participante'
           returnGeometry: false,
           start: fetched,
           num: pageSize,
         });
 
         result.features.forEach((f) => {
-          const dni = f.attributes['dni'];
+          const dni = f.attributes['dni_participante']; // CAMBIO: 'dni' -> 'dni_participante'
           if (dni) dnisTotales.add(dni);
         });
 
@@ -721,6 +734,7 @@ export class DashboardComponent implements AfterViewInit {
             callbacks: {
               label: (context) => {
                 const value = context.raw as number;
+                // CAMBIO: Se asegura de usar 0 decimales
                 return `${context.label}: ${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
               }
             }
@@ -730,6 +744,7 @@ export class DashboardComponent implements AfterViewInit {
             font: { weight: 'bold', size: 30 },
             formatter: (value) => {
               const porcentaje = (value as number / meta) * 100;
+              // CAMBIO: Se asegura de usar 0 decimales
               return `${porcentaje.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}%`;
             }
           }
@@ -753,17 +768,17 @@ export class DashboardComponent implements AfterViewInit {
       while (fetched < total) {
         const result = await layer.queryFeatures({
           where: '1=1',
-          outFields: ['dni', 'cultivo'],
+          outFields: ['dni_participante', 'tipo_cultivo'], // CAMBIO: 'dni' -> 'dni_participante', 'cultivo' -> 'tipo_cultivo'
           returnGeometry: false,
           start: fetched,
           num: pageSize,
         });
 
         result.features.forEach((f) => {
-          const dni = f.attributes['dni'];
+          const dni = f.attributes['dni_participante']; // CAMBIO: 'dni' -> 'dni_participante'
           if (!dni) return;
 
-          const cultivoRaw = (f.attributes['cultivo'] || '')
+          const cultivoRaw = (f.attributes['tipo_cultivo'] || '') // CAMBIO: 'cultivo' -> 'tipo_cultivo'
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
@@ -813,8 +828,9 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Paginación para traer TODOS los registros
     while (hasMore) {
+      // CAMBIO: 'org' -> 'oficina_zonal', 'dni' -> 'dni_participante'
       const url =
-        `${baseUrl}?where=1%3D1&outFields=org,dni` +
+        `${baseUrl}?where=1%3D1&outFields=oficina_zonal,dni_participante` +
         `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
 
       const res = await fetch(url);
@@ -831,8 +847,8 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Normalizar datos (org + dni)
     const rawData: Participante[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.org,
-      dni: feat.attributes.dni,
+      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
+      dni: feat.attributes.dni_participante, // CAMBIO: 'dni' -> 'dni_participante'
     }));
 
     // 🔹 Agrupar por Oficina Zonal y contar DNIs únicos
@@ -896,8 +912,9 @@ export class DashboardComponent implements AfterViewInit {
           x: {
             beginAtZero: true,
             ticks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
-                `${Number(value).toLocaleString('es-PE')}`,
+                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -919,7 +936,8 @@ export class DashboardComponent implements AfterViewInit {
             callbacks: {
               label: (ctx) => {
                 const value = ctx.raw as number;
-                return `${Number(value).toLocaleString('es-PE')} participantes`;
+                // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
+                return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} participantes`;
               },
             },
           },
@@ -928,8 +946,9 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
+            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('es-PE')}`,
+              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
           },
         },
       },
@@ -950,14 +969,14 @@ export class DashboardComponent implements AfterViewInit {
       while (fetched < total) {
         const result = await layer.queryFeatures({
           where: '1=1',
-          outFields: ['cultivo'],
+          outFields: ['tipo_cultivo'], // CAMBIO: 'cultivo' -> 'tipo_cultivo'
           returnGeometry: false,
           start: fetched,
           num: pageSize,
         });
 
         result.features.forEach((f) => {
-          const cultivo = (f.attributes['cultivo'] || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const cultivo = (f.attributes['tipo_cultivo'] || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // CAMBIO: 'cultivo' -> 'tipo_cultivo'
           if (cultivo.includes('cafe')) conteoCafe++;
           if (cultivo.includes('cacao')) conteoCacao++;
         });
@@ -984,14 +1003,14 @@ export class DashboardComponent implements AfterViewInit {
       while (fetched < total) {
         const result = await layer.queryFeatures({
           where: '1=1',
-          outFields: ['cultivo'],
+          outFields: ['tipo_cultivo'], // CAMBIO: 'cultivo' -> 'tipo_cultivo'
           returnGeometry: false,
           start: fetched,
           num: pageSize,
         });
 
         result.features.forEach((f) => {
-          const cultivo = f.attributes['cultivo'];
+          const cultivo = f.attributes['tipo_cultivo']; // CAMBIO: 'cultivo' -> 'tipo_cultivo'
           if (cultivo) conteo[cultivo] = (conteo[cultivo] || 0) + 1;
         });
 
@@ -1070,8 +1089,9 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Paginación para traer TODOS los registros SOLO de CAFÉ
     while (hasMore) {
+      // CAMBIO: 'cultivo' -> 'tipo_cultivo', 'org' -> 'oficina_zonal', 'dni' -> 'dni_participante'
       const url =
-        `${baseUrl}?where=cultivo='CAFE'&outFields=org,cultivo,dni` +
+        `${baseUrl}?where=tipo_cultivo='CAFE'&outFields=oficina_zonal,tipo_cultivo,dni_participante` +
         `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
 
       const res = await fetch(url);
@@ -1087,9 +1107,9 @@ export class DashboardComponent implements AfterViewInit {
     }
 
     const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.org,
-      cultivo: feat.attributes.cultivo,
-      dni: feat.attributes.dni,
+      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
+      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
+      dni: feat.attributes.dni_participante, // CAMBIO: 'dni' -> 'dni_participante'
     }));
 
     // 🔹 Contamos **DNI únicos** de CAFÉ por Oficina Zonal
@@ -1152,8 +1172,9 @@ export class DashboardComponent implements AfterViewInit {
             beginAtZero: true,
             max: 6000,
             ticks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
-                `${Number(value).toLocaleString('es-PE')}`,
+                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -1173,8 +1194,9 @@ export class DashboardComponent implements AfterViewInit {
           legend: { display: false },
           tooltip: {
             callbacks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               label: (ctx) =>
-                `${Number(ctx.raw).toLocaleString('es-PE')} participantes`,
+                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} participantes`,
             },
           },
           datalabels: {
@@ -1182,8 +1204,9 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
+            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('es-PE')}`,
+              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
           },
         },
       },
@@ -1205,8 +1228,9 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Paginación para traer TODOS los registros SOLO de CACAO
     while (hasMore) {
+      // CAMBIO: 'cultivo' -> 'tipo_cultivo', 'org' -> 'oficina_zonal', 'dni' -> 'dni_participante'
       const url =
-        `${baseUrl}?where=cultivo='CACAO'&outFields=org,cultivo,dni` +
+        `${baseUrl}?where=tipo_cultivo='CACAO'&outFields=oficina_zonal,tipo_cultivo,dni_participante` +
         `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
 
       const res = await fetch(url);
@@ -1222,9 +1246,9 @@ export class DashboardComponent implements AfterViewInit {
     }
 
     const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.org,
-      cultivo: feat.attributes.cultivo,
-      dni: feat.attributes.dni,
+      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
+      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
+      dni: feat.attributes.dni_participante, // CAMBIO: 'dni' -> 'dni_participante'
     }));
 
     // 🔹 Contamos **DNI únicos** de CACAO por Oficina Zonal
@@ -1287,8 +1311,9 @@ export class DashboardComponent implements AfterViewInit {
             beginAtZero: true,
             max: 6000,
             ticks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
-                `${Number(value).toLocaleString('es-PE')}`,
+                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -1308,8 +1333,9 @@ export class DashboardComponent implements AfterViewInit {
           legend: { display: false },
           tooltip: {
             callbacks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               label: (ctx) =>
-                `${Number(ctx.raw).toLocaleString('es-PE')} participantes`,
+                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} participantes`,
             },
           },
           datalabels: {
@@ -1317,8 +1343,9 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
+            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('es-PE')}`,
+              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
           },
         },
       },
@@ -1341,8 +1368,9 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Paginación para traer TODOS los registros SOLO de CAFÉ
     while (hasMore) {
+      // CAMBIO: 'cultivo' -> 'tipo_cultivo', 'org' -> 'oficina_zonal'
       const url =
-        `${baseUrl}?where=cultivo='CAFE'&outFields=org,cultivo` +
+        `${baseUrl}?where=tipo_cultivo='CAFE'&outFields=oficina_zonal,tipo_cultivo` +
         `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
 
       const res = await fetch(url);
@@ -1358,8 +1386,8 @@ export class DashboardComponent implements AfterViewInit {
     }
 
     const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.org,
-      cultivo: feat.attributes.cultivo,
+      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
+      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
     }));
 
     // 🔹 Contamos registros de CAFÉ por Oficina Zonal
@@ -1418,8 +1446,9 @@ export class DashboardComponent implements AfterViewInit {
             beginAtZero: true,
             max: 6000,
             ticks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
-                `${Number(value).toLocaleString('es-PE')}`,
+                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -1439,8 +1468,9 @@ export class DashboardComponent implements AfterViewInit {
           legend: { display: false },
           tooltip: {
             callbacks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               label: (ctx) =>
-                `${Number(ctx.raw).toLocaleString('es-PE')} polígonos`,
+                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} polígonos`,
             },
           },
           datalabels: {
@@ -1448,8 +1478,9 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
+            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('es-PE')}`,
+              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
           },
         },
       },
@@ -1471,8 +1502,9 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Paginación para traer TODOS los registros SOLO de CACAO
     while (hasMore) {
+      // CAMBIO: 'cultivo' -> 'tipo_cultivo', 'org' -> 'oficina_zonal'
       const url =
-        `${baseUrl}?where=cultivo='CACAO'&outFields=org,cultivo` +
+        `${baseUrl}?where=tipo_cultivo='CACAO'&outFields=oficina_zonal,tipo_cultivo` +
         `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
 
       const res = await fetch(url);
@@ -1488,8 +1520,8 @@ export class DashboardComponent implements AfterViewInit {
     }
 
     const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.org,
-      cultivo: feat.attributes.cultivo,
+      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
+      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
     }));
 
     // 🔹 Contamos registros de CACAO por Oficina Zonal
@@ -1548,8 +1580,9 @@ export class DashboardComponent implements AfterViewInit {
             beginAtZero: true,
             max: 6000,
             ticks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
-                `${Number(value).toLocaleString('es-PE')}`,
+                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -1569,8 +1602,9 @@ export class DashboardComponent implements AfterViewInit {
           legend: { display: false },
           tooltip: {
             callbacks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               label: (ctx) =>
-                `${Number(ctx.raw).toLocaleString('es-PE')} polígonos`,
+                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} polígonos`,
             },
           },
           datalabels: {
@@ -1578,8 +1612,9 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
+            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('es-PE')}`,
+              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
           },
         },
       },
