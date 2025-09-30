@@ -3,12 +3,15 @@ import { ElementRef, Injectable } from '@angular/core';
 //Libreria actual de ArcGIS 4.33
 import '@arcgis/map-components/components/arcgis-search';
 import { LayerConfig } from '../interface/layerConfig';
+import * as geometryEngineAsync from '@arcgis/core/geometry/geometryEngineAsync';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
 import CoordinateConversion from '@arcgis/core/widgets/CoordinateConversion.js';
 import CSVLayer from '@arcgis/core/layers/CSVLayer';
 import Expand from '@arcgis/core/widgets/Expand.js';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer.js';
 import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
+import Graphic from '@arcgis/core/Graphic';
+import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Legend from '@arcgis/core/widgets/Legend.js';
 import Map from '@arcgis/core/Map.js';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
@@ -20,21 +23,9 @@ import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
 import WebTileLayer from '@arcgis/core/layers/WebTileLayer';
 import Zoom from '@arcgis/core/widgets/Zoom.js';
 
-import * as geometryEngineAsync from '@arcgis/core/geometry/geometryEngineAsync';
-import Graphic from '@arcgis/core/Graphic';
-import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
-
-
-
-
-
-
-
-
-
 //* POPUP & CLUSTERS
 const popupPoligonoCultivo = new PopupTemplate({
-  title: 'Tipo de Cultivo: {cultivo}',
+  title: 'Tipo de Cultivo: {tipo_cultivo}',
   outFields: ['*'],
   content: [
     {
@@ -51,7 +42,7 @@ const popupPoligonoCultivo = new PopupTemplate({
           stringFieldOption: 'text-box',
         },
         {
-          fieldName: 'dni',
+          fieldName: 'dni_participante',
           label: '<b><font>DNI del productor:</font></b>',
           visible: true,
           stringFieldOption: 'text-box',
@@ -63,14 +54,14 @@ const popupPoligonoCultivo = new PopupTemplate({
           stringFieldOption: 'text-box',
         },
         {
-          fieldName: 'celular',
+          fieldName: 'celular_participante',
           label: '<b><font>Telefono del productor:</font></b>',
           visible: true,
           stringFieldOption: 'text-box',
         },
         {
-          fieldName: 'region',
-          label: '<b><font>Region del Cultivo:</font></b>',
+          fieldName: 'departamento ',
+          label: '<b><font>Departamento del Cultivo:</font></b>',
           visible: true,
           stringFieldOption: 'text-box',
         },
@@ -99,7 +90,7 @@ const popupPoligonoCultivo = new PopupTemplate({
           stringFieldOption: 'text-box',
         },
         {
-          fieldName: 'org',
+          fieldName: 'oficina_zonal',
           label: '<b><font>Oficina Zonal:</font></b>',
           visible: true,
           stringFieldOption: 'text-box',
@@ -122,6 +113,26 @@ const popupPoligonoCultivo = new PopupTemplate({
         {
           fieldName: 'area_cultivo',
           label: '<b><font>Area del Cultivo: (has)</font></b>',
+          visible: true,
+          stringFieldOption: 'text-box',
+          format: {
+            places: 3,
+            digitSeparator: true,
+          },
+        },
+        {
+          fieldName: 'codigo_plan',
+          label: '<b><font>CODIGO DEL PLAN:</font></b>',
+          visible: true,
+          stringFieldOption: 'text-box',
+          format: {
+            places: 3,
+            digitSeparator: true,
+          },
+        },
+        {
+          fieldName: 'nombre_plan',
+          label: '<b><font>NOMBRE DEL PLAN:</font></b>',
           visible: true,
           stringFieldOption: 'text-box',
           format: {
@@ -926,12 +937,12 @@ export class GeovisorSharedService {
         layer: new FeatureLayer({
           url: `${this.restApiDevida}/0`,
         }),
-        searchFields: ['dni', 'nombres'],
+        searchFields: ['dni_participante', 'nombres'],
         displayField: 'nombres',
         exactMatch: true,
         outFields: ['*'],
         name: 'CULTIVOS',
-        placeholder: 'Digite el DNI',
+        placeholder: 'INGRESE EL Nro DNI',
         maxResults: 1,
         maxSuggestions: 20,
         suggestionsEnabled: true,
