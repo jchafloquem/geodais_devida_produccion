@@ -7,12 +7,14 @@ import StatisticDefinition from '@arcgis/core/rest/support/StatisticDefinition.j
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { NavbarmenuComponent } from '../../components/navbarmenu/navbarmenu.component';
+import { FooterComponent } from '../../components/footer/footer.component';
+
 
 Chart.register(ChartDataLabels);
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterModule, SidemenuComponent, NavbarmenuComponent],
+  imports: [CommonModule, RouterModule, SidemenuComponent, NavbarmenuComponent, FooterComponent],
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],

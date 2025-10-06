@@ -6,9 +6,19 @@
   <app-sidemenu *ngIf="isMenuOpen || isDesktop" class="w-full md:w-64 bg-[#323232] md:h-full"></app-sidemenu>
   <!-- 📊 Contenido principal -->
   <div class="flex-1 min-w-0 pt-4 pr-6 pb-6 pl-6 overflow-y-auto space-y-4">
-    <h1 class="text-base sm:text-lg md:text-xl font-bold text-white bg-[#0DA642] px-3 py-1.5 rounded-lg shadow-md">
+    <h1 class="text-base sm:text-lg md:text-xl font-normal text-white bg-[#0DA642] px-3 py-1.5 rounded-lg shadow-md">
       Información vigente al 30 de julio 2025
     </h1>
+
+    <select id="selector-opciones"
+      class="mt-3 block w-full md:w-1/3 lg:w-1/4 p-2.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-[#0DA642] focus:border-[#0DA642] shadow-sm">
+      <option selected disabled>Selecciona una opción</option>
+      <option value="opcion1">Opción 1</option>
+      <option value="opcion2">Opción 2</option>
+      <option value="opcion3">Opción 3</option>
+    </select>
+
+
     <!-- ESTADISTICA SOBRE HECTAREAS -->
     <div class="rounded-2xl bg-[#0D9BD7] p-6 shadow-md ring-1 ring-gray-200">
       <!-- Título de la tarjeta principal -->
@@ -23,7 +33,8 @@
             <p class="text-xl font-medium leading-6 text-white">META</p>
             <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">43,364</p>
           </div>
-          <img src="assets/images/dashboard/meta.png" alt="icono" class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
+          <img src="assets/images/dashboard/meta.png" alt="icono"
+            class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
         </div>
         <!-- Hectáreas Total en Cultivos -->
         <div
@@ -33,10 +44,12 @@
             <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalAreaCultivo | number : "1.0-0"
               }}</p>
           </div>
-          <img src="assets/images/dashboard/avance.png" alt="icono" class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
+          <img src="assets/images/dashboard/avance.png" alt="icono"
+            class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
         </div>
         <!-- Hectáreas de Cacao -->
-        <div class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
+        <div
+          class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
             <p class="text-xl font-medium leading-6 text-white">AVANCE CACAO</p>
             <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalAreaCacao | number : "1.0-0"
@@ -46,7 +59,8 @@
             class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
         </div>
         <!-- Hectáreas de Café -->
-        <div class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
+        <div
+          class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
             <p class="text-xl font-medium leading-6 text-white">AVANCE CAFE</p>
             <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalAreaCafe | number : "1.0-0"
@@ -94,7 +108,8 @@
       </h2>
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 cursor-pointer">
 
-        <div class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
+        <div
+          class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
             <p class="text-xl font-medium leading-6 text-white">META</p>
             <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">38,313</p>
@@ -103,26 +118,32 @@
             class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
         </div>
 
-        <div class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
+        <div
+          class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
             <p class="text-xl font-medium leading-6 text-white">AVANCE</p>
-            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["total"] | number : "1.0-0" }}</p>
+            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["total"] |
+              number : "1.0-0" }}</p>
           </div>
           <img src="assets/images/dashboard/avance.png" alt="icono"
             class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
         </div>
-        <div class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
+        <div
+          class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
             <p class="text-xl font-medium leading-6 text-white">AVANCE CACAO</p>
-            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["cacao"] | number : "1.0-0" }}</p>
+            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["cacao"] |
+              number : "1.0-0" }}</p>
           </div>
           <img src="assets/images/dashboard/grano_cacao.png" alt="icono"
             class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
         </div>
-        <div class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
+        <div
+          class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
             <p class="text-xl font-medium leading-6 text-white">AVANCE CAFE</p>
-            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["cafe"] | number : "1.0-0" }}</p>
+            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["cafe"] |
+              number : "1.0-0" }}</p>
           </div>
           <img src="assets/images/dashboard/grano_cafe.png" alt="icono"
             class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
@@ -170,16 +191,18 @@
         POLIGONOS DE CACAO & CAFE
       </h2>
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 cursor-pointer">
-        <div class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
+        <div
+          class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
             <p class="text-xl font-medium leading-6 text-white">AVANCE</p>
-            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosCultivos | number : "1.0-0" }}</p>
+            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosCultivos | number :
+              "1.0-0" }}</p>
           </div>
           <img src="assets/images/dashboard/avance.png" alt="icono"
             class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
         </div>
 
-       <!--  <div class="rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
+        <!--  <div class="rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <p class="text-xl font-medium leading-6 text-white">EN PROCESO</p>
           <p class="mt-2 flex items-baseline gap-x-2">
             <span class="text-4xl font-semibold tracking-tight text-green-400">
@@ -188,7 +211,8 @@
           </p>
         </div> -->
 
-        <div class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
+        <div
+          class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
             <p class="text-xl font-medium leading-6 text-white">AVANCE CACAO</p>
             <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalCacao | number : "1.0-0"}}</p>
@@ -197,7 +221,8 @@
             class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
         </div>
 
-        <div class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
+        <div
+          class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
             <p class="text-xl font-medium leading-6 text-white">AVANCE CAFE</p>
             <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ totalCafe | number : "1.0-0"}}</p>
@@ -211,8 +236,8 @@
 
     <div class="bg-white rounded-2xl shadow-lg border p-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
-         <!-- Gráfico 2 (barras horizontales) -->
-         <div class="w-full h-[280px] sm:h-[380px] md:h-[450px] lg:h-[500px] 3xl:h-[650px] max-w-full mx-auto">
+        <!-- Gráfico 2 (barras horizontales) -->
+        <div class="w-full h-[280px] sm:h-[380px] md:h-[450px] lg:h-[500px] 3xl:h-[650px] max-w-full mx-auto">
           <canvas id="graficoCantidadOZCACAO" class="w-full h-full"></canvas>
         </div>
         <!-- Gráfico 1 -->
@@ -221,5 +246,8 @@
         </div>
       </div>
     </div>
+    <br>
+    <br>
   </div>
+  <app-footer/>
 </div>
