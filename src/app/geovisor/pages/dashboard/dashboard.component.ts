@@ -32,6 +32,16 @@ export class DashboardComponent implements AfterViewInit {
   public areaPorCultivo: { cultivo: string; total_area: number }[] = [];
   public totalAreaCafe = 0;
   public totalAreaCacao = 0;
+  private readonly METAS_HECTAREAS: { [key: number]: number } = {
+    2024: 43364,
+    2025: 5000,
+  };
+  private readonly METAS_FAMILIAS: { [key: number]: number } = {
+    2024: 38313,
+    2025: 6000,
+  };
+  public currentMetaFamilias: number = 0;
+  public currentMetaHectareas: number = 0;
   public availableYears: number[] = [];
   public selectedYear: number = new Date().getFullYear();
   private charts: Chart[] = [];
@@ -75,6 +85,9 @@ export class DashboardComponent implements AfterViewInit {
 
   async loadDashboardData(): Promise<void> {
     this.clearCharts();
+    this.currentMetaHectareas = this.METAS_HECTAREAS[this.selectedYear] || 0;
+    this.currentMetaFamilias = this.METAS_FAMILIAS[this.selectedYear] || 0;
+
     const dashboardCultivos = new FeatureLayer({ url: this.SERVICIO_PIRDAIS });
     const yearFilter = `EXTRACT(YEAR FROM fecha_levantamiento) = ${this.selectedYear}`;
 
@@ -167,7 +180,7 @@ export class DashboardComponent implements AfterViewInit {
   }
   //Grafico sobre la Meta & Avance
   crearGraficoProgresoporHectareas(total: number) {
-    const meta = 43364;
+    const meta = this.currentMetaHectareas;
     const restante = Math.max(meta - total, 0);
     const ctx = document.getElementById('graficoMeta') as HTMLCanvasElement;
 
@@ -219,9 +232,12 @@ export class DashboardComponent implements AfterViewInit {
             color: 'black',
             font: { weight: 'bold', size: 30 },
             formatter: (value) => {
+              if (meta === 0) {
+                return 'N/A';
+              }
               const porcentaje = (value as number / meta) * 100;
-              // CAMBIO: Se asegura de usar 0 decimales para el porcentaje
-              return `${porcentaje.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%`;
+              // CAMBIO: Se asegura de usar 1 decimal para el porcentaje
+              return `${porcentaje.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
             }
           }
         }
@@ -716,7 +732,7 @@ export class DashboardComponent implements AfterViewInit {
     }
   }
   crearGraficoProgresoporDNI(totalDNI: number) {
-    const meta = 38313; // meta de DNIs únicos
+    const meta = this.currentMetaFamilias; // meta de DNIs únicos
     const restante = Math.max(meta - totalDNI, 0);
     const ctx = document.getElementById('graficoMetaDNI') as HTMLCanvasElement;
 
@@ -763,9 +779,12 @@ export class DashboardComponent implements AfterViewInit {
             color: 'black',
             font: { weight: 'bold', size: 30 },
             formatter: (value) => {
+              if (meta === 0) {
+                return 'N/A';
+              }
               const porcentaje = (value as number / meta) * 100;
-              // CAMBIO: Se asegura de usar 0 decimales
-              return `${porcentaje.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}%`;
+              // CAMBIO: Se asegura de usar 1 decimal para el porcentaje
+              return `${porcentaje.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
             }
           }
         }
