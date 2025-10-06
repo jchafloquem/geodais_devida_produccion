@@ -6,21 +6,32 @@
   <app-sidemenu *ngIf="isMenuOpen || isDesktop" class="w-full md:w-64 bg-[#323232] md:h-full"></app-sidemenu>
   <!-- 📊 Contenido principal -->
   <div class="flex-1 min-w-0 pt-4 pr-6 pb-6 pl-6 overflow-y-auto space-y-4">
-    <h1 class="text-base sm:text-lg md:text-xl font-normal text-white bg-[#0DA642] px-3 py-1.5 rounded-lg shadow-md">
-      Información vigente al 30 de julio 2025
+    <h1 class="text-base sm:text-lg md:text-xl font-normal text-white bg-[#0DA642] px-3 py-1.5 rounded-lg shadow-md text-center">
+      <ng-container [ngSwitch]="selectedYear">
+        <ng-container *ngSwitchCase="0">
+          Información Acumulada (Todos los años)
+        </ng-container>
+        <ng-container *ngSwitchCase="2024">
+          Información vigente al 30 de julio del 2025
+        </ng-container>
+        <ng-container *ngSwitchCase="2025">
+          Información vigente al {{ currentDate | date:'longDate' }}
+        </ng-container>
+        <ng-container *ngSwitchDefault>
+          Información correspondiente al año {{ selectedYear }}
+        </ng-container>
+      </ng-container>
     </h1>
-
-  <!-- Agrega esto donde quieras que aparezca el selector de año -->
-<div class="year-selector-container">
-  <label for="year-select">Seleccionar Año:</label>
-  <select id="year-select" (change)="onYearChange($event)">
-    <option *ngFor="let year of availableYears" [value]="year" [selected]="year === selectedYear">
-      {{ year }}
-    </option>
-  </select>
-</div>
-
-
+    <!-- Agrega esto donde quieras que aparezca el selector de año -->
+    <div class="year-selector-container inline-flex items-center bg-white rounded-lg shadow-sm border border-gray-300 p-1">
+      <label for="year-select" class="px-3 text-sm font-semibold text-gray-600">Seleccionar Año:</label>
+      <select id="year-select" (change)="onYearChange($event)" class="rounded-md border-transparent bg-transparent py-2 pl-2 pr-8 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <option [value]="0" [selected]="selectedYear === 0">Todos</option>
+        <option *ngFor="let year of availableYears" [value]="year" [selected]="year === selectedYear">
+          {{ year }}
+        </option>
+      </select>
+    </div>
     <!-- ESTADISTICA SOBRE HECTAREAS -->
     <div class="rounded-2xl bg-[#0D9BD7] p-6 shadow-md ring-1 ring-gray-200">
       <!-- Título de la tarjeta principal -->
@@ -33,7 +44,8 @@
           class="flex items-center justify-between rounded-2xl bg-gray-800 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
             <p class="text-xl font-medium leading-6 text-white">META</p>
-            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ currentMetaHectareas | number : "1.0-0" }}</p>
+            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ currentMetaHectareas | number :
+              "1.0-0" }}</p>
           </div>
           <img src="assets/images/dashboard/meta.png" alt="icono"
             class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
@@ -85,41 +97,33 @@
         </div>
       </div>
     </div>
-
     <!-- estaditica con meta -->
-
     <!-- <div class="bg-white rounded-2xl shadow-lg border p-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
-
         <div class="w-full h-[280px] sm:h-[380px] md:h-[450px] lg:h-[500px] 3xl:h-[650px] max-w-full mx-auto">
           <canvas id="graficoMetaOZCAFE" class="w-full h-full"></canvas>
         </div>
-
         <div class="w-full h-[280px] sm:h-[380px] md:h-[450px] lg:h-[500px] 3xl:h-[650px] max-w-full mx-auto">
           <canvas id="graficoMetaOZCACAO" class="w-full h-full"></canvas>
         </div>
       </div>
     </div> -->
-
-    <!-- FIND ESTADISTICA SOBRE HECTAREAS -->
-
     <!-- ESTADISTICA SOBRE FAMILIAS -->
     <div class="rounded-2xl bg-[#0D9BD7] p-6 shadow-md ring-1 ring-gray-200">
       <h2 class="text-2xl font-bold text-black mb-6">
         FAMILIAS PARTICIPANTES EN CULTIVOS DE CACAO & CAFE
       </h2>
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 cursor-pointer">
-
         <div
           class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
             <p class="text-xl font-medium leading-6 text-white">META</p>
-            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ currentMetaFamilias | number : "1.0-0" }}</p>
+            <p class="mt-2 text-4xl font-semibold tracking-tight text-green-400">{{ currentMetaFamilias | number :
+              "1.0-0" }}</p>
           </div>
           <img src="assets/images/dashboard/meta.png" alt="icono"
             class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
         </div>
-
         <div
           class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
@@ -173,7 +177,6 @@
       </div>
     </div>
     <!-- FIN ESTADISTICA SOBRE FAMILIAS -->
-
     <div class="bg-white rounded-2xl shadow-lg border p-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
         <!-- Gráfico 2 (barras horizontales) -->
@@ -186,7 +189,6 @@
         </div>
       </div>
     </div>
-
     <!-- ESTADISTICA POLIGONOS -->
     <div class="rounded-2xl bg-[#0D9BD7] p-6 shadow-md ring-1 ring-gray-200">
       <h2 class="text-2xl font-bold text-black mb-6">
@@ -203,7 +205,6 @@
           <img src="assets/images/dashboard/avance.png" alt="icono"
             class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
         </div>
-
         <!--  <div class="rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <p class="text-xl font-medium leading-6 text-white">EN PROCESO</p>
           <p class="mt-2 flex items-baseline gap-x-2">
@@ -212,7 +213,6 @@
             </span>
           </p>
         </div> -->
-
         <div
           class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
@@ -222,7 +222,6 @@
           <img src="assets/images/dashboard/grano_cacao.png" alt="icono"
             class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white]">
         </div>
-
         <div
           class="flex items-center justify-between rounded-2xl bg-gray-900 p-6 shadow ring-1 ring-white/10 cursor-pointer">
           <div>
@@ -235,7 +234,6 @@
       </div>
     </div>
     <!-- FIN ESTADISTICA POLIGONOS -->
-
     <div class="bg-white rounded-2xl shadow-lg border p-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
         <!-- Gráfico 2 (barras horizontales) -->

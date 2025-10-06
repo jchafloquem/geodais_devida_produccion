@@ -1,6 +1,6 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, AfterViewInit, LOCALE_ID } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, registerLocaleData } from '@angular/common';
 import { SidemenuComponent } from '../../components/sidebarmenu/sidemenu.component';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import StatisticDefinition from '@arcgis/core/rest/support/StatisticDefinition.js';
@@ -8,9 +8,11 @@ import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { NavbarmenuComponent } from '../../components/navbarmenu/navbarmenu.component';
 import { FooterComponent } from '../../components/footer/footer.component';
+import localeEsPE from '@angular/common/locales/es-PE';
 
 
 Chart.register(ChartDataLabels);
+registerLocaleData(localeEsPE, 'es-PE');
 
 @Component({
   standalone: true,
@@ -18,6 +20,7 @@ Chart.register(ChartDataLabels);
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
+  providers: [{ provide: LOCALE_ID, useValue: 'es-PE' }],
 })
 export class DashboardComponent implements AfterViewInit {
   private readonly SERVICIO_PIRDAIS = 'https://siscod.devida.gob.pe/server/rest/services/DPM_LIMITES_PIRDAIS/MapServer/0';
@@ -43,7 +46,8 @@ export class DashboardComponent implements AfterViewInit {
   public currentMetaFamilias: number = 0;
   public currentMetaHectareas: number = 0;
   public availableYears: number[] = [];
-  public selectedYear: number = new Date().getFullYear();
+  public selectedYear: number | 0 = new Date().getFullYear();
+  public currentDate: Date = new Date();
   private charts: Chart[] = [];
 
   async ngAfterViewInit(): Promise<void> {
@@ -85,11 +89,19 @@ export class DashboardComponent implements AfterViewInit {
 
   async loadDashboardData(): Promise<void> {
     this.clearCharts();
-    this.currentMetaHectareas = this.METAS_HECTAREAS[this.selectedYear] || 0;
-    this.currentMetaFamilias = this.METAS_FAMILIAS[this.selectedYear] || 0;
+
+    let yearFilter: string;
+    if (this.selectedYear === 0) { // 'Todos'
+        yearFilter = '1=1';
+        this.currentMetaHectareas = Object.values(this.METAS_HECTAREAS).reduce((sum, meta) => sum + meta, 0);
+        this.currentMetaFamilias = Object.values(this.METAS_FAMILIAS).reduce((sum, meta) => sum + meta, 0);
+    } else { // Specific year
+        yearFilter = `EXTRACT(YEAR FROM fecha_levantamiento) = ${this.selectedYear}`;
+        this.currentMetaHectareas = this.METAS_HECTAREAS[this.selectedYear] || 0;
+        this.currentMetaFamilias = this.METAS_FAMILIAS[this.selectedYear] || 0;
+    }
 
     const dashboardCultivos = new FeatureLayer({ url: this.SERVICIO_PIRDAIS });
-    const yearFilter = `EXTRACT(YEAR FROM fecha_levantamiento) = ${this.selectedYear}`;
 
     try {
         const [totalArea, cafeCacao, areaPorCultivo, totalDNIResult] = await Promise.all([
@@ -223,8 +235,7 @@ export class DashboardComponent implements AfterViewInit {
             callbacks: {
               label: (context) => {
                 const value = context.raw as number;
-                // CAMBIO: Se asegura de usar 0 decimales para el valor
-                return `${context.label}: ${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                return `${context.label}: ${value.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
               }
             }
           },
@@ -236,8 +247,7 @@ export class DashboardComponent implements AfterViewInit {
                 return 'N/A';
               }
               const porcentaje = (value as number / meta) * 100;
-              // CAMBIO: Se asegura de usar 1 decimal para el porcentaje
-              return `${porcentaje.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+              return `${porcentaje.toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
             }
           }
         }
@@ -329,7 +339,7 @@ export class DashboardComponent implements AfterViewInit {
             beginAtZero: true,
             ticks: {
               callback: (value) =>
-                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+                `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -351,7 +361,7 @@ export class DashboardComponent implements AfterViewInit {
             callbacks: {
               label: (ctx) => {
                 const value = ctx.raw as number;
-                return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
+                return `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
               },
             },
           },
@@ -361,7 +371,7 @@ export class DashboardComponent implements AfterViewInit {
             color: '#000',
             font: { weight: 'bold', size: 12 },
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
+              `${Number(v).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
           },
         },
       },
@@ -460,9 +470,8 @@ export class DashboardComponent implements AfterViewInit {
               align: 'end',
               color: '#000',
               font: { weight: 'bold', size: 12 },
-              // CAMBIO: 'es-PE' -> 'en-US' y 2 decimales -> 0 decimales
               formatter: (v: number) =>
-                `${v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
+                `${v.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
             },
           },
           {
@@ -520,11 +529,9 @@ export class DashboardComponent implements AfterViewInit {
                 const value = ctx.raw as number;
                 const meta = metaValues[ctx.dataIndex];
                 if (ctx.dataset.label === 'Área cultivada de CACAO (ha)') {
-                  // CAMBIO: 'es-PE' -> 'en-US' y 2 decimales -> 0 decimales
-                  return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
+                  return `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
                 }
-                // CAMBIO: 'es-PE' -> 'en-US' y 2 decimales -> 0 decimales
-                return `Meta: ${Number(meta).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
+                return `Meta: ${Number(meta).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
               },
             },
           },
@@ -622,9 +629,8 @@ export class DashboardComponent implements AfterViewInit {
               align: 'end',
               color: '#000',
               font: { weight: 'bold', size: 12 },
-              // CAMBIO: 2 decimales -> 0 decimales
               formatter: (v: number) =>
-                `${v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
+                `${v.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
             },
           },
           {
@@ -682,11 +688,9 @@ export class DashboardComponent implements AfterViewInit {
                 const value = ctx.raw as number;
                 const meta = metaValues[ctx.dataIndex];
                 if (ctx.dataset.label === 'Área cultivada de CAFE (ha)') {
-                  // CAMBIO: 2 decimales -> 0 decimales
-                  return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
+                  return `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
                 }
-                // CAMBIO: 2 decimales -> 0 decimales
-                return `Meta: ${Number(meta).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
+                return `Meta: ${Number(meta).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
               },
             },
           },
@@ -770,8 +774,7 @@ export class DashboardComponent implements AfterViewInit {
             callbacks: {
               label: (context) => {
                 const value = context.raw as number;
-                // CAMBIO: Se asegura de usar 0 decimales
-                return `${context.label}: ${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                return `${context.label}: ${value.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
               }
             }
           },
@@ -783,8 +786,7 @@ export class DashboardComponent implements AfterViewInit {
                 return 'N/A';
               }
               const porcentaje = (value as number / meta) * 100;
-              // CAMBIO: Se asegura de usar 1 decimal para el porcentaje
-              return `${porcentaje.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+              return `${porcentaje.toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
             }
           }
         }
@@ -948,9 +950,8 @@ export class DashboardComponent implements AfterViewInit {
             max: 14000,
             beginAtZero: true,
             ticks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
-                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+                `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -972,8 +973,7 @@ export class DashboardComponent implements AfterViewInit {
             callbacks: {
               label: (ctx) => {
                 const value = ctx.raw as number;
-                // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
-                return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} participantes`;
+                return `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} participantes`;
               },
             },
           },
@@ -982,9 +982,8 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
-            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+              `${Number(v).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
           },
         },
       },
@@ -1209,9 +1208,8 @@ export class DashboardComponent implements AfterViewInit {
             max: 10000,
             beginAtZero: true,
             ticks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
-                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+                `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -1231,9 +1229,8 @@ export class DashboardComponent implements AfterViewInit {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               label: (ctx) =>
-                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} participantes`,
+                `${Number(ctx.raw).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} participantes`,
             },
           },
           datalabels: {
@@ -1241,9 +1238,8 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
-            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+              `${Number(v).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
           },
         },
       },
@@ -1351,9 +1347,8 @@ export class DashboardComponent implements AfterViewInit {
             max: 10000,
             beginAtZero: true,
             ticks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
-                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+                `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -1373,9 +1368,8 @@ export class DashboardComponent implements AfterViewInit {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               label: (ctx) =>
-                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} participantes`,
+                `${Number(ctx.raw).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} participantes`,
             },
           },
           datalabels: {
@@ -1383,9 +1377,8 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
-            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+              `${Number(v).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
           },
         },
       },
@@ -1488,9 +1481,8 @@ export class DashboardComponent implements AfterViewInit {
             max: 10000,
             beginAtZero: true,
             ticks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
-                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+                `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -1510,9 +1502,8 @@ export class DashboardComponent implements AfterViewInit {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               label: (ctx) =>
-                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} polígonos`,
+                `${Number(ctx.raw).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} polígonos`,
             },
           },
           datalabels: {
@@ -1520,9 +1511,8 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
-            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+              `${Number(v).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
           },
         },
       },
@@ -1623,9 +1613,8 @@ export class DashboardComponent implements AfterViewInit {
             max: 10000,
             beginAtZero: true,
             ticks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
-                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+                `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
           },
           y: {
@@ -1645,9 +1634,8 @@ export class DashboardComponent implements AfterViewInit {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               label: (ctx) =>
-                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} polígonos`,
+                `${Number(ctx.raw).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} polígonos`,
             },
           },
           datalabels: {
@@ -1655,9 +1643,8 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
-            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
-              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+              `${Number(v).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
           },
         },
       },
