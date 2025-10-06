@@ -7,5 +7,10 @@ import { Component } from '@angular/core';
   styleUrl: './footer.component.scss'
 })
 export class FooterComponent {
+  public anioencurso : number;
+
+  constructor() {
+    this.anioencurso = new Date().getFullYear();
+    }
 
 }

@@ -33,42 +33,38 @@ export class DashboardComponent implements AfterViewInit {
   public totalAreaCafe = 0;
   public totalAreaCacao = 0;
 
-  ngAfterViewInit(): void {
-    const dashboardCultivos = new FeatureLayer({ url: this.SERVICIO_PIRDAIS});
-    dashboardCultivos
-      .load()
-      .then(() => {
-        this.sumarAreaCultivoTotal(dashboardCultivos).then((total) => {
-          this.totalAreaCultivo = total;
-          this.crearGraficoProgresoporHectareas(total);
-          this.crearGraficoProgresoporHectareasOZ();
-          this.crearGraficoProgresoporHectareasOZCAFE();
-          this.crearGraficoProgresoporHectareasOZCACAO();
-          this.crearGraficoCantidadRegistrosOZCAFE();
-          this.crearGraficoCantidadRegistrosOZCACAO();
-          this.crearGraficoCantidadDniOZCAFE();
-          this.crearGraficoCantidadDniOZCACAO();
-          this.crearGraficoProgresoporParticipantesOZ();
-        });
+  async ngAfterViewInit(): Promise<void> {
+    const dashboardCultivos = new FeatureLayer({ url: this.SERVICIO_PIRDAIS });
+    try {
+        await dashboardCultivos.load();
+        const [totalArea, cafeCacao, areaPorCultivo, totalDNIResult] = await Promise.all([
+            this.sumarAreaCultivoTotal(dashboardCultivos),
+            this.contarCafeCacao(dashboardCultivos),
+            this.sumarAreaPorCultivo(dashboardCultivos),
+            this.contarRegistrosUnicosPorDNI(dashboardCultivos),
+        ]);
+        this.totalAreaCultivo = totalArea;
+        this.totalCafe = cafeCacao.cafe;
+        this.totalCacao = cafeCacao.cacao;
+        this.areaPorCultivo = areaPorCultivo;
+        this.crearGraficoProgresoporHectareas(totalArea);
+        this.crearGraficoProgresoporDNI(totalDNIResult["total"]);
+        this.crearGraficoProgresoporHectareasOZ();
+        this.crearGraficoProgresoporHectareasOZCacao();
+        this.crearGraficoProgresoporHectareasOZCAFE();
+        this.crearGraficoCantidadPoligonosOZCacao();
+        this.crearGraficoCantidadPoligonosOZCafe();
+        this.crearGraficoProgresoporFamiliasOZ();
+        this.crearGraficoCantidadFamiliasOZCacao();
+        this.crearGraficoCantidadFamiliasOZCafe();
         this.generarGraficoCultivosPorTipo(dashboardCultivos);
-        this.contarCafeCacao(dashboardCultivos).then((res) => {
-          this.totalCafe = res.cafe;
-          this.totalCacao = res.cacao;
-        });
-        this.sumarAreaPorCultivo(dashboardCultivos).then((data) => {
-          this.areaPorCultivo = data;
-        });
-      this.contarRegistrosUnicosPorDNI(dashboardCultivos).then((res) => {
-        this.crearGraficoProgresoporDNI(res["total"]); // 👈 aquí ya pintas el gráfico
-      });
-        this.contarRegistrosUnicosPorDNI(dashboardCultivos);
-      })
-      .catch((err) => {
-        console.error('Error cargando la capa:', err);
-      });
+
+    } catch (err) {
+        console.error('Error durante la inicialización del dashboard:', err);
+    }
   }
 
-  //*Tarjetas sobre la Meta & Avance
+  //Tarjetas sobre la Meta & Avance
   async sumarAreaCultivoTotal(layer: FeatureLayer): Promise<number> {
     const statDef = new StatisticDefinition({
       onStatisticField: 'area_cultivo',
@@ -101,14 +97,14 @@ export class DashboardComponent implements AfterViewInit {
     const query = layer.createQuery();
     query.where = '1=1';
     query.outStatistics = [statDef];
-    query.groupByFieldsForStatistics = ['tipo_cultivo']; // CAMBIO: 'cultivo' -> 'tipo_cultivo'
+    query.groupByFieldsForStatistics = ['tipo_cultivo'];
     query.returnGeometry = false;
 
     try {
       const result = await layer.queryFeatures(query);
 
       const data = result.features.map((f) => ({
-        cultivo: f.attributes['tipo_cultivo'], // CAMBIO: 'cultivo' -> 'tipo_cultivo'
+        cultivo: f.attributes['tipo_cultivo'],
         total_area: f.attributes['total_area'],
       }));
 
@@ -127,7 +123,7 @@ export class DashboardComponent implements AfterViewInit {
       return [];
     }
   }
-  //*Grafico sobre la Meta & Avance
+  //Grafico sobre la Meta & Avance
   crearGraficoProgresoporHectareas(total: number) {
     const meta = 43364;
     const restante = Math.max(meta - total, 0);
@@ -191,32 +187,25 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [ChartDataLabels]
     });
   }
-
-  //*Fin Grafico sobre la Meta & Avance
-
-  //*Grafico sobre la Meta por Oficina Zonal
+  //Grafico sobre la Meta por Oficina Zonal
   async crearGraficoProgresoporHectareasOZ() {
     const baseUrl = this.QUERY_SERVICIO;
     interface Cultivo {
       org: string;
       area_cultivo: number;
     }
-
     let allFeatures: any[] = [];
     let offset = 0;
     const pageSize = 2000;
     let hasMore = true;
 
-    // 🔹 Paginación para traer TODOS los registros
     while (hasMore) {
-      // CAMBIO: 'org' -> 'oficina_zonal'
       const url =
         `${baseUrl}?where=1%3D1&outFields=oficina_zonal,area_cultivo` +
         `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
 
       const res = await fetch(url);
       const data = await res.json();
-
       if (data.features?.length) {
         allFeatures = allFeatures.concat(data.features);
         offset += pageSize;
@@ -225,24 +214,21 @@ export class DashboardComponent implements AfterViewInit {
         hasMore = false;
       }
     }
-
     const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
+      org: feat.attributes.oficina_zonal,
       area_cultivo: feat.attributes.area_cultivo,
     }));
-
     // Agrupamos por Oficina Zonal
     const agrupado: Record<string, number> = {};
     rawData.forEach((item: Cultivo) => {
       agrupado[item.org] = (agrupado[item.org] || 0) + item.area_cultivo;
     });
-
     // 🔹 Ordenar de mayor a menor
     const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
     const labels = entries.map(e => e[0]);
     const values = entries.map(e => e[1]);
 
-    // 🔹 Colores por ORG (mapa)
+    // 🔹 Colores por Oficina Zonal
     const colorMap: Record<string, string> = {
       'OZ SAN FRANCISCO': '#FEEFD8',
       'OZ PUCALLPA': '#B7D9FE',
@@ -253,11 +239,8 @@ export class DashboardComponent implements AfterViewInit {
       'OZ QUILLABAMBA': '#FEFEB9',
       'OZ IQUITOS': '#CAFEDA',
     };
-
-    // Asignar colores según el ORG, si no existe usar gris
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
     const borderColors = backgroundColors.map(c => c);
-
     const ctx = document.getElementById('graficoMetaOZ') as HTMLCanvasElement;
     if (!ctx) return;
 
@@ -280,12 +263,13 @@ export class DashboardComponent implements AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        indexAxis: 'y', // barras horizontales
+        indexAxis: 'y',
         scales: {
           x: {
+            min: 0,
+            max: 20000,
             beginAtZero: true,
             ticks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
                 `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
             },
@@ -309,7 +293,6 @@ export class DashboardComponent implements AfterViewInit {
             callbacks: {
               label: (ctx) => {
                 const value = ctx.raw as number;
-                // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
                 return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
               },
             },
@@ -319,7 +302,6 @@ export class DashboardComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 12 },
-            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
             formatter: (v: number) =>
               `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
           },
@@ -328,176 +310,9 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [ChartDataLabels],
     });
   }
-  //*Fin Grafico sobre la Meta por Oficina Zonal
 
-  //*Grafico sobre la Meta por Oficina Zonal - CAFE
-  async crearGraficoProgresoporHectareasOZCAFE() {
-    const baseUrl = this.QUERY_SERVICIO;
-
-    interface Cultivo { org: string; area_cultivo: number; cultivo: string; }
-
-    let allFeatures: any[] = [];
-    let offset = 0;
-    const pageSize = 2000;
-    let hasMore = true;
-
-    while (hasMore) {
-      // CAMBIO: 'cultivo' -> 'tipo_cultivo', 'org' -> 'oficina_zonal'
-      const url =
-        `${baseUrl}?where=tipo_cultivo='CAFE'&outFields=oficina_zonal,area_cultivo,tipo_cultivo` +
-        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.features?.length) {
-        allFeatures = allFeatures.concat(data.features);
-        offset += pageSize;
-        hasMore = data.features.length === pageSize;
-      } else {
-        hasMore = false;
-      }
-    }
-
-    const rawData: Cultivo[] = allFeatures.map(feat => ({
-      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
-      area_cultivo: feat.attributes.area_cultivo,
-      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
-    }));
-
-    const agrupado: Record<string, number> = {};
-    rawData.forEach(item => {
-      if (item.cultivo === 'CAFE') {
-        agrupado[item.org] = (agrupado[item.org] || 0) + item.area_cultivo;
-      }
-    });
-
-    const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
-
-    const metasOZ: Record<string, number> = {
-      'OZ SAN FRANCISCO': 2344,
-      'OZ PUCALLPA': 0,
-      'OZ LA MERCED': 1973,
-      'OZ TINGO MARIA': 2133,
-      'OZ TARAPOTO': 688,
-      'OZ SAN JUAN DE ORO': 1119,
-      'OZ QUILLABAMBA': 1197,
-      'OZ IQUITOS': 0,
-    };
-    const metaValues = labels.map(org => metasOZ[org] ?? 0);
-
-    const colorMap: Record<string, string> = {
-      'OZ SAN FRANCISCO': '#FEEFD8',
-      'OZ PUCALLPA': '#B7D9FE',
-      'OZ LA MERCED': '#FFC0B6',
-      'OZ TINGO MARIA': '#D6F9FD',
-      'OZ TARAPOTO': '#C2BBFE',
-      'OZ SAN JUAN DE ORO': '#FED2F3',
-      'OZ QUILLABAMBA': '#FEFEB9',
-      'OZ IQUITOS': '#CAFEDA',
-    };
-    const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
-    const borderColors = backgroundColors.map(c => c);
-
-    const ctx = document.getElementById('graficoMetaOZCAFE') as HTMLCanvasElement;
-    if (!ctx) return;
-
-    new Chart(ctx, {
-      type: 'bar', // ✅ barras verticales
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'Área cultivada de CAFE (ha)',
-            data: values,
-            backgroundColor: backgroundColors,
-            borderColor: borderColors,
-            borderWidth: 1,
-            barThickness: 25,
-            maxBarThickness: 50,
-            order: 1,
-            datalabels: {
-              anchor: 'end',
-              align: 'end',
-              color: '#000',
-              font: { weight: 'bold', size: 12 },
-              // CAMBIO: 2 decimales -> 0 decimales
-              formatter: (v: number) =>
-                `${v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
-            },
-          },
-          {
-            label: 'Meta',
-            type: 'line',
-            data: metaValues,
-            borderColor: '#FF0000',
-            borderWidth: 2,
-            pointRadius: 3,
-            pointBackgroundColor: '#FF0000',
-            borderDash: [6, 6],
-            fill: false,
-            order: 999, // ✅ línea encima de las barras
-            datalabels: {
-              anchor: 'end',
-              align: 'top',
-              color: '#FF0000',
-              font: { weight: 'bold', size: 11 },
-              formatter: (meta: number, ctx) => {
-                const valor = values[ctx.dataIndex] ?? 0;
-                if (!meta || meta <= 0) return '';
-                const diff = meta - valor;
-                const perc = (diff / meta) * 100;
-                if (perc <= 0) return `Superado: ${Math.abs(perc).toFixed(1)}%`;
-                return `Falta: ${perc.toFixed(1)}%`;
-              },
-            },
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { font: { size: 12, weight: 'bold' } },
-          },
-          x: {
-            ticks: { font: { size: 12, weight: 'bold' } },
-          },
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: 'OFICINA ZONAL / HECTÁREAS CAFE vs META',
-            font: { size: 18, weight: 'bold' },
-            color: '#333',
-            padding: { top: 10, bottom: 20 },
-          },
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                const value = ctx.raw as number;
-                const meta = metaValues[ctx.dataIndex];
-                if (ctx.dataset.label === 'Área cultivada de CAFE (ha)') {
-                  // CAMBIO: 2 decimales -> 0 decimales
-                  return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
-                }
-                // CAMBIO: 2 decimales -> 0 decimales
-                return `Meta: ${Number(meta).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
-              },
-            },
-          },
-        },
-      },
-      plugins: [ChartDataLabels],
-    });
-  }
-  //*FIN Grafico sobre la Meta por Oficina Zonal - CAFE
-
-  //*Grafico sobre la Meta por Oficina Zonal - CACAO
-  async crearGraficoProgresoporHectareasOZCACAO() {
+  //Grafico sobre la Meta por Oficina Zonal - CACAO
+  async crearGraficoProgresoporHectareasOZCacao() {
     const baseUrl = this.QUERY_SERVICIO;
 
     interface Cultivo { org: string; area_cultivo: number; cultivo: string; }
@@ -660,11 +475,171 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [ChartDataLabels],
     });
   }
+  //Grafico sobre la Meta por Oficina Zonal - CAFE
+  async crearGraficoProgresoporHectareasOZCAFE() {
+    const baseUrl = this.QUERY_SERVICIO;
+    interface Cultivo { org: string; area_cultivo: number; cultivo: string; }
+    let allFeatures: any[] = [];
+    let offset = 0;
+    const pageSize = 2000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const url =
+        `${baseUrl}?where=tipo_cultivo='CAFE'&outFields=oficina_zonal,area_cultivo,tipo_cultivo` +
+        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.features?.length) {
+        allFeatures = allFeatures.concat(data.features);
+        offset += pageSize;
+        hasMore = data.features.length === pageSize;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    const rawData: Cultivo[] = allFeatures.map(feat => ({
+      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
+      area_cultivo: feat.attributes.area_cultivo,
+      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
+    }));
+
+    const agrupado: Record<string, number> = {};
+    rawData.forEach(item => {
+      if (item.cultivo === 'CAFE') {
+        agrupado[item.org] = (agrupado[item.org] || 0) + item.area_cultivo;
+      }
+    });
+
+    const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
+    const labels = entries.map(e => e[0]);
+    const values = entries.map(e => e[1]);
+
+    const metasOZ: Record<string, number> = {
+      'OZ SAN FRANCISCO': 2344,
+      'OZ PUCALLPA': 0,
+      'OZ LA MERCED': 1973,
+      'OZ TINGO MARIA': 2133,
+      'OZ TARAPOTO': 688,
+      'OZ SAN JUAN DE ORO': 1119,
+      'OZ QUILLABAMBA': 1197,
+      'OZ IQUITOS': 0,
+    };
+    const metaValues = labels.map(org => metasOZ[org] ?? 0);
+
+    const colorMap: Record<string, string> = {
+      'OZ SAN FRANCISCO': '#FEEFD8',
+      'OZ PUCALLPA': '#B7D9FE',
+      'OZ LA MERCED': '#FFC0B6',
+      'OZ TINGO MARIA': '#D6F9FD',
+      'OZ TARAPOTO': '#C2BBFE',
+      'OZ SAN JUAN DE ORO': '#FED2F3',
+      'OZ QUILLABAMBA': '#FEFEB9',
+      'OZ IQUITOS': '#CAFEDA',
+    };
+    const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
+    const borderColors = backgroundColors.map(c => c);
+
+    const ctx = document.getElementById('graficoMetaOZCAFE') as HTMLCanvasElement;
+    if (!ctx) return;
+
+    new Chart(ctx, {
+      type: 'bar', // ✅ barras verticales
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Área cultivada de CAFE (ha)',
+            data: values,
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
+            borderWidth: 1,
+            barThickness: 25,
+            maxBarThickness: 50,
+            order: 1,
+            datalabels: {
+              anchor: 'end',
+              align: 'end',
+              color: '#000',
+              font: { weight: 'bold', size: 12 },
+              // CAMBIO: 2 decimales -> 0 decimales
+              formatter: (v: number) =>
+                `${v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`,
+            },
+          },
+          {
+            label: 'Meta',
+            type: 'line',
+            data: metaValues,
+            borderColor: '#FF0000',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: '#FF0000',
+            borderDash: [6, 6],
+            fill: false,
+            order: 999, // ✅ línea encima de las barras
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              color: '#FF0000',
+              font: { weight: 'bold', size: 11 },
+              formatter: (meta: number, ctx) => {
+                const valor = values[ctx.dataIndex] ?? 0;
+                if (!meta || meta <= 0) return '';
+                const diff = meta - valor;
+                const perc = (diff / meta) * 100;
+                if (perc <= 0) return `Superado: ${Math.abs(perc).toFixed(1)}%`;
+                return `Falta: ${perc.toFixed(1)}%`;
+              },
+            },
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { font: { size: 12, weight: 'bold' } },
+          },
+          x: {
+            ticks: { font: { size: 12, weight: 'bold' } },
+          },
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'OFICINA ZONAL / HECTÁREAS CAFE vs META',
+            font: { size: 18, weight: 'bold' },
+            color: '#333',
+            padding: { top: 10, bottom: 20 },
+          },
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const value = ctx.raw as number;
+                const meta = metaValues[ctx.dataIndex];
+                if (ctx.dataset.label === 'Área cultivada de CAFE (ha)') {
+                  // CAMBIO: 2 decimales -> 0 decimales
+                  return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
+                }
+                // CAMBIO: 2 decimales -> 0 decimales
+                return `Meta: ${Number(meta).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ha`;
+              },
+            },
+          },
+        },
+      },
+      plugins: [ChartDataLabels],
+    });
+  }
 
 
-  //*FIN Grafico sobre la Meta por Oficina Zonal - CACAO
 
-  //*Grafico sobre total participantes
+  //Grafico sobre total participantes
   public totalRegistrosUnicosDNI: Record<string, number> = {};
   public async contarTotalDNIUnicos(layer: FeatureLayer): Promise<number> {
     try {
@@ -815,9 +790,8 @@ export class DashboardComponent implements AfterViewInit {
       return { cafe: 0, cacao: 0, cafe_y_cacao: 0, total: 0 };
     }
   }
-  async crearGraficoProgresoporParticipantesOZ() {
+  async crearGraficoProgresoporFamiliasOZ() {
     const baseUrl = this.QUERY_SERVICIO;
-
     interface Participante {
       org: string;
       dni: string;
@@ -827,10 +801,7 @@ export class DashboardComponent implements AfterViewInit {
     let offset = 0;
     const pageSize = 2000;
     let hasMore = true;
-
-    // 🔹 Paginación para traer TODOS los registros
     while (hasMore) {
-      // CAMBIO: 'org' -> 'oficina_zonal', 'dni' -> 'dni_participante'
       const url =
         `${baseUrl}?where=1%3D1&outFields=oficina_zonal,dni_participante` +
         `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
@@ -847,10 +818,9 @@ export class DashboardComponent implements AfterViewInit {
       }
     }
 
-    // 🔹 Normalizar datos (org + dni)
     const rawData: Participante[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
-      dni: feat.attributes.dni_participante, // CAMBIO: 'dni' -> 'dni_participante'
+      org: feat.attributes.oficina_zonal,
+      dni: feat.attributes.dni_participante,
     }));
 
     // 🔹 Agrupar por Oficina Zonal y contar DNIs únicos
@@ -912,6 +882,8 @@ export class DashboardComponent implements AfterViewInit {
         indexAxis: 'y', // barras horizontales
         scales: {
           x: {
+            min: 0,
+            max: 14000,
             beginAtZero: true,
             ticks: {
               // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
@@ -958,7 +930,7 @@ export class DashboardComponent implements AfterViewInit {
     });
   }
 
-  //*Grafico sobre total poligonos
+  //Grafico sobre total poligonos
   contarCafeCacao(layer: FeatureLayer) {
     const pageSize = 2000;
     let conteoCafe = 0;
@@ -1075,147 +1047,8 @@ export class DashboardComponent implements AfterViewInit {
 
     getAllCultivoData().catch((err) => console.error('❌ Error al consultar todos los cultivos:', err));
   }
-  //*Participantes por oficina Zonal
-  async crearGraficoCantidadDniOZCAFE() {
-    const baseUrl =this.QUERY_SERVICIO;
-    interface Cultivo {
-      org: string;
-      cultivo: string;
-      dni: string;
-    }
-
-    let allFeatures: any[] = [];
-    let offset = 0;
-    const pageSize = 2000;
-    let hasMore = true;
-
-    // 🔹 Paginación para traer TODOS los registros SOLO de CAFÉ
-    while (hasMore) {
-      // CAMBIO: 'cultivo' -> 'tipo_cultivo', 'org' -> 'oficina_zonal', 'dni' -> 'dni_participante'
-      const url =
-        `${baseUrl}?where=tipo_cultivo='CAFE'&outFields=oficina_zonal,tipo_cultivo,dni_participante` +
-        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.features?.length) {
-        allFeatures = allFeatures.concat(data.features);
-        offset += pageSize;
-        hasMore = data.features.length === pageSize;
-      } else {
-        hasMore = false;
-      }
-    }
-
-    const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
-      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
-      dni: feat.attributes.dni_participante, // CAMBIO: 'dni' -> 'dni_participante'
-    }));
-
-    // 🔹 Contamos **DNI únicos** de CAFÉ por Oficina Zonal
-    const agrupado: Record<string, Set<string>> = {};
-    rawData.forEach((item: Cultivo) => {
-      if (item.cultivo === 'CAFE' && item.dni) {
-        if (!agrupado[item.org]) agrupado[item.org] = new Set<string>();
-        agrupado[item.org].add(item.dni);
-      }
-    });
-
-    // 🔹 Convertimos los sets a números y ordenamos
-    const entries = Object.entries(agrupado)
-      .map(([org, dnis]) => [org, dnis.size] as [string, number])
-      .sort((a, b) => b[1] - a[1]);
-
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
-
-    // 🔹 Colores por ORG
-    const colorMap: Record<string, string> = {
-      'OZ SAN FRANCISCO': '#FEEFD8',
-      'OZ PUCALLPA': '#B7D9FE',
-      'OZ LA MERCED': '#FFC0B6',
-      'OZ TINGO MARIA': '#D6F9FD',
-      'OZ TARAPOTO': '#C2BBFE',
-      'OZ SAN JUAN DE ORO': '#FED2F3',
-      'OZ QUILLABAMBA': '#FEFEB9',
-      'OZ IQUITOS': '#CAFEDA',
-    };
-
-    const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
-    const borderColors = backgroundColors.map(c => c);
-
-    const ctx = document.getElementById('graficoCantidadDNIOZCAFE') as HTMLCanvasElement;
-    if (!ctx) return;
-
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'Participantes únicos con CAFE',
-            data: values,
-            backgroundColor: backgroundColors,
-            borderColor: borderColors,
-            borderWidth: 1,
-            barThickness: 25,
-            maxBarThickness: 50,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: 'y',
-        scales: {
-          x: {
-            beginAtZero: true,
-            max: 6000,
-            ticks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
-              callback: (value) =>
-                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
-            },
-          },
-          y: {
-            ticks: {
-              font: { size: 12, weight: 'bold' },
-            },
-          },
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: 'FAMILIAS PARTICIPANTES CAFE',
-            font: { size: 18, weight: 'bold' },
-            color: '#333',
-            padding: { top: 10, bottom: 20 }
-          },
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
-              label: (ctx) =>
-                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} participantes`,
-            },
-          },
-          datalabels: {
-            anchor: 'end',
-            align: 'right',
-            color: '#000',
-            font: { weight: 'bold', size: 12 },
-            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
-            formatter: (v: number) =>
-              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
-          },
-        },
-      },
-      plugins: [ChartDataLabels],
-    });
-  }
-  async crearGraficoCantidadDniOZCACAO() {
+  // Grafico de barra por cantidad de familias por Oficina Zonal - Cacao
+  async crearGraficoCantidadFamiliasOZCacao() {
     const baseUrl =this.QUERY_SERVICIO;
     interface Cultivo {
       org: string;
@@ -1310,8 +1143,9 @@ export class DashboardComponent implements AfterViewInit {
         indexAxis: 'y',
         scales: {
           x: {
+            min:0,
+            max: 10000,
             beginAtZero: true,
-            max: 6000,
             ticks: {
               // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
@@ -1355,12 +1189,13 @@ export class DashboardComponent implements AfterViewInit {
     });
   }
 
-  //*Grafico por cultivo de cafe por Oficina Zonal
-  async crearGraficoCantidadRegistrosOZCAFE() {
-    const baseUrl = this.QUERY_SERVICIO;
+  //Participantes por oficina Zonal
+  async crearGraficoCantidadFamiliasOZCafe() {
+    const baseUrl =this.QUERY_SERVICIO;
     interface Cultivo {
       org: string;
       cultivo: string;
+      dni: string;
     }
 
     let allFeatures: any[] = [];
@@ -1370,9 +1205,9 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Paginación para traer TODOS los registros SOLO de CAFÉ
     while (hasMore) {
-      // CAMBIO: 'cultivo' -> 'tipo_cultivo', 'org' -> 'oficina_zonal'
+      // CAMBIO: 'cultivo' -> 'tipo_cultivo', 'org' -> 'oficina_zonal', 'dni' -> 'dni_participante'
       const url =
-        `${baseUrl}?where=tipo_cultivo='CAFE'&outFields=oficina_zonal,tipo_cultivo` +
+        `${baseUrl}?where=tipo_cultivo='CAFE'&outFields=oficina_zonal,tipo_cultivo,dni_participante` +
         `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
 
       const res = await fetch(url);
@@ -1390,18 +1225,23 @@ export class DashboardComponent implements AfterViewInit {
     const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
       org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
       cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
+      dni: feat.attributes.dni_participante, // CAMBIO: 'dni' -> 'dni_participante'
     }));
 
-    // 🔹 Contamos registros de CAFÉ por Oficina Zonal
-    const agrupado: Record<string, number> = {};
+    // 🔹 Contamos **DNI únicos** de CAFÉ por Oficina Zonal
+    const agrupado: Record<string, Set<string>> = {};
     rawData.forEach((item: Cultivo) => {
-      if (item.cultivo === 'CAFE') {
-        agrupado[item.org] = (agrupado[item.org] || 0) + 1;
+      if (item.cultivo === 'CAFE' && item.dni) {
+        if (!agrupado[item.org]) agrupado[item.org] = new Set<string>();
+        agrupado[item.org].add(item.dni);
       }
     });
 
-    // 🔹 Ordenar de mayor a menor
-    const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
+    // 🔹 Convertimos los sets a números y ordenamos
+    const entries = Object.entries(agrupado)
+      .map(([org, dnis]) => [org, dnis.size] as [string, number])
+      .sort((a, b) => b[1] - a[1]);
+
     const labels = entries.map(e => e[0]);
     const values = entries.map(e => e[1]);
 
@@ -1420,7 +1260,7 @@ export class DashboardComponent implements AfterViewInit {
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
     const borderColors = backgroundColors.map(c => c);
 
-    const ctx = document.getElementById('graficoCantidadOZCAFE') as HTMLCanvasElement;
+    const ctx = document.getElementById('graficoCantidadDNIOZCAFE') as HTMLCanvasElement;
     if (!ctx) return;
 
     new Chart(ctx, {
@@ -1429,7 +1269,7 @@ export class DashboardComponent implements AfterViewInit {
         labels,
         datasets: [
           {
-            label: 'Cantidad de polígonos de CAFÉ',
+            label: 'Participantes únicos con CAFE',
             data: values,
             backgroundColor: backgroundColors,
             borderColor: borderColors,
@@ -1445,8 +1285,9 @@ export class DashboardComponent implements AfterViewInit {
         indexAxis: 'y',
         scales: {
           x: {
+            min:0,
+            max: 10000,
             beginAtZero: true,
-            max: 6000,
             ticks: {
               // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
@@ -1462,7 +1303,7 @@ export class DashboardComponent implements AfterViewInit {
         plugins: {
           title: {
             display: true,
-            text: 'POLIGONOS DE CAFE',
+            text: 'FAMILIAS PARTICIPANTES CAFE',
             font: { size: 18, weight: 'bold' },
             color: '#333',
             padding: { top: 10, bottom: 20 }
@@ -1472,7 +1313,7 @@ export class DashboardComponent implements AfterViewInit {
             callbacks: {
               // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               label: (ctx) =>
-                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} polígonos`,
+                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} participantes`,
             },
           },
           datalabels: {
@@ -1489,8 +1330,10 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [ChartDataLabels],
     });
   }
-  //*Grafico por cultivo de cacao por Oficina Zonal
-  async crearGraficoCantidadRegistrosOZCACAO() {
+
+
+  //Grafico por poligonos de cultivos de cacao por Oficina Zonal
+   async crearGraficoCantidadPoligonosOZCacao() {
     const baseUrl = this.QUERY_SERVICIO;
     interface Cultivo {
       org: string;
@@ -1579,8 +1422,9 @@ export class DashboardComponent implements AfterViewInit {
         indexAxis: 'y',
         scales: {
           x: {
+            min:0,
+            max: 10000,
             beginAtZero: true,
-            max: 6000,
             ticks: {
               // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
               callback: (value) =>
@@ -1623,4 +1467,140 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [ChartDataLabels],
     });
   }
+  //Grafico por poligonos de cultivos de cafe por Oficina Zonal
+  async crearGraficoCantidadPoligonosOZCafe() {
+    const baseUrl = this.QUERY_SERVICIO;
+    interface Cultivo {
+      org: string;
+      cultivo: string;
+    }
+
+    let allFeatures: any[] = [];
+    let offset = 0;
+    const pageSize = 2000;
+    let hasMore = true;
+
+    // 🔹 Paginación para traer TODOS los registros SOLO de CAFÉ
+    while (hasMore) {
+      // CAMBIO: 'cultivo' -> 'tipo_cultivo', 'org' -> 'oficina_zonal'
+      const url =
+        `${baseUrl}?where=tipo_cultivo='CAFE'&outFields=oficina_zonal,tipo_cultivo` +
+        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.features?.length) {
+        allFeatures = allFeatures.concat(data.features);
+        offset += pageSize;
+        hasMore = data.features.length === pageSize;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
+      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
+      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
+    }));
+
+    // 🔹 Contamos registros de CAFÉ por Oficina Zonal
+    const agrupado: Record<string, number> = {};
+    rawData.forEach((item: Cultivo) => {
+      if (item.cultivo === 'CAFE') {
+        agrupado[item.org] = (agrupado[item.org] || 0) + 1;
+      }
+    });
+
+    // 🔹 Ordenar de mayor a menor
+    const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
+    const labels = entries.map(e => e[0]);
+    const values = entries.map(e => e[1]);
+
+    // 🔹 Colores por ORG
+    const colorMap: Record<string, string> = {
+      'OZ SAN FRANCISCO': '#FEEFD8',
+      'OZ PUCALLPA': '#B7D9FE',
+      'OZ LA MERCED': '#FFC0B6',
+      'OZ TINGO MARIA': '#D6F9FD',
+      'OZ TARAPOTO': '#C2BBFE',
+      'OZ SAN JUAN DE ORO': '#FED2F3',
+      'OZ QUILLABAMBA': '#FEFEB9',
+      'OZ IQUITOS': '#CAFEDA',
+    };
+
+    const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
+    const borderColors = backgroundColors.map(c => c);
+
+    const ctx = document.getElementById('graficoCantidadOZCAFE') as HTMLCanvasElement;
+    if (!ctx) return;
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Cantidad de polígonos de CAFÉ',
+            data: values,
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
+            borderWidth: 1,
+            barThickness: 25,
+            maxBarThickness: 50,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        scales: {
+          x: {
+            min: 0,
+            max: 10000,
+            beginAtZero: true,
+            ticks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
+              callback: (value) =>
+                `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+            },
+          },
+          y: {
+            ticks: {
+              font: { size: 12, weight: 'bold' },
+            },
+          },
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'POLIGONOS DE CAFE',
+            font: { size: 18, weight: 'bold' },
+            color: '#333',
+            padding: { top: 10, bottom: 20 }
+          },
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
+              label: (ctx) =>
+                `${Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} polígonos`,
+            },
+          },
+          datalabels: {
+            anchor: 'end',
+            align: 'right',
+            color: '#000',
+            font: { weight: 'bold', size: 12 },
+            // CAMBIO: 'es-PE' -> 'en-US' y 0 decimales
+            formatter: (v: number) =>
+              `${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+          },
+        },
+      },
+      plugins: [ChartDataLabels],
+    });
+  }
+
 }
