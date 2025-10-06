@@ -14,6 +14,14 @@ import localeEsPE from '@angular/common/locales/es-PE';
 Chart.register(ChartDataLabels);
 registerLocaleData(localeEsPE, 'es-PE');
 
+/**
+ * @Component DashboardComponent
+ * @description
+ * Componente principal para la visualización de estadísticas y gráficos del dashboard.
+ * Carga datos desde un servicio de ArcGIS y los presenta en tarjetas y gráficos interactivos.
+ * Permite filtrar la información por año, incluyendo una vista acumulada de "Todos" los años.
+ * Gestiona la creación y destrucción de gráficos de Chart.js para un rendimiento óptimo.
+ */
 @Component({
   standalone: true,
   imports: [CommonModule, RouterModule, SidemenuComponent, NavbarmenuComponent, FooterComponent],
@@ -23,49 +31,99 @@ registerLocaleData(localeEsPE, 'es-PE');
   providers: [{ provide: LOCALE_ID, useValue: 'es-PE' }],
 })
 export class DashboardComponent implements AfterViewInit {
+  /** URL del servicio de features de ArcGIS que contiene los datos de los cultivos. */
   private readonly SERVICIO_PIRDAIS = 'https://siscod.devida.gob.pe/server/rest/services/DPM_LIMITES_PIRDAIS/MapServer/0';
+  /** URL base para realizar consultas (queries) al servicio de features. */
   private readonly QUERY_SERVICIO = `${this.SERVICIO_PIRDAIS}/query`;
+
+  /** Estado de visibilidad del menú lateral. */
   isMenuOpen = true;   // Estado inicial del menú
+  /** Flag para detectar si la vista es de escritorio (pantalla grande). */
   isDesktop = false;   // Detecta si es pantalla grande
+
+  /** Almacena el número total de polígonos de cultivos registrados. */
   public totalRegistrosCultivos = 0;
+  /** Objeto que almacena el conteo de registros por cada tipo de cultivo. */
   public conteoPorCultivo: Record<string, number> = {};
+  /** Número total de polígonos de Café. */
   public totalCafe = 0;
+  /** Número total de polígonos de Cacao. */
   public totalCacao = 0;
+
+  /** Suma total del área de todos los cultivos (en hectáreas). */
   public totalAreaCultivo = 0; // en m²
+  /** Array con el área total agrupada por tipo de cultivo. */
   public areaPorCultivo: { cultivo: string; total_area: number }[] = [];
+  /** Área total de cultivos de Café. */
   public totalAreaCafe = 0;
+  /** Área total de cultivos de Cacao. */
   public totalAreaCacao = 0;
+
+  /**
+   * Define las metas de hectáreas a alcanzar por año.
+   * La clave es el año y el valor es la meta en hectáreas.
+   */
   private readonly METAS_HECTAREAS: { [key: number]: number } = {
     2024: 43364,
     2025: 5000,
   };
+  /**
+   * Define las metas de familias participantes a alcanzar por año.
+   * La clave es el año y el valor es la meta de familias.
+   */
   private readonly METAS_FAMILIAS: { [key: number]: number } = {
     2024: 38313,
     2025: 6000,
   };
+
+  /** Almacena la meta de familias para el año seleccionado. */
   public currentMetaFamilias: number = 0;
+  /** Almacena la meta de hectáreas para el año seleccionado. */
   public currentMetaHectareas: number = 0;
+
+  /** Array con los años disponibles para el filtro. */
   public availableYears: number[] = [];
+  /** Año seleccionado en el filtro. El valor `0` representa "Todos". */
   public selectedYear: number | 0 = new Date().getFullYear();
+  /** Fecha actual del sistema, usada para los títulos dinámicos. */
   public currentDate: Date = new Date();
+
+  /** Almacena las instancias de los gráficos de Chart.js para su posterior destrucción. */
   private charts: Chart[] = [];
 
+  /**
+   * @method ngAfterViewInit
+   * @description
+   * Hook del ciclo de vida de Angular que se ejecuta después de que la vista del componente ha sido inicializada.
+   * Inicia la carga de datos del dashboard.
+   * @async
+   */
   async ngAfterViewInit(): Promise<void> {
     const dashboardCultivos = new FeatureLayer({ url: this.SERVICIO_PIRDAIS });
     try {
         await dashboardCultivos.load();
         this.availableYears = await this.getAvailableYears(dashboardCultivos);
+        // Establece el año 2025 como selección por defecto si está disponible.
         if (this.availableYears.includes(2025)) {
             this.selectedYear = 2025; // Selecciona 2025 por defecto
         } else if (this.availableYears.length > 0) {
             this.selectedYear = this.availableYears[0]; // Fallback al año más reciente
         }
+        // Carga todos los datos y gráficos del dashboard.
         await this.loadDashboardData();
     } catch (err) {
         console.error('Error durante la inicialización del dashboard:', err);
     }
   }
 
+  /**
+   * @method getAvailableYears
+   * @description
+   * Genera una lista estática de años (2024-2030) para ser usada en el selector de filtro.
+   * @param {FeatureLayer} layer - Parámetro no utilizado, mantenido por consistencia de firma.
+   * @returns {Promise<number[]>} Una promesa que resuelve a un array de años.
+   * @async
+   */
   async getAvailableYears(layer: FeatureLayer): Promise<number[]> {
     // De acuerdo a la solicitud, ahora usamos una lista fija de años del 2024 al 2030.
     const years = [];
@@ -76,17 +134,40 @@ export class DashboardComponent implements AfterViewInit {
     return Promise.resolve(years);
   }
 
+  /**
+   * @method onYearChange
+   * @description
+   * Manejador de eventos para el cambio en el selector de año.
+   * Actualiza el año seleccionado y vuelve a cargar los datos del dashboard.
+   * @param {Event} event - El objeto del evento de cambio.
+   */
   public onYearChange(event: Event) {
     const selectElement = event.target as HTMLSelectElement;
     this.selectedYear = Number(selectElement.value);
     this.loadDashboardData();
   }
 
+  /**
+   * @method clearCharts
+   * @description
+   * Destruye todas las instancias de gráficos de Chart.js almacenadas en el array `this.charts`.
+   * Esto es crucial para liberar memoria y evitar errores de renderizado al recargar los datos.
+   */
   private clearCharts(): void {
     this.charts.forEach(chart => chart.destroy());
     this.charts = [];
   }
 
+  /**
+   * @method loadDashboardData
+   * @description
+   * Orquesta la carga y actualización de todos los datos y gráficos del dashboard.
+   * 1. Limpia los gráficos existentes.
+   * 2. Define el filtro de año y las metas correspondientes.
+   * 3. Ejecuta todas las consultas de datos en paralelo.
+   * 4. Una vez resueltas las consultas, crea los nuevos gráficos.
+   * @async
+   */
   async loadDashboardData(): Promise<void> {
     this.clearCharts();
 
@@ -132,6 +213,15 @@ export class DashboardComponent implements AfterViewInit {
   }
 
   //Tarjetas sobre la Meta & Avance
+  /**
+   * @method sumarAreaCultivoTotal
+   * @description
+   * Realiza una consulta de estadísticas al servicio para obtener la suma total del campo `area_cultivo`.
+   * @param {FeatureLayer} layer - La capa de features sobre la que se realizará la consulta.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos (ej. por año).
+   * @returns {Promise<number>} Una promesa que resuelve a la suma total del área.
+   * @async
+   */
   async sumarAreaCultivoTotal(layer: FeatureLayer, whereClause: string = '1=1'): Promise<number> {
     const statDef = new StatisticDefinition({
       onStatisticField: 'area_cultivo',
@@ -154,6 +244,17 @@ export class DashboardComponent implements AfterViewInit {
       return 0;
     }
   }
+
+  /**
+   * @method sumarAreaPorCultivo
+   * @description
+   * Consulta la suma del área de cultivo, agrupada por el campo `tipo_cultivo`.
+   * Además, actualiza las propiedades `totalAreaCafe` y `totalAreaCacao` con sus respectivos valores.
+   * @param {FeatureLayer} layer - La capa de features sobre la que se realizará la consulta.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos.
+   * @returns {Promise<any[]>} Una promesa que resuelve a un array de objetos con `{ cultivo, total_area }`.
+   * @async
+   */
   async sumarAreaPorCultivo(layer: FeatureLayer, whereClause: string = '1=1'): Promise<any[]> {
     const statDef = new StatisticDefinition({
       onStatisticField: 'area_cultivo',
@@ -190,7 +291,15 @@ export class DashboardComponent implements AfterViewInit {
       return [];
     }
   }
+
   //Grafico sobre la Meta & Avance
+  /**
+   * @method crearGraficoProgresoporHectareas
+   * @description
+   * Crea un gráfico de tipo "doughnut" (dona) que muestra el progreso del avance de hectáreas
+   * en comparación con la meta anual (`currentMetaHectareas`).
+   * @param {number} total - El valor total del avance de hectáreas.
+   */
   crearGraficoProgresoporHectareas(total: number) {
     const meta = this.currentMetaHectareas;
     const restante = Math.max(meta - total, 0);
@@ -255,7 +364,16 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [ChartDataLabels]
     }));
   }
+
   //Grafico sobre la Meta por Oficina Zonal
+  /**
+   * @method crearGraficoProgresoporHectareasOZ
+   * @description
+   * Crea un gráfico de barras horizontales que muestra el total de hectáreas (Café y Cacao)
+   * agrupado por Oficina Zonal. Los datos se obtienen mediante paginación.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos por año.
+   * @async
+   */
   async crearGraficoProgresoporHectareasOZ(whereClause: string = '1=1') {
     const baseUrl = this.QUERY_SERVICIO;
     interface Cultivo {
@@ -380,6 +498,14 @@ export class DashboardComponent implements AfterViewInit {
   }
 
   //Grafico sobre la Meta por Oficina Zonal - CACAO
+  /**
+   * @method crearGraficoProgresoporHectareasOZCacao
+   * @description
+   * Crea un gráfico combinado (barras y línea) que muestra el avance de hectáreas de Cacao por Oficina Zonal
+   * en comparación con las metas específicas definidas para cada zona.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos por año.
+   * @async
+   */
   async crearGraficoProgresoporHectareasOZCacao(whereClause: string = '1=1') {
     const baseUrl = this.QUERY_SERVICIO;
 
@@ -541,6 +667,14 @@ export class DashboardComponent implements AfterViewInit {
     }));
   }
   //Grafico sobre la Meta por Oficina Zonal - CAFE
+  /**
+   * @method crearGraficoProgresoporHectareasOZCAFE
+   * @description
+   * Crea un gráfico combinado (barras y línea) que muestra el avance de hectáreas de Café por Oficina Zonal
+   * en comparación con las metas específicas definidas para cada zona.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos por año.
+   * @async
+   */
   async crearGraficoProgresoporHectareasOZCAFE(whereClause: string = '1=1') {
     const baseUrl = this.QUERY_SERVICIO;
     interface Cultivo { org: string; area_cultivo: number; cultivo: string; }
@@ -704,6 +838,15 @@ export class DashboardComponent implements AfterViewInit {
 
   //Grafico sobre total participantes
   public totalRegistrosUnicosDNI: Record<string, number> = {};
+
+  /**
+   * @method contarTotalDNIUnicos
+   * @description
+   * Cuenta el número total de DNI únicos en toda la capa. **NOTA: Esta función no se está utilizando actualmente.**
+   * @param {FeatureLayer} layer - La capa de features.
+   * @returns {Promise<number>} El número total de DNIs únicos.
+   * @async
+   */
   public async contarTotalDNIUnicos(layer: FeatureLayer): Promise<number> {
     try { // NOTA: Esta función no se está utilizando actualmente.
       const pageSize = 2000;
@@ -735,6 +878,14 @@ export class DashboardComponent implements AfterViewInit {
       return 0;
     }
   }
+
+  /**
+   * @method crearGraficoProgresoporDNI
+   * @description
+   * Crea un gráfico de tipo "doughnut" (dona) que muestra el progreso del número de familias participantes
+   * en comparación con la meta anual (`currentMetaFamilias`).
+   * @param {number} totalDNI - El número total de familias participantes (DNIs únicos).
+   */
   crearGraficoProgresoporDNI(totalDNI: number) {
     const meta = this.currentMetaFamilias; // meta de DNIs únicos
     const restante = Math.max(meta - totalDNI, 0);
@@ -795,6 +946,17 @@ export class DashboardComponent implements AfterViewInit {
     }));
   }
 
+  /**
+   * @method contarRegistrosUnicosPorDNI
+   * @description
+   * Realiza un conteo complejo de participantes (DNIs únicos) a través de paginación.
+   * Calcula el número de participantes que tienen solo café, solo cacao, ambos, y el total general.
+   * Los resultados se almacenan en la propiedad `totalRegistrosUnicosDNI`.
+   * @param {FeatureLayer} layer - La capa de features.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos.
+   * @returns {Promise<Record<string, number>>} Un objeto con los conteos: `{ cafe, cacao, cafe_y_cacao, total }`.
+   * @async
+   */
   async contarRegistrosUnicosPorDNI(layer: FeatureLayer, whereClause: string = '1=1'): Promise<Record<string, number>> {
     try {
       const pageSize = 2000;
@@ -854,6 +1016,15 @@ export class DashboardComponent implements AfterViewInit {
       return { cafe: 0, cacao: 0, cafe_y_cacao: 0, total: 0 };
     }
   }
+
+  /**
+   * @method crearGraficoProgresoporFamiliasOZ
+   * @description
+   * Crea un gráfico de barras horizontales que muestra el número de familias participantes (DNIs únicos)
+   * agrupado por Oficina Zonal.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos por año.
+   * @async
+   */
   async crearGraficoProgresoporFamiliasOZ(whereClause: string = '1=1') {
     const baseUrl = this.QUERY_SERVICIO;
     interface Participante {
@@ -992,6 +1163,15 @@ export class DashboardComponent implements AfterViewInit {
   }
 
   //Grafico sobre total poligonos
+  /**
+   * @method contarCafeCacao
+   * @description
+   * Cuenta el número total de polígonos (registros) para Café y Cacao.
+   * @param {FeatureLayer} layer - La capa de features.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos.
+   * @returns {Promise<{ cafe: number, cacao: number }>} Una promesa que resuelve a un objeto con los conteos.
+   * @async
+   */
   contarCafeCacao(layer: FeatureLayer, whereClause: string = '1=1') {
     const pageSize = 2000;
     let conteoCafe = 0;
@@ -1027,6 +1207,15 @@ export class DashboardComponent implements AfterViewInit {
       return { cafe: 0, cacao: 0 };
     });
   }
+
+  /**
+   * @method generarGraficoCultivosPorTipo
+   * @description
+   * **Método no utilizado actualmente en el HTML.**
+   * Crea un gráfico de tipo "pie" (torta) que muestra la distribución de la cantidad de polígonos por tipo de cultivo.
+   * @param {FeatureLayer} layer - La capa de features.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos.
+   */
   generarGraficoCultivosPorTipo(layer: FeatureLayer, whereClause: string = '1=1') {
     const pageSize = 2000;
     const conteo: Record<string, number> = {};
@@ -1108,7 +1297,16 @@ export class DashboardComponent implements AfterViewInit {
 
     getAllCultivoData().catch((err) => console.error('❌ Error al consultar todos los cultivos:', err));
   }
+
   // Grafico de barra por cantidad de familias por Oficina Zonal - Cacao
+  /**
+   * @method crearGraficoCantidadFamiliasOZCacao
+   * @description
+   * Crea un gráfico de barras horizontales que muestra el número de familias participantes (DNIs únicos)
+   * que tienen cultivos de Cacao, agrupado por Oficina Zonal.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos por año.
+   * @async
+   */
   async crearGraficoCantidadFamiliasOZCacao(whereClause: string = '1=1') {
     const baseUrl = this.QUERY_SERVICIO;
     interface Cultivo {
@@ -1248,6 +1446,14 @@ export class DashboardComponent implements AfterViewInit {
   }
 
   //Participantes por oficina Zonal
+  /**
+   * @method crearGraficoCantidadFamiliasOZCafe
+   * @description
+   * Crea un gráfico de barras horizontales que muestra el número de familias participantes (DNIs únicos)
+   * que tienen cultivos de Café, agrupado por Oficina Zonal.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos por año.
+   * @async
+   */
   async crearGraficoCantidadFamiliasOZCafe(whereClause: string = '1=1') {
     const baseUrl = this.QUERY_SERVICIO;
     interface Cultivo {
@@ -1388,7 +1594,15 @@ export class DashboardComponent implements AfterViewInit {
 
 
   //Grafico por poligonos de cultivos de cacao por Oficina Zonal
-   async crearGraficoCantidadPoligonosOZCacao(whereClause: string = '1=1') {
+  /**
+   * @method crearGraficoCantidadPoligonosOZCacao
+   * @description
+   * Crea un gráfico de barras horizontales que muestra la cantidad de polígonos de Cacao
+   * agrupados por Oficina Zonal.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos por año.
+   * @async
+   */
+  async crearGraficoCantidadPoligonosOZCacao(whereClause: string = '1=1') {
     const baseUrl = this.QUERY_SERVICIO;
     interface Cultivo {
       org: string;
@@ -1520,6 +1734,14 @@ export class DashboardComponent implements AfterViewInit {
     }));
   }
   //Grafico por poligonos de cultivos de cafe por Oficina Zonal
+  /**
+   * @method crearGraficoCantidadPoligonosOZCafe
+   * @description
+   * Crea un gráfico de barras horizontales que muestra la cantidad de polígonos de Café
+   * agrupados por Oficina Zonal.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos por año.
+   * @async
+   */
   async crearGraficoCantidadPoligonosOZCafe(whereClause: string = '1=1') {
     const baseUrl = this.QUERY_SERVICIO;
     interface Cultivo {

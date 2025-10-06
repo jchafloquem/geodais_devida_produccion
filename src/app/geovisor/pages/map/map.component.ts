@@ -8,6 +8,7 @@ import { FabContainerTopComponent } from '../../components/fab-container-top/fab
 import { InfoCoordenadasComponent } from '../../components/info-coordenadas/info-coordenadas.component';
 import { Usuario } from '../../../auth/interface/usuario';
 import { AuthStateService } from '../../../auth/shared/access/auth-state.service';
+import { FooterComponent } from '../../components/footer/footer.component';
 
 @Component({
   standalone: true,
@@ -18,7 +19,8 @@ import { AuthStateService } from '../../../auth/shared/access/auth-state.service
     SidebarComponent,
     FabContainerTopComponent,
     InfoCoordenadasComponent,
-    CommonModule
+    CommonModule,
+    FooterComponent
   ],
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss']
@@ -72,5 +74,5 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     // Limpia el intervalo de sesión
     clearInterval(this.intervaloSesion);
   }
- 
+
 }
