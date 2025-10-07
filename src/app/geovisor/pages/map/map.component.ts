@@ -8,7 +8,7 @@ import { FabContainerTopComponent } from '../../components/fab-container-top/fab
 import { InfoCoordenadasComponent } from '../../components/info-coordenadas/info-coordenadas.component';
 import { Usuario } from '../../../auth/interface/usuario';
 import { AuthStateService } from '../../../auth/shared/access/auth-state.service';
-import { FooterComponent } from '../../components/footer/footer.component';
+
 
 @Component({
   standalone: true,
@@ -20,7 +20,6 @@ import { FooterComponent } from '../../components/footer/footer.component';
     FabContainerTopComponent,
     InfoCoordenadasComponent,
     CommonModule,
-    FooterComponent
   ],
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss']

@@ -73,7 +73,7 @@ export class DashboardComponent implements AfterViewInit {
    */
   private readonly METAS_FAMILIAS: { [key: number]: number } = {
     2024: 38313,
-    2025: 6000,
+    2025: 1000,
   };
 
   /** Almacena la meta de familias para el año seleccionado. */
@@ -205,6 +205,7 @@ export class DashboardComponent implements AfterViewInit {
         this.crearGraficoProgresoporFamiliasOZ(yearFilter);
         this.crearGraficoCantidadFamiliasOZCacao(yearFilter);
         this.crearGraficoCantidadFamiliasOZCafe(yearFilter);
+        this.crearGraficoPorDepartamento(yearFilter);
         this.generarGraficoCultivosPorTipo(dashboardCultivos, yearFilter);
 
     } catch (err) {
@@ -1874,4 +1875,119 @@ export class DashboardComponent implements AfterViewInit {
     }));
   }
 
+  /**
+   * @method crearGraficoPorDepartamento
+   * @description
+   * Crea un gráfico de barras que muestra la cantidad de registros (polígonos)
+   * agrupados por departamento.
+   * @param {string} whereClause - La cláusula WHERE para filtrar los datos por año.
+   * @async
+   */
+  async crearGraficoPorDepartamento(whereClause: string = '1=1') {
+    // Se utiliza una consulta de estadísticas para que el servidor haga el conteo, es más eficiente.
+    const statDef = new StatisticDefinition({
+      onStatisticField: 'OBJECTID', // Se usa OBJECTID para contar cada registro (polígono).
+      outStatisticFieldName: 'count_registros',
+      statisticType: 'count',
+    });
+
+    const featureLayer = new FeatureLayer({ url: this.SERVICIO_PIRDAIS });
+    const query = featureLayer.createQuery();
+    query.where = whereClause;
+    query.outStatistics = [statDef];
+    query.groupByFieldsForStatistics = ['DEPARTAMENTO'];
+    query.orderByFields = ['count_registros DESC']; // Ordenar de mayor a menor
+
+    const ctx = document.getElementById('graficoPorDepartamento') as HTMLCanvasElement;
+    if (!ctx) return;
+
+    try {
+      const result = await featureLayer.queryFeatures(query);
+
+      // Valida si se obtuvieron resultados
+      if (!result.features || result.features.length === 0) {
+        console.warn(`No se encontraron datos de departamento para el filtro: ${whereClause}.`);
+        const context = ctx.getContext('2d');
+        if (context) {
+            context.clearRect(0, 0, ctx.width, ctx.height);
+            context.textAlign = 'center';
+            context.fillStyle = '#999';
+            context.font = '16px Arial';
+            context.fillText('No hay datos disponibles para mostrar', ctx.width / 2, ctx.height / 2);
+        }
+        return;
+      }
+
+      const labels = result.features.map(f => f.attributes.DEPARTAMENTO).filter(Boolean); // Filtra nulos o vacíos
+      const values = result.features.map(f => f.attributes.count_registros);
+
+      this.charts.push(new Chart(ctx, {
+        type: 'bar', // Gráfico de barras verticales
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Registros por Departamento',
+              data: values,
+              backgroundColor: '#88B268',
+              borderColor: '#6A8A50',
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              min:0,
+              max: 10000,
+              beginAtZero: true,
+              ticks: {
+                font: { size: 12, weight: 'bold' },
+              },
+            },
+            x: {
+              ticks: {
+                font: { size: 12, weight: 'bold' },
+              },
+            },
+          },
+          plugins: {
+            title: {
+              display: false, // El título ahora se muestra en el HTML
+            },
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const value = ctx.raw as number;
+                  return `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} registros`;
+                },
+              },
+            },
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              color: '#000',
+              font: { weight: 'bold', size: 12 },
+              formatter: (v: number) =>
+                `${Number(v).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+            },
+          },
+        },
+        plugins: [ChartDataLabels],
+      }));
+    } catch (err) {
+      console.error('Error al crear gráfico por departamento:', err);
+      const context = ctx.getContext('2d');
+      if (context) {
+          context.clearRect(0, 0, ctx.width, ctx.height);
+          context.textAlign = 'center';
+          context.fillStyle = '#D32F2F';
+          context.font = '16px Arial';
+          context.fillText('Error al cargar los datos del gráfico', ctx.width / 2, ctx.height / 2);
+      }
+    }
+  }
 }
