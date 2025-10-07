@@ -73,7 +73,7 @@ export class DashboardComponent implements AfterViewInit {
    */
   private readonly METAS_FAMILIAS: { [key: number]: number } = {
     2024: 38313,
-    2025: 1000,
+    2025: 4000,
   };
 
   /** Almacena la meta de familias para el año seleccionado. */
