@@ -490,7 +490,7 @@ export class GeovisorSharedService {
   //Método auxiliar para mostrar los mensajes toast.
     private showToast(
       mensaje: string,
-      tipo: 'success' | 'error' = 'success',
+      tipo: 'success' | 'error' | 'info' = 'success',
       autoHide: boolean = true
     ): void {
       let toast = document.getElementById('toast');
@@ -510,7 +510,7 @@ export class GeovisorSharedService {
       toast!.className = `
         fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
         px-4 py-2 rounded shadow text-white
-        ${tipo === 'success' ? 'bg-green-600' : 'bg-red-600'}
+        ${tipo === 'success' ? 'bg-green-600' : tipo === 'error' ? 'bg-red-600' : 'bg-blue-600'}
         text-center
         transition-opacity duration-500
       `;
@@ -1240,6 +1240,39 @@ export class GeovisorSharedService {
       }
     }
 
+    //Widget para limpiar capas GeoJSON
+    const clearGeoJSONEl = document.createElement('div');
+    clearGeoJSONEl.className = 'clear-geojson-widget p-2 bg-white rounded shadow';
+    const clearButton = document.createElement('button');
+    clearButton.textContent = '🗑️ Limpiar GeoJSON';
+    clearButton.className = `
+                      px-4 py-1
+                      bg-red-600 hover:bg-red-700
+                      text-white font-semibold rounded
+                      text-base
+                      transition-colors
+                      mx-auto
+                      block
+                    `;
+    clearButton.addEventListener('click', () => this.clearGeoJSONLayers());
+    clearGeoJSONEl.appendChild(clearButton);
+    const expandClearGeoJSON = new Expand({
+      view: this.view,
+      content: clearGeoJSONEl,
+      expandTooltip: 'Limpiar capas GeoJSON importadas',
+      expandIcon: 'trash',
+    });
+    this.view.ui.add(expandClearGeoJSON, { position: 'top-right', index: 6 });
+    function toggleClearGeoJSONWidget() {
+      if (!expandClearGeoJSON.container) return;
+      if (window.innerWidth < 768) {
+        expandClearGeoJSON.container.style.display = 'none';
+        expandClearGeoJSON.collapse();
+      } else {
+        expandClearGeoJSON.container.style.display = 'block';
+      }
+    }
+
     //Widget para ANALISIS ESPACIAL CON BPP-SERFOR
         const uploadEl6 = document.createElement('div');
         uploadEl6.className = 'file-upload-widget p-2 bg-white rounded shadow';
@@ -1300,7 +1333,7 @@ export class GeovisorSharedService {
           expandTooltip: 'Analizar superposición con Bosque de Protección Permanente',
           expandIcon: 'parcel-layer',
         });
-        this.view.ui.add(expandAnalisis, { position: 'top-right', index: 6 });
+        this.view.ui.add(expandAnalisis, { position: 'top-right', index: 7 });
         function toggleAnalisisWidget() {
           if (!expandAnalisis.container) return;
           if (window.innerWidth < 768) {
@@ -1372,7 +1405,7 @@ export class GeovisorSharedService {
           expandTooltip: 'Analizar superposición con poligonos de cultivos',
           expandIcon: 'overwrite-features',
         });
-        this.view.ui.add(expandAnalisisCultivo, { position: 'top-right', index: 7 });
+        this.view.ui.add(expandAnalisisCultivo, { position: 'top-right', index: 8 });
         function toggleAnalisisCultivoWidget() {
           if (!expandAnalisisCultivo.container) return;
           if (window.innerWidth < 768) {
@@ -1425,8 +1458,9 @@ export class GeovisorSharedService {
         content: 'Permite que el navegador acceda a tu ubicación para centrar el mapa en tu posición actual.',
         position: 'left'
       },
-      { element: expand.container, widget: expand, title: 'Galería de Mapas Base', content: 'Cambia el mapa de fondo. Puedes elegir entre satelital, calles, topográfico, etc.', position: 'left' },
+      { element: expand.container, widget: expand, title: 'Galería de Mapas Base', content: 'Cambia el mapa de fondo. Puedes elegir entre satelital, calles, topográfico, etc.', position: 'bottom' },
       { element: expanduploadEl.container, widget: expanduploadEl, title: 'Cargar Archivos', content: 'Importa tus propios datos en formato GeoJSON, JSON o CSV para visualizarlos en el mapa.', position: 'left' },
+      { element: expandClearGeoJSON.container, widget: expandClearGeoJSON, title: 'Limpiar Capas Cargadas', content: 'Usa este botón para eliminar del mapa todas las capas que hayas importado (GeoJSON, CSV, etc.).', position: 'left' },
       { element: expandAnalisis.container, widget: expandAnalisis, title: 'Análisis de Superposición (SERFOR)', content: 'Analiza si tus polígonos se superponen con la capa de Bosques de Producción Permanente de SERFOR.', position: 'left' },
       { element: expandAnalisisCultivo.container, widget: expandAnalisisCultivo, title: 'Análisis de Superposición (Cultivos)', content: 'Analiza si tus polígonos se superponen con los polígonos de cultivo de PIRDAIS.', position: 'left' },
       {
@@ -1445,6 +1479,8 @@ export class GeovisorSharedService {
 
     toggleUploadWidget();
     window.addEventListener('resize', toggleUploadWidget);
+    toggleClearGeoJSONWidget();
+    window.addEventListener('resize', toggleClearGeoJSONWidget);
     toggleAnalisisWidget();
     window.addEventListener('resize', toggleAnalisisWidget);
     toggleAnalisisCultivoWidget();
@@ -1778,6 +1814,22 @@ export class GeovisorSharedService {
         );
       }
     }
+    //Funcion que limpia el mapa de los archivos GeoJson
+    public clearGeoJSONLayers(): void {
+      const layersToRemove: __esri.Layer[] = [];
+      this.mapa.layers.forEach(layer => {
+        if (layer.type === 'geojson' || layer.type === 'csv') {
+          layersToRemove.push(layer);
+        }
+      });
+      if (layersToRemove.length > 0) {
+        this.mapa.removeMany(layersToRemove);
+        this.showToast(`Se eliminaron ${layersToRemove.length} capas GeoJSON/CSV.`, 'success');
+      } else {
+        this.showToast('No hay capas GeoJSON/CSV para eliminar.', 'info');
+      }
+    }
+
     private showModal(
       message: string,
       typeOrTitle?: 'success' | 'error' | 'info' | string,
