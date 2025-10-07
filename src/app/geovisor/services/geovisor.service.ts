@@ -12,8 +12,8 @@ import FeatureLayer from '@arcgis/core/layers/FeatureLayer.js';
 import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
 import Graphic from '@arcgis/core/Graphic';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
-import Legend from '@arcgis/core/widgets/Legend.js';
-import Map from '@arcgis/core/Map.js';
+import Legend from '@arcgis/core/widgets/Legend';
+import EsriMap from '@arcgis/core/Map';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import MapView from '@arcgis/core/views/MapView.js';
 import PopupTemplate from '@arcgis/core/PopupTemplate.js';
@@ -473,9 +473,19 @@ const restCaribRecopilacion = new PopupTemplate({
   providedIn: 'root',
 })
 export class GeovisorSharedService {
-  public mapa = new Map({ basemap: 'satellite' });
+  public mapa = new EsriMap({ basemap: 'satellite' });
   public view: MapView | null = null;
   private highlightLayer = new GraphicsLayer({ id: 'highlight-overlaps' });
+  // Propiedades para el Tour Guiado
+  private masterTourSteps: any[] = [];
+  private tourSteps: any[] = [];
+  private currentTourStep = -1;
+  private tourOverlay: HTMLDivElement | null = null;
+  private tourPopover: HTMLDivElement | null = null;
+  private originalElementStyles: Map<
+    HTMLElement,
+    { zIndex: string; position: string; boxShadow: string }
+  > = new Map();
 
   //Método auxiliar para mostrar los mensajes toast.
     private showToast(
@@ -512,6 +522,226 @@ export class GeovisorSharedService {
         toast!.style.opacity = '0';
       });
     }
+
+  // --- Métodos para el Tour Guiado ---
+
+  public startTour(): void {
+    if (this.currentTourStep !== -1) {
+      return; // El tour ya está en ejecución
+    }
+
+    // Filtra los pasos del tour para incluir solo los elementos que están visibles en la pantalla.
+    this.tourSteps = this.masterTourSteps.filter(step => {
+      let targetElement: HTMLElement | null = null;
+      if (typeof step.element === 'string') {
+        targetElement = document.querySelector(step.element);
+      } else {
+        targetElement = step.element;
+      }
+      // Un elemento es visible si existe y su estilo computado 'display' no es 'none'.
+      // Esto funciona incluso si el estilo se aplica a través de clases CSS o style.display.
+      return targetElement && getComputedStyle(targetElement).display !== 'none';
+    });
+
+    if (this.tourSteps.length === 0) {
+      console.warn("No hay pasos del tour visibles para mostrar.");
+      return;
+    }
+
+    // Crear overlay
+    this.tourOverlay = document.createElement('div');
+    this.tourOverlay.id = 'tour-overlay';
+    Object.assign(this.tourOverlay.style, {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      zIndex: '10001',
+      display: 'block',
+    });
+    document.body.appendChild(this.tourOverlay);
+    this.tourOverlay.addEventListener('click', () => this.endTour());
+
+    this.showTourStep(0);
+  }
+
+  private endTour(): void {
+    this.tourOverlay?.remove();
+    this.tourPopover?.remove();
+
+    // Restaurar estilos originales de los elementos resaltados
+    this.originalElementStyles.forEach((
+      style: { zIndex: string; position: string; boxShadow: string },
+      element: HTMLElement
+    ) => {
+      element.style.zIndex = style.zIndex;
+      element.style.position = style.position;
+      element.style.boxShadow = style.boxShadow;
+    });
+
+    this.originalElementStyles.clear();
+    this.tourOverlay = null;
+    this.tourPopover = null;
+    this.currentTourStep = -1;
+  }
+
+  private nextTourStep(): void {
+    if (this.currentTourStep < this.tourSteps.length - 1) {
+      this.showTourStep(this.currentTourStep + 1);
+    } else {
+      this.endTour();
+    }
+  }
+
+  private prevTourStep(): void {
+    if (this.currentTourStep > 0) {
+      this.showTourStep(this.currentTourStep - 1);
+    }
+  }
+
+  private async showTourStep(stepIndex: number): Promise<void> {
+    if (stepIndex < 0 || stepIndex >= this.tourSteps.length) {
+      this.endTour();
+      return;
+    }
+
+    // Limpiar resaltado del paso anterior
+    this.originalElementStyles.forEach((
+      style: { zIndex: string; position: string; boxShadow: string },
+      element: HTMLElement
+    ) => {
+      element.style.zIndex = style.zIndex;
+      element.style.position = style.position;
+      element.style.boxShadow = style.boxShadow;
+    });
+    this.originalElementStyles.clear();
+
+    if (this.tourPopover) this.tourPopover.remove();
+
+    this.currentTourStep = stepIndex;
+    const step = this.tourSteps[stepIndex];
+
+    let targetElement: HTMLElement | null = null;
+    if (typeof step.element === 'string') {
+      targetElement = document.querySelector(step.element);
+    } else {
+      targetElement = step.element;
+    }
+
+    if (!targetElement) {
+      console.warn(`Elemento del tour no encontrado: ${step.element}`);
+      this.nextTourStep(); // Saltar al siguiente paso
+      return;
+    }
+
+    // Guardar estilos originales y resaltar el elemento
+    this.originalElementStyles.set(targetElement, {
+      zIndex: targetElement.style.zIndex,
+      position: targetElement.style.position,
+      boxShadow: targetElement.style.boxShadow,
+    });
+    targetElement.style.position = 'relative';
+    targetElement.style.zIndex = '10002';
+    targetElement.style.boxShadow = '0 0 0 4px rgba(37, 99, 235, 0.7)';
+    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Crear Popover
+    this.tourPopover = document.createElement('div');
+    this.tourPopover.id = 'tour-popover';
+    Object.assign(this.tourPopover.style, {
+      position: 'absolute',
+      visibility: 'hidden', // Ocultar para calcular dimensiones
+      backgroundColor: 'white',
+      padding: '15px',
+      borderRadius: '8px',
+      boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+      zIndex: '10003',
+      width: '300px',
+      maxWidth: '90vw',
+    });
+
+    const isLastStep = stepIndex === this.tourSteps.length - 1;
+    const isFirstStep = stepIndex === 0;
+
+    this.tourPopover.innerHTML = `
+      <h3 style="margin-top:0; font-size: 1.1rem; font-weight: bold; color: #1e40af;">${step.title}</h3>
+      <p style="font-size: 0.9rem; color: #334155;">${step.content}</p>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+        <button id="tour-prev" style="background: none; border: 1px solid #ccc; border-radius: 4px; padding: 5px 10px; cursor: pointer; visibility: ${isFirstStep ? 'hidden' : 'visible'};">Anterior</button>
+        <span style="font-size: 0.8rem; color: #64748b;">${stepIndex + 1} / ${this.tourSteps.length}</span>
+        <button id="tour-next" style="background-color: #2563eb; color: white; border: none; border-radius: 4px; padding: 5px 10px; font-weight: bold; cursor: pointer;">${isLastStep ? 'Finalizar' : 'Siguiente'}</button>
+      </div>
+      <button id="tour-end" title="Finalizar Tour" style="position: absolute; top: 8px; right: 8px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">&times;</button>
+    `;
+
+    document.body.appendChild(this.tourPopover);
+
+    // Añadir listeners
+    document.getElementById('tour-next')?.addEventListener('click', () => this.nextTourStep());
+    document.getElementById('tour-prev')?.addEventListener('click', () => this.prevTourStep());
+    document.getElementById('tour-end')?.addEventListener('click', () => this.endTour());
+
+    // --- Lógica de Posicionamiento del Popover ---
+    const targetRect = targetElement.getBoundingClientRect();
+    const popoverRect = this.tourPopover.getBoundingClientRect();
+    const margin = 10; // Espacio entre el elemento y el popover
+
+    let top = 0;
+    let left = 0;
+    const stepPosition = step.position || 'bottom'; // 'bottom' por defecto
+
+    switch (stepPosition) {
+      case 'top-left':
+        top = targetRect.top + window.scrollY - popoverRect.height - margin;
+        left = targetRect.left + window.scrollX;
+        break;
+      case 'top':
+        top = targetRect.top + window.scrollY - popoverRect.height - margin;
+        left = targetRect.left + window.scrollX + (targetRect.width - popoverRect.width) / 2;
+        break;
+      case 'bottom':
+        top = targetRect.bottom + window.scrollY + margin;
+        left = targetRect.left + window.scrollX + (targetRect.width - popoverRect.width) / 2;
+        break;
+      case 'left':
+        top = targetRect.top + window.scrollY + (targetRect.height - popoverRect.height) / 2;
+        left = targetRect.left + window.scrollX - popoverRect.width - margin;
+        break;
+      case 'right':
+        top = targetRect.top + window.scrollY + (targetRect.height - popoverRect.height) / 2;
+        left = targetRect.right + window.scrollX + margin;
+        break;
+      case 'center':
+        top = (window.innerHeight / 2) - (popoverRect.height / 2) + window.scrollY;
+        left = (window.innerWidth / 2) - (popoverRect.width / 2) + window.scrollX;
+        break;
+    }
+
+    // Ajustar si se sale de la pantalla (coordenadas relativas al documento)
+    const viewportLeft = window.scrollX + margin;
+    const viewportRight = window.scrollX + window.innerWidth - margin;
+    const viewportTop = window.scrollY + margin;
+    const viewportBottom = window.scrollY + window.innerHeight - margin;
+
+    if (left < viewportLeft) {
+      left = viewportLeft;
+    }
+    if (left + popoverRect.width > viewportRight) {
+      left = viewportRight - popoverRect.width;
+    }
+    if (top < viewportTop) {
+      top = viewportTop;
+    }
+    if (top + popoverRect.height > viewportBottom) {
+      top = viewportBottom - popoverRect.height;
+    }
+
+    this.tourPopover.style.top = `${top}px`;
+    this.tourPopover.style.left = `${left}px`;
+    this.tourPopover.style.visibility = 'visible'; // Mostrar popover
+  }
 
   //Servicio SISCOD-DEVIDA
   public restApiDevida =
@@ -1152,6 +1382,66 @@ export class GeovisorSharedService {
             expandAnalisisCultivo.container.style.display = 'block';
           }
         }
+
+    // --- Inicio del Tour Guiado ---
+    const tourBtn = document.createElement('button');
+    tourBtn.innerHTML = '💡'; // Icono de bombilla para "guía" o "tips"
+    tourBtn.className = 'esri-widget--button esri-widget';
+    tourBtn.title = 'Iniciar Tour Guiado';
+    tourBtn.style.width = '45px';
+    tourBtn.style.height = '45px';
+    tourBtn.style.fontSize = '1.5rem';
+    tourBtn.addEventListener('click', () => this.startTour());
+    this.view.ui.add(tourBtn, { position: 'top-right', index: 0 });
+
+    this.masterTourSteps = [
+      {
+        element: this.view.container,
+        title: '¡Bienvenido al Geovisor!',
+        content: 'Este es un tour rápido por las principales funcionalidades. Haz clic en "Siguiente" para comenzar.',
+        position: 'center'
+      },
+      {
+        element: 'arcgis-search',
+        title: 'Buscador Inteligente',
+        content: 'Utiliza esta barra para buscar polígonos de cultivo por DNI o nombre, oficinas zonales y más.',
+        position: 'bottom'
+      },
+      {
+        element: 'app-sidebar',
+        title: 'Panel de Capas',
+        content: 'Aquí puedes activar o desactivar las diferentes capas de información disponibles en el mapa.',
+        position: 'left'
+      },
+      {
+        element: 'arcgis-home',
+        title: 'Vista Inicial',
+        content: 'Haz clic aquí en cualquier momento para volver a la vista y zoom iniciales del mapa.',
+        position: 'left'
+      },
+      {
+        element: 'arcgis-locate',
+        title: 'Mi Ubicación',
+        content: 'Permite que el navegador acceda a tu ubicación para centrar el mapa en tu posición actual.',
+        position: 'left'
+      },
+      { element: expand.container, widget: expand, title: 'Galería de Mapas Base', content: 'Cambia el mapa de fondo. Puedes elegir entre satelital, calles, topográfico, etc.', position: 'left' },
+      { element: expanduploadEl.container, widget: expanduploadEl, title: 'Cargar Archivos', content: 'Importa tus propios datos en formato GeoJSON, JSON o CSV para visualizarlos en el mapa.', position: 'left' },
+      { element: expandAnalisis.container, widget: expandAnalisis, title: 'Análisis de Superposición (SERFOR)', content: 'Analiza si tus polígonos se superponen con la capa de Bosques de Producción Permanente de SERFOR.', position: 'left' },
+      { element: expandAnalisisCultivo.container, widget: expandAnalisisCultivo, title: 'Análisis de Superposición (Cultivos)', content: 'Analiza si tus polígonos se superponen con los polígonos de cultivo de PIRDAIS.', position: 'left' },
+      {
+        element: 'app-info-coordenadas',
+        title: 'Información de Coordenadas',
+        content: 'Mueve el cursor sobre el mapa para ver las coordenadas geográficas y UTM, y la escala actual.',
+        position: 'top'
+      },
+      {
+        element: this.view.container,
+        title: 'Fin del Tour',
+        content: '¡Has completado el recorrido! Ahora puedes explorar el mapa por tu cuenta.',
+        position: 'center'
+      }
+    ];
 
     toggleUploadWidget();
     window.addEventListener('resize', toggleUploadWidget);
