@@ -2384,8 +2384,11 @@ export class DashboardComponent implements AfterViewInit {
       const docWidth = doc.internal.pageSize.getWidth();
       const docHeight = doc.internal.pageSize.getHeight();
       const margin = 10;
+      // Definir espacio para encabezado y pie de página
+      const headerMargin = 15;
+      const footerMargin = 15;
       const contentWidth = docWidth - margin * 2;
-      let yPos = margin;
+      let yPos = headerMargin + 5; // Posición Y inicial, con espacio extra para evitar superposición con el encabezado
 
       // --- Helper para añadir elementos al PDF y gestionar el salto de página ---
       const addElementToPdf = async (elementId: string) => {
@@ -2404,9 +2407,9 @@ export class DashboardComponent implements AfterViewInit {
         const finalWidth = contentWidth;
         const finalHeight = finalWidth / ratio;
 
-        if (yPos + finalHeight > docHeight - margin) {
+        if (yPos + finalHeight > docHeight - footerMargin) {
           doc.addPage();
-          yPos = margin;
+          yPos = headerMargin; // Reiniciar yPos en nueva página
         }
 
         doc.addImage(imgData, 'PNG', margin, yPos, finalWidth, finalHeight);
@@ -2414,11 +2417,11 @@ export class DashboardComponent implements AfterViewInit {
       };
 
       // --- Título del Reporte ---
-      const title = `Reporte de Dashboard - ${this.selectedYear === 0 ? 'Acumulado' : this.selectedYear}`;
+      const title = `Reporte de Dashboard - ${this.selectedYear === 0 ? 'Acumulado' : this.selectedYear}`.toUpperCase();
       doc.setFontSize(18);
       doc.setTextColor(40, 40, 40);
       doc.text(title, docWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
+      yPos += 10; // Reducir el espacio después del título para compensar el ajuste inicial
 
       // --- Capturar y añadir cada sección del dashboard ---
       const elementIds = [
@@ -2433,8 +2436,15 @@ export class DashboardComponent implements AfterViewInit {
         await addElementToPdf(id);
       }
 
-      // --- Añadir Sello de Agua ---
-      const addWatermark = (doc: jsPDF) => {
+      // --- Añadir Encabezado y Pie de página ---
+      const addHeaderAndFooter = (doc: jsPDF) => {
+        const now = new Date();
+        const dateTimeString = now.toLocaleString('es-PE', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: false
+        });
+
         const totalPages = doc.getNumberOfPages();
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
@@ -2442,18 +2452,22 @@ export class DashboardComponent implements AfterViewInit {
         for (let i = 1; i <= totalPages; i++) {
           doc.setPage(i);
 
-          // Configurar el estilo del sello de agua
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(40);
-          doc.setTextColor(200, 200, 200); // Color gris claro
-          doc.saveGraphicsState();
-          doc.setGState(new (doc as any).GState({ opacity: 0.5 })); // Transparencia
+          // --- Encabezado ---
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          doc.setTextColor(100); // Gris oscuro
+          doc.text('DIRECCION DE PROMOCION Y MONITOREO', margin, margin);
+          doc.line(margin, margin + 2, pageWidth - margin, margin + 2);
 
-          doc.text('DIRECCION DE PROMOCION Y MONITOREO', pageWidth / 2, pageHeight / 2, { align: 'center', angle: -45 });
-          doc.restoreGraphicsState();
+          // --- Pie de página ---
+          const footerLeftText = `EQUIPO-GIS/DPM/DEVIDA | Generado: ${dateTimeString}`;
+          const pageInfo = `Página ${i} de ${totalPages}`;
+          doc.setFontSize(8);
+          doc.text(footerLeftText, margin, pageHeight - margin);
+          doc.text(pageInfo, pageWidth - margin, pageHeight - margin, { align: 'right' });
         }
       };
-      addWatermark(doc);
+      addHeaderAndFooter(doc);
 
       // --- Guardar el PDF ---
       doc.save(`reporte_dashboard_${this.selectedYear === 0 ? 'todos' : this.selectedYear}.pdf`);
