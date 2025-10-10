@@ -7,6 +7,7 @@ import { CapasComponent } from './components/capas/capas.component';
 import { LeyendaComponent } from './components/leyenda/leyenda.component';
 import { AcercaComponent } from './components/acerca/acerca.component';
 import { ResumenComponent } from './components/resumen/resumen.component';
+import { CoordenadasComponent } from './components/coordenadas/coordenadas.component';
 
 @Component({
   selector: 'app-sidebar',
@@ -16,28 +17,30 @@ import { ResumenComponent } from './components/resumen/resumen.component';
     MatButtonModule,
     CapasComponent,
     LeyendaComponent,
-    AcercaComponent,
+    CoordenadasComponent,
     ResumenComponent,
+    AcercaComponent,
   ],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
 export class SidebarComponent {
   public _geovisorSharedService = inject(GeovisorSharedService);
-  public subMenu: 'capas' | 'leyendas' | 'resumen' | 'acerca' = 'capas';
+  public subMenu: 'capas' | 'leyendas' | 'resumen' |'coordenadas'| 'acerca' = 'capas';
   public toogleMenu = false;
   public menuItems: {
-    key: 'capas' | 'leyendas' | 'resumen' | 'acerca';
+    key: 'capas' | 'leyendas' | 'resumen' |'coordenadas'| 'acerca';
     icon: string;
     label: string;
   }[] = [
       { key: 'capas', icon: 'layers', label: 'Capas' },
       { key: 'leyendas', icon: 'view_list', label: 'Leyendas' },
       { key: 'resumen', icon: 'summarize', label: 'resumen' },
+      { key: 'coordenadas', icon: 'explore', label: 'coordenadas' },
       { key: 'acerca', icon: 'info', label: 'Acerca de' },
     ];
 
-  clickToogleMenu(filtro?: 'capas' | 'leyendas' | 'resumen' | 'acerca'): void {
+  clickToogleMenu(filtro?: 'capas' | 'leyendas' | 'resumen' |'coordenadas'| 'acerca'): void {
     if (filtro == undefined) {
       this.toogleMenu = !this.toogleMenu;
     } else {

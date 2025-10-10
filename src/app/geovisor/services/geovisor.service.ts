@@ -475,6 +475,7 @@ const restCaribRecopilacion = new PopupTemplate({
 export class GeovisorSharedService {
   public mapa = new EsriMap({ basemap: 'satellite' });
   public view: MapView | null = null;
+  private coordinateMarkerLayer = new GraphicsLayer({ id: 'coordinate-marker' });
   private highlightLayer = new GraphicsLayer({ id: 'highlight-overlaps' });
   // Propiedades para el Tour Guiado
   private masterTourSteps: any[] = [];
@@ -1000,6 +1001,7 @@ export class GeovisorSharedService {
 
   constructor() {
     this.mapa.add(this.highlightLayer);
+    this.mapa.add(this.coordinateMarkerLayer);
   }
 
   initializeMap(mapViewEl: ElementRef): Promise<void> {
@@ -1496,6 +1498,91 @@ export class GeovisorSharedService {
     return this.view.when();
   }
   //FIN <InitializeMap>
+
+  public goToCoordinates(lat: number, lon: number): void {
+    if (!this.view) {
+      console.error('La vista del mapa no está inicializada.');
+      this.showToast('La vista del mapa no está inicializada.', 'error');
+      return;
+    }
+
+    // Validación básica para Perú
+    if (isNaN(lat) || isNaN(lon) || lat > 0 || lat < -20 || lon < -82 || lon > -68) {
+      this.showToast('Coordenadas inválidas o fuera del rango para Perú.', 'error');
+      return;
+    }
+
+    this.coordinateMarkerLayer.removeAll();
+
+    const point = {
+      type: 'point',
+      longitude: lon, // Usamos la longitud original
+      latitude: lat,
+      spatialReference: { wkid: 4326 } // WGS 84: El datum de Google Maps/GPS
+    };
+
+    const markerSymbol = new SimpleMarkerSymbol({
+      color: [37, 99, 235], // Azul
+      outline: {
+        color: [255, 255, 255], // Blanco
+        width: 2,
+      },
+      size: '12px'
+    });
+
+    const pointGraphic = new Graphic({
+      geometry: point as any,
+      symbol: markerSymbol,
+      popupTemplate: new PopupTemplate({
+        title: 'Ubicación por Coordenada',
+        content: `<b>Latitud:</b> {latitude}<br><b>Longitud:</b> {longitude}`,
+      }),
+      attributes: {
+        latitude: lat,
+        longitude: lon,
+      },
+    });
+
+    this.coordinateMarkerLayer.add(pointGraphic);
+
+    this.view.goTo({
+      target: pointGraphic,
+      zoom: 16, // Un buen nivel de zoom para ver detalles
+    }).then(() => {
+      this.view?.openPopup({ features: [pointGraphic] });
+    });
+  }
+
+  public goToUTMCoordinates(este: number, norte: number, zona: '17S' | '18S' | '19S'): void {
+    // Definiciones de Proj4 para las zonas UTM de Perú (WGS84)
+    const utmDefs: Record<string, string> = {
+      '17S': '+proj=utm +zone=17 +south +datum=WGS84 +units=m +no_defs',
+      '18S': '+proj=utm +zone=18 +south +datum=WGS84 +units=m +no_defs',
+      '19S': '+proj=utm +zone=19 +south +datum=WGS84 +units=m +no_defs',
+    };
+    const wgs84 = '+proj=longlat +datum=WGS84 +no_defs';
+
+    try {
+      // Realizar la conversión de UTM a Geográficas (Longitud, Latitud)
+      const [lon, lat] = proj4(utmDefs[zona], wgs84, [este, norte]);
+
+      // Reutilizar la función existente para ir a las coordenadas
+      this.goToCoordinates(lat, lon);
+
+    } catch (error) {
+      console.error('Error al convertir coordenadas UTM:', error);
+      this.showToast('Error al convertir las coordenadas UTM.', 'error');
+    }
+  }
+
+  public clearCoordinateMarker(): void {
+    if (this.view) {
+      // Cierra cualquier popup que esté abierto
+      this.view.closePopup();
+    }
+    // Elimina los gráficos de la capa de marcadores
+    this.coordinateMarkerLayer.removeAll();
+  }
 
     destroyMap(): void {if (this.view) {this.view.container = null;}}
     //Inicio del Toogle

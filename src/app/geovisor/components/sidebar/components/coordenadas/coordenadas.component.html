@@ -1,0 +1,106 @@
+<div class="coordenadas-container p-4">
+  <div class="flex justify-between items-center mb-3">
+    <h3 class="text-lg font-semibold text-gray-700">Ir a Coordenada</h3>
+    <button (click)="limpiarUbicacion()"
+            title="Limpiar ubicación y formulario"
+            class="text-gray-500 hover:text-red-600 transition-colors duration-200 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500 -mr-1">
+      <mat-icon>delete_sweep</mat-icon>
+    </button>
+  </div>
+
+  <!-- Tabs para seleccionar sistema de coordenadas -->
+  <div class="flex border-b border-gray-200 mb-4">
+    <button
+      (click)="coordSystem = 'GEOGRAFICA'"
+      [ngClass]="{'border-blue-600 text-blue-600': coordSystem === 'GEOGRAFICA', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': coordSystem !== 'GEOGRAFICA'}"
+      class="flex-1 py-2 px-1 text-center border-b-2 font-medium text-sm focus:outline-none">
+      Geográficas
+    </button>
+    <button
+      (click)="coordSystem = 'UTM'"
+      [ngClass]="{'border-blue-600 text-blue-600': coordSystem === 'UTM', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': coordSystem !== 'UTM'}"
+      class="flex-1 py-2 px-1 text-center border-b-2 font-medium text-sm focus:outline-none">
+      UTM
+    </button>
+  </div>
+
+  <!-- Formulario para Geográficas -->
+  <div *ngIf="coordSystem === 'GEOGRAFICA'">
+    <div class="form-group mb-3">
+      <label for="latitud" class="block text-sm font-medium text-gray-600 mb-1">Latitud (Y)</label>
+      <input
+        type="number"
+        id="latitud"
+        name="latitud"
+        [(ngModel)]="latitud"
+        class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+        placeholder="Ej: -12.046"
+      />
+    </div>
+    <div class="form-group mb-4">
+      <label for="longitud" class="block text-sm font-medium text-gray-600 mb-1">Longitud (X)</label>
+      <input
+        type="number"
+        id="longitud"
+        name="longitud"
+        [(ngModel)]="longitud"
+        class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+        placeholder="Ej: -77.042"
+      />
+    </div>
+  </div>
+
+  <!-- Formulario para UTM -->
+  <div *ngIf="coordSystem === 'UTM'">
+    <div class="form-group mb-3">
+      <label for="este" class="block text-sm font-medium text-gray-600 mb-1">Este (X)</label>
+      <input
+        type="number"
+        id="este"
+        name="este"
+        [(ngModel)]="este"
+        class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+        placeholder="Ej: 279530"
+      />
+    </div>
+    <div class="form-group mb-3">
+      <label for="norte" class="block text-sm font-medium text-gray-600 mb-1">Norte (Y)</label>
+      <input
+        type="number"
+        id="norte"
+        name="norte"
+        [(ngModel)]="norte"
+        class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+        placeholder="Ej: 8659795"
+      />
+    </div>
+    <div class="form-group mb-4">
+      <label for="zona" class="block text-sm font-medium text-gray-600 mb-1">Zona</label>
+      <select
+        id="zona"
+        name="zona"
+        [(ngModel)]="zona"
+        class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white">
+        <option [ngValue]="null" disabled>Seleccione una zona</option>
+        <option value="17S">17S</option>
+        <option value="18S">18S</option>
+        <option value="19S">19S</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="errorMensaje" class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded relative mb-4 text-sm" role="alert">
+    {{ errorMensaje }}
+  </div>
+
+  <button (click)="irACoordenada()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200 flex items-center justify-center">
+    Ubicar en el Mapa
+  </button>
+
+  <div class="mt-4 p-2 bg-yellow-50 border border-yellow-300 rounded text-center">
+    <p class="text-xs text-yellow-800">
+      <strong>Nota:</strong> Las coordenadas de Google Maps pueden tener una ligera diferencia de ubicación en este mapa debido a distintos sistemas de referencia (datum).
+    </p>
+  </div>
+
+</div>
