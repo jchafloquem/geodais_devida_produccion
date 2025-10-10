@@ -4,7 +4,7 @@ import { privateGuard, publicGuard } from '../core/auth.guard';
 export default [
 			{
 				path: 'map',
-        title:'GeoVisor',
+        title:'GeoCultivos',
         canActivate: [privateGuard()],
 				loadComponent: () => import('./pages/map/map.component').then(m => m.MapComponent),
 			},
