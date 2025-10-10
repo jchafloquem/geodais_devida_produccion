@@ -14,6 +14,7 @@ import localeEsPE from '@angular/common/locales/es-PE';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 // Plugin personalizado para simular un efecto de sombra 3D en las barras.
 const pseudo3DPlugin = {
@@ -196,6 +197,8 @@ export class DashboardComponent implements AfterViewInit {
   public modalData: any[] = [];
   /** Flag para mostrar el indicador de carga en el modal. */
   public isModalLoading = false;
+  /** Flag para indicar que la exportación a PDF está en progreso. */
+  public isExportingPDF = false;
   /**
    * @method ngAfterViewInit
    * @description
@@ -2350,5 +2353,116 @@ export class DashboardComponent implements AfterViewInit {
 
     const year = this.selectedYear === 0 ? 'Todos' : this.selectedYear;
     doc.save(`reporte_cacao_y_cafe_${year}.pdf`);
+  }
+
+  /**
+   * @method shareDashboardViaWhatsApp
+   * @description
+   * Construye y abre una URL de WhatsApp para compartir un enlace al dashboard actual.
+   */
+  public shareDashboardViaWhatsApp(): void {
+    const yearText = this.selectedYear === 0 ? 'Acumulado' : `del año ${this.selectedYear}`;
+    const message = `Hola, te comparto el dashboard de GeoCULTIVOS (${yearText}). Puedes verlo aquí: ${window.location.href}`;
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+  }
+
+  /**
+   * @method exportDashboardToPDF
+   * @description
+   * Exporta una vista consolidada del dashboard a un archivo PDF.
+   * Captura los elementos visuales clave (título, tarjetas, gráficos) como imágenes
+   * y los organiza en un documento PDF de varias páginas.
+   * @async
+   */
+  public async exportDashboardToPDF(): Promise<void> {
+    this.isExportingPDF = true;
+
+    try {
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const docWidth = doc.internal.pageSize.getWidth();
+      const docHeight = doc.internal.pageSize.getHeight();
+      const margin = 10;
+      const contentWidth = docWidth - margin * 2;
+      let yPos = margin;
+
+      // --- Helper para añadir elementos al PDF y gestionar el salto de página ---
+      const addElementToPdf = async (elementId: string) => {
+        const element = document.getElementById(elementId);
+        if (!element) {
+          console.warn(`Elemento ${elementId} no encontrado para exportar a PDF.`);
+          return;
+        }
+
+        // Usar fondo blanco para que los elementos se vean bien en el PDF
+        const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / imgHeight;
+        const finalWidth = contentWidth;
+        const finalHeight = finalWidth / ratio;
+
+        if (yPos + finalHeight > docHeight - margin) {
+          doc.addPage();
+          yPos = margin;
+        }
+
+        doc.addImage(imgData, 'PNG', margin, yPos, finalWidth, finalHeight);
+        yPos += finalHeight + 5; // Espacio después del elemento
+      };
+
+      // --- Título del Reporte ---
+      const title = `Reporte de Dashboard - ${this.selectedYear === 0 ? 'Acumulado' : this.selectedYear}`;
+      doc.setFontSize(18);
+      doc.setTextColor(40, 40, 40);
+      doc.text(title, docWidth / 2, yPos, { align: 'center' });
+      yPos += 15;
+
+      // --- Capturar y añadir cada sección del dashboard ---
+      const elementIds = [
+        'hectareas-section', 'graficoMeta', 'graficoMetaOZ',
+        'familias-section', 'graficoMetaDNI', 'graficoMetaParticipantes',
+        'graficoCantidadDNIOZCACAO', 'graficoCantidadDNIOZCAFE',
+        'poligonos-section', 'graficoCantidadOZCACAO', 'graficoCantidadOZCAFE',
+        'departamento-section'
+      ];
+
+      for (const id of elementIds) {
+        await addElementToPdf(id);
+      }
+
+      // --- Añadir Sello de Agua ---
+      const addWatermark = (doc: jsPDF) => {
+        const totalPages = doc.getNumberOfPages();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        for (let i = 1; i <= totalPages; i++) {
+          doc.setPage(i);
+
+          // Configurar el estilo del sello de agua
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(40);
+          doc.setTextColor(200, 200, 200); // Color gris claro
+          doc.saveGraphicsState();
+          doc.setGState(new (doc as any).GState({ opacity: 0.5 })); // Transparencia
+
+          doc.text('DIRECCION DE PROMOCION Y MONITOREO', pageWidth / 2, pageHeight / 2, { align: 'center', angle: -45 });
+          doc.restoreGraphicsState();
+        }
+      };
+      addWatermark(doc);
+
+      // --- Guardar el PDF ---
+      doc.save(`reporte_dashboard_${this.selectedYear === 0 ? 'todos' : this.selectedYear}.pdf`);
+
+    } catch (error) {
+      console.error('Error al exportar el dashboard a PDF:', error);
+      // Aquí podrías añadir una notificación de error para el usuario.
+    } finally {
+      this.isExportingPDF = false;
+    }
   }
 }
