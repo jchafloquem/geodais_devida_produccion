@@ -12,6 +12,46 @@ import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import localeEsPE from '@angular/common/locales/es-PE';
 
+// Plugin personalizado para simular un efecto 3D en las barras del gráfico.
+// Dibuja una "sombra" o "extrusión" para dar una sensación de profundidad.
+const pseudo3DPlugin = {
+  id: 'pseudo3D',
+  beforeDatasetsDraw: (chart: Chart) => {
+    const { ctx } = chart;
+    const offset = 5; // "Profundidad" del efecto 3D en píxeles.
+    const darkerColor = '#6A8A50'; // Usamos el color del borde existente para la sombra.
+
+    ctx.save();
+    ctx.fillStyle = darkerColor;
+
+    // Itera sobre cada barra del primer dataset para dibujar su extrusión.
+    chart.getDatasetMeta(0).data.forEach(bar => {
+      // Hacemos una aserción de tipo a 'any' para acceder a propiedades específicas del BarElement
+      // ('base' y 'width') que no están presentes en el tipo 'Element' genérico que infiere TypeScript.
+      const { x, y, base, width } = bar as any;
+
+      // Dibuja la cara superior de la barra.
+      ctx.beginPath();
+      ctx.moveTo(x - width / 2, y);
+      ctx.lineTo(x - width / 2 + offset, y - offset);
+      ctx.lineTo(x + width / 2 + offset, y - offset);
+      ctx.lineTo(x + width / 2, y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Dibuja la cara lateral de la barra.
+      ctx.beginPath();
+      ctx.moveTo(x + width / 2, y);
+      ctx.lineTo(x + width / 2 + offset, y - offset);
+      ctx.lineTo(x + width / 2 + offset, base - offset);
+      ctx.lineTo(x + width / 2, base);
+      ctx.closePath();
+      ctx.fill();
+    });
+
+    ctx.restore();
+  }
+};
 
 Chart.register(ChartDataLabels);
 registerLocaleData(localeEsPE, 'es-PE');
@@ -1947,6 +1987,11 @@ export class DashboardComponent implements AfterViewInit {
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: {
+            padding: {
+              right: 10 // Espacio para que el efecto 3D no se corte en el borde.
+            }
+          },
           scales: {
             y: {
               min:0,
@@ -1985,7 +2030,7 @@ export class DashboardComponent implements AfterViewInit {
             },
           },
         },
-        plugins: [ChartDataLabels],
+        plugins: [ChartDataLabels, pseudo3DPlugin], // Se añade el plugin para el efecto 3D.
       }));
     } catch (err) {
       console.error('Error al crear gráfico por departamento:', err);
