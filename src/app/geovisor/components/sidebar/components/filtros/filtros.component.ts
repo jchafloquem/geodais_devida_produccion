@@ -87,10 +87,21 @@ export class FiltrosComponent implements OnInit {
     let hectareasCafe = 0;
 
     try {
+      // Normalización del nombre de la oficina para corregir inconsistencias de datos entre servicios.
+      // Esto asegura que los nombres coincidan con los valores en la capa de polígonos.
+      let oficinaParaQuery = oficina.trim().toUpperCase();
+
+      // Caso específico: 'SAN JUAN DEL ORO' en el servicio de oficinas vs 'SAN JUAN DE ORO' en polígonos.
+      if (oficinaParaQuery === 'SAN JUAN DEL ORO') {
+        oficinaParaQuery = 'SAN JUAN DE ORO';
+      }
+      // Caso genérico: Eliminar tildes como en 'TINGO MARÍA' vs 'TINGO MARIA'.
+      oficinaParaQuery = oficinaParaQuery.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
       const query = this.pirdaisLayer.createQuery();
       // 1. Filtramos DIRECTAMENTE en el servidor. Es mucho más eficiente.
       // Usamos UPPER() para una comparación insensible a mayúsculas/minúsculas, lo que resuelve el problema.
-      query.where = `UPPER(oficina_zonal) = '${oficina.trim().toUpperCase()}'`;
+      query.where = `UPPER(oficina_zonal) = '${oficinaParaQuery}'`;
       query.outFields = ["dni_participante", "tipo_cultivo", "area_cultivo"];
       query.returnGeometry = false;
 
