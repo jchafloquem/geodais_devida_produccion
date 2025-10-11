@@ -18,6 +18,7 @@ import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import MapView from '@arcgis/core/views/MapView.js';
 import PopupTemplate from '@arcgis/core/PopupTemplate.js';
 import proj4 from 'proj4';
+import StatisticDefinition from '@arcgis/core/rest/support/StatisticDefinition.js';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
 import WebTileLayer from '@arcgis/core/layers/WebTileLayer';
@@ -469,6 +470,17 @@ const restCaribRecopilacion = new PopupTemplate({
   ],
 });
 
+export interface OficinaStats {
+  totalHectareas: number;
+  hectareasCacao: number;
+  hectareasCafe: number;
+  totalFamilias: number;
+  familiasCacao: number;
+  familiasCafe: number;
+  familiasAmbos: number;
+}
+
+
 @Injectable({
   providedIn: 'root',
 })
@@ -487,11 +499,12 @@ export class GeovisorSharedService {
     HTMLElement,
     { zIndex: string; position: string; boxShadow: string }
   > = new Map();
+  private previousLayerVisibility: Map<string, boolean> = new Map();
 
   //Método auxiliar para mostrar los mensajes toast.
     public showToast(
       mensaje: string,
-      tipo: 'success' | 'error' | 'info' = 'success',
+      tipo: 'success' | 'error' | 'info' | 'warning' = 'success',
       autoHide: boolean = true
     ): void {
       let toast = document.getElementById('toast');
@@ -511,7 +524,7 @@ export class GeovisorSharedService {
       toast!.className = `
         fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
         px-4 py-2 rounded shadow text-white
-        ${tipo === 'success' ? 'bg-green-600' : tipo === 'error' ? 'bg-red-600' : 'bg-blue-600'}
+        ${tipo === 'success' ? 'bg-green-600' : tipo === 'error' ? 'bg-red-600' : tipo === 'warning' ? 'bg-orange-500' : 'bg-blue-600'}
         text-center
         transition-opacity duration-500
       `;
@@ -917,6 +930,25 @@ export class GeovisorSharedService {
       ],
     },
     //(Limites Politicos)
+    {
+      type: 'map-image',
+      title: 'DISTRITOS',
+      url: this.restApiDevida,
+      visible: true,
+      opacity: 0.9,
+      minScale: 0,
+      maxScale: 0,
+      group: 'LIMITES POLITICOS',
+      sublayers: [
+        {
+          id: 1,
+          visible: true,
+          labelsVisible: true,
+          minScale: 0,
+          maxScale: 0,
+        },
+      ],
+    },
     {
       type: 'map-image',
       title: 'PROVINCIA',
@@ -1625,14 +1657,27 @@ export class GeovisorSharedService {
       return;
     }
 
+    // Si es la primera búsqueda desde una limpieza, guardar el estado de las capas y apagarlas
+    if (this.previousLayerVisibility.size === 0) {
+      this.mapa.layers.forEach(layer => {
+        const esCapaEsencial =
+          layer.title === 'POLIGONOS DE CULTIVO' ||
+          layer.id === this.highlightLayer.id ||
+          layer.id === this.coordinateMarkerLayer.id;
+
+        if (!esCapaEsencial) {
+          this.previousLayerVisibility.set(layer.id, layer.visible);
+          if (layer.visible) {
+            layer.visible = false;
+          }
+        }
+      });
+    }
+
     const layer = this.mapa.layers.find(lyr => lyr.title === 'OFICINAS ZONALES') as __esri.MapImageLayer;
     if (!layer) {
       this.showToast("La capa 'Oficinas Zonales' no está en el mapa.", "error");
       return;
-    }
-    if (!layer.visible) {
-      layer.visible = true;
-      this.showToast("Capa 'Oficinas Zonales' activada.", "info");
     }
 
     const sublayer = layer.sublayers?.find(sl => sl.id === 5);
@@ -1641,7 +1686,7 @@ export class GeovisorSharedService {
       return;
     }
 
-    this.highlightLayer.removeAll();
+    this.highlightLayer.removeAll(); // Limpiar resaltado anterior
 
     try {
       const featureSet = await sublayer.queryFeatures({
@@ -1657,12 +1702,6 @@ export class GeovisorSharedService {
           symbol: { type: "simple-fill", color: [255, 255, 0, 0.4], outline: { color: [255, 255, 0, 1], width: 2 } } as any
         });
         this.highlightLayer.add(highlightGraphic);
-
-        // Ocultar la capa temporalmente
-        layer.visible = false;
-
-        // Hacer zoom a la oficina zonal
-
         this.view.goTo(feature.geometry);
       } else {
         this.showToast(`No se encontró la oficina zonal: ${nombreOficina}`, "info");
@@ -1673,13 +1712,113 @@ export class GeovisorSharedService {
     }
   }
 
+  public async getStatsForOficina(nombreOficina: string): Promise<OficinaStats> {
+    const layer = new FeatureLayer({ url: `${this.restApiDevida}/0` });
+
+    // NOTA: El dashboard realiza el filtrado por oficina zonal en el cliente, no en el servidor.
+    // Aunque es ineficiente porque trae todos los datos, replicamos ese patrón para asegurar consistencia,
+    // ya que podría haber un problema con el servicio al filtrar por 'oficina_zonal' en el 'where'.
+    const baseWhere = `1=1`;
+
+    try {
+      // 1. Obtener TODOS los registros de polígonos.
+      const allFeatures: __esri.Graphic[] = [];
+      let offset = 0;
+      const pageSize = 2000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const query = layer.createQuery();
+        query.where = baseWhere;
+        query.outFields = ["oficina_zonal", "area_cultivo", "tipo_cultivo", "dni_participante"];
+        query.returnGeometry = false;
+        query.start = offset;
+        query.num = pageSize;
+
+        const featureSet = await layer.queryFeatures(query);
+        const features = featureSet.features;
+
+        if (features.length > 0) {
+          allFeatures.push(...features);
+          offset += features.length;
+          hasMore = features.length === pageSize;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      // 2. Filtrar los registros por la oficina zonal seleccionada en el cliente.
+      const officeFeatures = allFeatures.filter(f =>
+        (f.attributes.oficina_zonal || '').replace(/^OZ\s+/, '').trim().toUpperCase() === nombreOficina.trim().toUpperCase()
+      );
+
+      if (officeFeatures.length === 0) {
+        // Esto puede pasar si no hay polígonos para esa oficina.
+        return { totalHectareas: 0, hectareasCacao: 0, hectareasCafe: 0, totalFamilias: 0, familiasCacao: 0, familiasCafe: 0, familiasAmbos: 0 };
+      }
+
+      // 3. Calcular las estadísticas sobre los datos ya filtrados.
+      let totalHectareas = 0;
+      let hectareasCacao = 0;
+      let hectareasCafe = 0;
+      const dnisCafe = new Set<string>();
+      const dnisCacao = new Set<string>();
+      const dnisTotal = new Set<string>();
+
+      officeFeatures.forEach(feature => {
+        const attrs = feature.attributes;
+        const area = attrs.area_cultivo || 0;
+        const dni = attrs.dni_participante;
+        const cultivoRaw = (attrs.tipo_cultivo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+        // Suma de hectáreas
+        totalHectareas += area;
+        if (cultivoRaw.includes('cacao')) {
+          hectareasCacao += area;
+        }
+        if (cultivoRaw.includes('cafe')) {
+          hectareasCafe += area;
+        }
+
+        // Conteo de familias (DNIs únicos)
+        if (dni) {
+          dnisTotal.add(dni);
+          if (cultivoRaw.includes('cacao')) dnisCacao.add(dni);
+          if (cultivoRaw.includes('cafe')) dnisCafe.add(dni);
+        }
+      });
+
+      const dnisAmbos = [...dnisCacao].filter(dni => dnisCafe.has(dni));
+
+      return {
+        totalHectareas,
+        hectareasCacao,
+        hectareasCafe,
+        totalFamilias: dnisTotal.size,
+        familiasCacao: dnisCacao.size,
+        familiasCafe: dnisCafe.size,
+        familiasAmbos: dnisAmbos.length
+      };
+
+    } catch (error) {
+        console.error(`Error al obtener estadísticas para ${nombreOficina}:`, error);
+        this.showToast('Error al calcular las estadísticas de la oficina.', 'error');
+        return { totalHectareas: 0, hectareasCacao: 0, hectareasCafe: 0, totalFamilias: 0, familiasCacao: 0, familiasCafe: 0, familiasAmbos: 0 };
+    }
+  }
+
   public clearHighlights(): void {
     this.highlightLayer.removeAll();
     if (this.view) this.view.closePopup();
 
-    // Restablecer la visibilidad de la capa
-    const layer = this.mapa.layers.find(lyr => lyr.title === 'OFICINAS ZONALES') as __esri.MapImageLayer;
-    if (layer) layer.visible = false;
+    // Restaurar visibilidad de las capas
+    this.previousLayerVisibility.forEach((isVisible, layerId) => {
+      const layerToRestore = this.mapa.findLayerById(layerId);
+      if (layerToRestore) {
+        layerToRestore.visible = isVisible;
+      }
+    });
+    this.previousLayerVisibility.clear();
   }
 
     destroyMap(): void {if (this.view) {this.view.container = null;}}

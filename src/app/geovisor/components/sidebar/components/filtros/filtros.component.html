@@ -31,5 +31,55 @@
       <mat-icon class="mr-2">search</mat-icon>
       Ubicar en el Mapa
     </button>
+
+    <!-- Sección de Estadísticas -->
+    <div *ngIf="isStatsLoading" class="text-center py-6">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+      <p class="text-sm text-gray-500 mt-2">Calculando estadísticas...</p>
+    </div>
+
+    <div *ngIf="stats && !isStatsLoading" class="mt-6 space-y-5 animate-fade-in">
+      <!-- Hectáreas -->
+      <div>
+        <h4 class="text-md font-semibold text-gray-800 mb-2 border-b pb-1">Resumen de Hectáreas</h4>
+        <div class="space-y-2">
+          <div class="bg-blue-50 p-3 rounded-lg shadow-sm flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-600">Total (ha)</p>
+            <p class="text-lg font-bold text-blue-700">{{ stats.totalHectareas | number:'1.0-0' }}</p>
+          </div>
+          <div class="bg-green-50 p-3 rounded-lg shadow-sm flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-600">Cacao (ha)</p>
+            <p class="text-lg font-bold text-green-700">{{ stats.hectareasCacao | number:'1.0-0' }}</p>
+          </div>
+          <div class="bg-yellow-50 p-3 rounded-lg shadow-sm flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-600">Café (ha)</p>
+            <p class="text-lg font-bold text-yellow-700">{{ stats.hectareasCafe | number:'1.0-0' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Familias -->
+      <div>
+        <h4 class="text-md font-semibold text-gray-800 mb-2 border-b pb-1">Resumen de Familias</h4>
+        <div class="space-y-2">
+          <div class="bg-indigo-50 p-3 rounded-lg shadow-sm flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-600">Total Familias</p>
+            <p class="text-xl font-bold text-indigo-700">{{ stats.totalFamilias | number }}</p>
+          </div>
+          <div class="bg-green-50 p-3 rounded-lg shadow-sm flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-600">Con Cacao</p>
+            <p class="text-lg font-bold text-green-700">{{ stats.familiasCacao | number }}</p>
+          </div>
+          <div class="bg-yellow-50 p-3 rounded-lg shadow-sm flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-600">Con Café</p>
+            <p class="text-lg font-bold text-yellow-700">{{ stats.familiasCafe | number }}</p>
+          </div>
+          <div class="bg-purple-50 p-3 rounded-lg shadow-sm flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-600">Con Cacao y Café</p>
+            <p class="text-xl font-bold text-purple-700">{{ stats.familiasAmbos | number }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

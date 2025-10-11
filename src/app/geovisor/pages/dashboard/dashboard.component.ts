@@ -1,20 +1,20 @@
-import { Component, AfterViewInit, LOCALE_ID } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import "driver.js/dist/driver.css";
 import { CommonModule, registerLocaleData } from '@angular/common';
+import { Component, AfterViewInit, LOCALE_ID } from '@angular/core';
+import { driver } from "driver.js";
+import { FooterComponent } from '../../components/footer/footer.component';
+import { NavbarmenuComponent } from '../../components/navbarmenu/navbarmenu.component';
+import { RouterModule } from '@angular/router';
 import { SidemenuComponent } from '../../components/sidebarmenu/sidemenu.component';
-import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
-import StatisticDefinition from '@arcgis/core/rest/support/StatisticDefinition.js';
+import * as XLSX from 'xlsx';
+import autoTable from 'jspdf-autotable';
 import Chart, { ChartConfiguration } from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
-import { NavbarmenuComponent } from '../../components/navbarmenu/navbarmenu.component';
-import { FooterComponent } from '../../components/footer/footer.component';
-import { driver } from "driver.js";
-import "driver.js/dist/driver.css";
-import localeEsPE from '@angular/common/locales/es-PE';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import localeEsPE from '@angular/common/locales/es-PE';
+import StatisticDefinition from '@arcgis/core/rest/support/StatisticDefinition.js';
 
 // Plugin personalizado para simular un efecto de sombra 3D en las barras.
 const pseudo3DPlugin = {
@@ -131,7 +131,7 @@ registerLocaleData(localeEsPE, 'es-PE');
 })
 export class DashboardComponent implements AfterViewInit {
   /** URL del servicio de features de ArcGIS que contiene los datos de los cultivos. */
-  private readonly SERVICIO_PIRDAIS = 'https://siscod.devida.gob.pe/server/rest/services/DPM_LIMITES_PIRDAIS/MapServer/0';
+  private readonly SERVICIO_PIRDAIS = 'https://siscod.devida.gob.pe/server/rest/services/LIMITES_CULTIVOS/MapServer/0';
   /** URL base para realizar consultas (queries) al servicio de features. */
   private readonly QUERY_SERVICIO = `${this.SERVICIO_PIRDAIS}/query`;
 
@@ -526,14 +526,14 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Colores por Oficina Zonal
     const colorMap: Record<string, string> = {
-      'OZ SAN FRANCISCO': '#FEEFD8',
-      'OZ PUCALLPA': '#B7D9FE',
-      'OZ LA MERCED': '#FFC0B6',
-      'OZ TINGO MARIA': '#D6F9FD',
-      'OZ TARAPOTO': '#C2BBFE',
-      'OZ SAN JUAN DE ORO': '#FED2F3',
-      'OZ QUILLABAMBA': '#FEFEB9',
-      'OZ IQUITOS': '#CAFEDA',
+      'SAN FRANCISCO': '#FEEFD8',
+      'PUCALLPA': '#B7D9FE',
+      'LA MERCED': '#FFC0B6',
+      'TINGO MARIA': '#D6F9FD',
+      'TARAPOTO': '#C2BBFE',
+      'SAN JUAN DE ORO': '#FED2F3',
+      'QUILLABAMBA': '#FEFEB9',
+      'IQUITOS': '#CAFEDA',
     };
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
     const ctx = document.getElementById('graficoMetaOZ') as HTMLCanvasElement;
@@ -664,26 +664,26 @@ export class DashboardComponent implements AfterViewInit {
     const values = entries.map(e => e[1]);
 
     const metasOZ: Record<string, number> = {
-      'OZ SAN FRANCISCO': 4824,
-      'OZ PUCALLPA': 10154,
-      'OZ LA MERCED': 5134,
-      'OZ TINGO MARIA': 4629,
-      'OZ TARAPOTO': 7383,
-      'OZ SAN JUAN DE ORO': 1281,
-      'OZ QUILLABAMBA': 0,
-      'OZ IQUITOS': 505,
+      'SAN FRANCISCO': 4824,
+      'PUCALLPA': 10154,
+      'LA MERCED': 5134,
+      'TINGO MARIA': 4629,
+      'TARAPOTO': 7383,
+      'SAN JUAN DE ORO': 1281,
+      'QUILLABAMBA': 0,
+      'IQUITOS': 505,
     };
     const metaValues = labels.map(org => metasOZ[org] ?? 0);
 
     const colorMap: Record<string, string> = {
-      'OZ SAN FRANCISCO': '#FEEFD8',
-      'OZ PUCALLPA': '#B7D9FE',
-      'OZ LA MERCED': '#FFC0B6',
-      'OZ TINGO MARIA': '#D6F9FD',
-      'OZ TARAPOTO': '#C2BBFE',
-      'OZ SAN JUAN DE ORO': '#FED2F3',
-      'OZ QUILLABAMBA': '#FEFEB9',
-      'OZ IQUITOS': '#CAFEDA',
+      'SAN FRANCISCO': '#FEEFD8',
+      'PUCALLPA': '#B7D9FE',
+      'LA MERCED': '#FFC0B6',
+      'TINGO MARIA': '#D6F9FD',
+      'TARAPOTO': '#C2BBFE',
+      'SAN JUAN DE ORO': '#FED2F3',
+      'QUILLABAMBA': '#FEFEB9',
+      'IQUITOS': '#CAFEDA',
     };
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
     const ctx = document.getElementById('graficoMetaOZCACAO') as HTMLCanvasElement;
@@ -834,26 +834,26 @@ export class DashboardComponent implements AfterViewInit {
     const values = entries.map(e => e[1]);
 
     const metasOZ: Record<string, number> = {
-      'OZ SAN FRANCISCO': 2344,
-      'OZ PUCALLPA': 0,
-      'OZ LA MERCED': 1973,
-      'OZ TINGO MARIA': 2133,
-      'OZ TARAPOTO': 688,
-      'OZ SAN JUAN DE ORO': 1119,
-      'OZ QUILLABAMBA': 1197,
-      'OZ IQUITOS': 0,
+      'SAN FRANCISCO': 2344,
+      'PUCALLPA': 0,
+      'LA MERCED': 1973,
+      'TINGO MARIA': 2133,
+      'TARAPOTO': 688,
+      'SAN JUAN DE ORO': 1119,
+      'QUILLABAMBA': 1197,
+      'IQUITOS': 0,
     };
     const metaValues = labels.map(org => metasOZ[org] ?? 0);
 
     const colorMap: Record<string, string> = {
-      'OZ SAN FRANCISCO': '#FEEFD8',
-      'OZ PUCALLPA': '#B7D9FE',
-      'OZ LA MERCED': '#FFC0B6',
-      'OZ TINGO MARIA': '#D6F9FD',
-      'OZ TARAPOTO': '#C2BBFE',
-      'OZ SAN JUAN DE ORO': '#FED2F3',
-      'OZ QUILLABAMBA': '#FEFEB9',
-      'OZ IQUITOS': '#CAFEDA',
+      'SAN FRANCISCO': '#FEEFD8',
+      'PUCALLPA': '#B7D9FE',
+      'LA MERCED': '#FFC0B6',
+      'TINGO MARIA': '#D6F9FD',
+      'TARAPOTO': '#C2BBFE',
+      'SAN JUAN DE ORO': '#FED2F3',
+      'QUILLABAMBA': '#FEFEB9',
+      'IQUITOS': '#CAFEDA',
     };
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
     const ctx = document.getElementById('graficoMetaOZCAFE') as HTMLCanvasElement;
@@ -1199,14 +1199,14 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Colores por ORG (mapa de referencia)
     const colorMap: Record<string, string> = {
-      'OZ SAN FRANCISCO': '#FEEFD8',
-      'OZ PUCALLPA': '#B7D9FE',
-      'OZ LA MERCED': '#FFC0B6',
-      'OZ TINGO MARIA': '#D6F9FD',
-      'OZ TARAPOTO': '#C2BBFE',
-      'OZ SAN JUAN DE ORO': '#FED2F3',
-      'OZ QUILLABAMBA': '#FEFEB9',
-      'OZ IQUITOS': '#CAFEDA',
+      'SAN FRANCISCO': '#FEEFD8',
+      'PUCALLPA': '#B7D9FE',
+      'LA MERCED': '#FFC0B6',
+      'TINGO MARIA': '#D6F9FD',
+      'TARAPOTO': '#C2BBFE',
+      'SAN JUAN DE ORO': '#FED2F3',
+      'QUILLABAMBA': '#FEFEB9',
+      'IQUITOS': '#CAFEDA',
     };
 
     // Asignar colores según el ORG, si no existe usar gris
@@ -1488,14 +1488,14 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Colores por ORG
     const colorMap: Record<string, string> = {
-      'OZ SAN FRANCISCO': '#FEEFD8',
-      'OZ PUCALLPA': '#B7D9FE',
-      'OZ LA MERCED': '#FFC0B6',
-      'OZ TINGO MARIA': '#D6F9FD',
-      'OZ TARAPOTO': '#C2BBFE',
-      'OZ SAN JUAN DE ORO': '#FED2F3',
-      'OZ QUILLABAMBA': '#FEFEB9',
-      'OZ IQUITOS': '#CAFEDA',
+      'SAN FRANCISCO': '#FEEFD8',
+      'PUCALLPA': '#B7D9FE',
+      'LA MERCED': '#FFC0B6',
+      'TINGO MARIA': '#D6F9FD',
+      'TARAPOTO': '#C2BBFE',
+      'SAN JUAN DE ORO': '#FED2F3',
+      'QUILLABAMBA': '#FEFEB9',
+      'IQUITOS': '#CAFEDA',
     };
 
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
@@ -1638,14 +1638,14 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Colores por ORG
     const colorMap: Record<string, string> = {
-      'OZ SAN FRANCISCO': '#FEEFD8',
-      'OZ PUCALLPA': '#B7D9FE',
-      'OZ LA MERCED': '#FFC0B6',
-      'OZ TINGO MARIA': '#D6F9FD',
-      'OZ TARAPOTO': '#C2BBFE',
-      'OZ SAN JUAN DE ORO': '#FED2F3',
-      'OZ QUILLABAMBA': '#FEFEB9',
-      'OZ IQUITOS': '#CAFEDA',
+      'SAN FRANCISCO': '#FEEFD8',
+      'PUCALLPA': '#B7D9FE',
+      'LA MERCED': '#FFC0B6',
+      'TINGO MARIA': '#D6F9FD',
+      'TARAPOTO': '#C2BBFE',
+      'SAN JUAN DE ORO': '#FED2F3',
+      'QUILLABAMBA': '#FEFEB9',
+      'IQUITOS': '#CAFEDA',
     };
 
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
@@ -1783,14 +1783,14 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Colores por ORG
     const colorMap: Record<string, string> = {
-      'OZ SAN FRANCISCO': '#FEEFD8',
-      'OZ PUCALLPA': '#B7D9FE',
-      'OZ LA MERCED': '#FFC0B6',
-      'OZ TINGO MARIA': '#D6F9FD',
-      'OZ TARAPOTO': '#C2BBFE',
-      'OZ SAN JUAN DE ORO': '#FED2F3',
-      'OZ QUILLABAMBA': '#FEFEB9',
-      'OZ IQUITOS': '#CAFEDA',
+      'SAN FRANCISCO': '#FEEFD8',
+      'PUCALLPA': '#B7D9FE',
+      'LA MERCED': '#FFC0B6',
+      'TINGO MARIA': '#D6F9FD',
+      'TARAPOTO': '#C2BBFE',
+      'SAN JUAN DE ORO': '#FED2F3',
+      'QUILLABAMBA': '#FEFEB9',
+      'IQUITOS': '#CAFEDA',
     };
 
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
@@ -1926,14 +1926,14 @@ export class DashboardComponent implements AfterViewInit {
 
     // 🔹 Colores por ORG
     const colorMap: Record<string, string> = {
-      'OZ SAN FRANCISCO': '#FEEFD8',
-      'OZ PUCALLPA': '#B7D9FE',
-      'OZ LA MERCED': '#FFC0B6',
-      'OZ TINGO MARIA': '#D6F9FD',
-      'OZ TARAPOTO': '#C2BBFE',
-      'OZ SAN JUAN DE ORO': '#FED2F3',
-      'OZ QUILLABAMBA': '#FEFEB9',
-      'OZ IQUITOS': '#CAFEDA',
+      'SAN FRANCISCO': '#FEEFD8',
+      'PUCALLPA': '#B7D9FE',
+      'LA MERCED': '#FFC0B6',
+      'TINGO MARIA': '#D6F9FD',
+      'TARAPOTO': '#C2BBFE',
+      'SAN JUAN DE ORO': '#FED2F3',
+      'QUILLABAMBA': '#FEFEB9',
+      'IQUITOS': '#CAFEDA',
     };
 
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
@@ -2030,7 +2030,7 @@ export class DashboardComponent implements AfterViewInit {
     const query = featureLayer.createQuery();
     query.where = whereClause;
     query.outStatistics = [statDef];
-    query.groupByFieldsForStatistics = ['DEPARTAMENTO'];
+    query.groupByFieldsForStatistics = ['departamento'];
     query.orderByFields = ['count_registros DESC']; // Ordenar de mayor a menor
 
     const ctx = document.getElementById('graficoPorDepartamento') as HTMLCanvasElement;
@@ -2053,7 +2053,7 @@ export class DashboardComponent implements AfterViewInit {
         return;
       }
 
-      const labels = result.features.map(f => f.attributes.DEPARTAMENTO).filter(Boolean); // Filtra nulos o vacíos
+      const labels = result.features.map(f => f.attributes.departamento).filter(Boolean); // Filtra nulos o vacíos
       const values = result.features.map(f => f.attributes.count_registros);
 
       this.charts.push(new Chart(ctx, {
