@@ -758,8 +758,7 @@ export class GeovisorSharedService {
   }
 
   //Servicio SISCOD-DEVIDA
-  public restApiDevida =
-    'https://siscod.devida.gob.pe/server/rest/services/DPM_LIMITES_PIRDAIS/MapServer';
+  public restSISCOD = 'https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer';
   public restCaribSurvey = {
     serviceBase:
       'https://services8.arcgis.com/tPY1NaqA2ETpJ86A/ArcGIS/rest/services',
@@ -779,7 +778,7 @@ export class GeovisorSharedService {
     {
       type: 'feature',
       title: 'POLIGONOS DE CULTIVO',
-      url: 'https://siscod.devida.gob.pe/server/rest/services/LIMITES_CULTIVOS/MapServer',
+      url: this.restSISCOD,
       visible: true,
       opacity: 1,
       minScale: 0,
@@ -788,7 +787,7 @@ export class GeovisorSharedService {
       // 🔹 Aquí defines las subcapas visibles
       sublayers: [
         {
-          id: 0,
+          id: 1,
           visible: true,
           labelsVisible: true,
           minScale: 0,
@@ -913,7 +912,7 @@ export class GeovisorSharedService {
     {
       type: 'map-image',
       title: 'OFICINAS ZONALES',
-      url: this.restApiDevida,
+      url: this.restSISCOD,
       visible: false, // Establecer la visibilidad por defecto en false
       opacity: 1,
       minScale: 0,
@@ -921,7 +920,7 @@ export class GeovisorSharedService {
       group: 'CARTOGRAFIA DEVIDA',
       sublayers: [
         {
-          id: 5,
+          id: 0,
           visible: true,
           labelsVisible: true,
           minScale: 0,
@@ -933,7 +932,7 @@ export class GeovisorSharedService {
     {
       type: 'map-image',
       title: 'DISTRITOS',
-      url: this.restApiDevida,
+      url: this.restSISCOD,
       visible: true,
       opacity: 0.9,
       minScale: 0,
@@ -941,7 +940,7 @@ export class GeovisorSharedService {
       group: 'LIMITES POLITICOS',
       sublayers: [
         {
-          id: 1,
+          id: 6,
           visible: true,
           labelsVisible: true,
           minScale: 0,
@@ -952,7 +951,7 @@ export class GeovisorSharedService {
     {
       type: 'map-image',
       title: 'PROVINCIA',
-      url: this.restApiDevida,
+      url: this.restSISCOD,
       visible: true,
       opacity: 0.9,
       minScale: 0,
@@ -960,7 +959,7 @@ export class GeovisorSharedService {
       group: 'LIMITES POLITICOS',
       sublayers: [
         {
-          id: 2,
+          id: 5,
           visible: true,
           labelsVisible: true,
           minScale: 0,
@@ -971,7 +970,7 @@ export class GeovisorSharedService {
     {
       type: 'map-image',
       title: 'DEPARTAMENTO',
-      url: this.restApiDevida,
+      url: this.restSISCOD,
       visible: true,
       opacity: 0.9,
       minScale: 0,
@@ -979,7 +978,7 @@ export class GeovisorSharedService {
       group: 'LIMITES POLITICOS',
       sublayers: [
         {
-          id: 3,
+          id: 4,
           visible: true,
           labelsVisible: true,
           minScale: 0,
@@ -1001,7 +1000,7 @@ export class GeovisorSharedService {
     {
       type: 'map-image',
       title: 'PERU',
-      url: this.restApiDevida,
+      url: this.restSISCOD,
       visible: true,
       opacity: 0.9,
       minScale: 0,
@@ -1009,7 +1008,7 @@ export class GeovisorSharedService {
       group: 'LIMITES POLITICOS',
       sublayers: [
         {
-          id: 4,
+          id: 3,
           visible: true,
           labelsVisible: true,
           minScale: 0,
@@ -1186,7 +1185,7 @@ export class GeovisorSharedService {
       },
       {
         layer: new FeatureLayer({
-          url: `${this.restApiDevida}/5`,
+          url: `${this.restSISCOD}/0`,
         }),
         searchFields: ['nombre'],
         displayField: 'nombre',
@@ -1629,7 +1628,7 @@ export class GeovisorSharedService {
   }
 
   public async getOficinasZonales(): Promise<{ nombre: string }[]> {
-    const layerUrl = `${this.restApiDevida}/5`;
+    const layerUrl = `${this.restSISCOD}/0`;
     const layer = new FeatureLayer({ url: layerUrl });
 
     try {
@@ -1680,7 +1679,7 @@ export class GeovisorSharedService {
       return;
     }
 
-    const sublayer = layer.sublayers?.find(sl => sl.id === 5);
+    const sublayer = layer.sublayers?.find(sl => sl.id === 0);
     if (!sublayer || !('queryFeatures' in sublayer)) {
       this.showToast("No se encontró la subcapa de Oficinas Zonales.", "error");
       return;
@@ -1713,7 +1712,7 @@ export class GeovisorSharedService {
   }
 
   public async getStatsForOficina(nombreOficina: string): Promise<OficinaStats> {
-    const layer = new FeatureLayer({ url: `${this.restApiDevida}/0` });
+    const layer = new FeatureLayer({ url: `${this.restSISCOD}/1` });
 
     // NOTA: El dashboard realiza el filtrado por oficina zonal en el cliente, no en el servidor.
     // Aunque es ineficiente porque trae todos los datos, replicamos ese patrón para asegurar consistencia,

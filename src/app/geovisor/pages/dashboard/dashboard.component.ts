@@ -131,7 +131,7 @@ registerLocaleData(localeEsPE, 'es-PE');
 })
 export class DashboardComponent implements AfterViewInit {
   /** URL del servicio de features de ArcGIS que contiene los datos de los cultivos. */
-  private readonly SERVICIO_PIRDAIS = 'https://siscod.devida.gob.pe/server/rest/services/LIMITES_CULTIVOS/MapServer/0';
+  private readonly SERVICIO_PIRDAIS = 'https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer/1';
   /** URL base para realizar consultas (queries) al servicio de features. */
   private readonly QUERY_SERVICIO = `${this.SERVICIO_PIRDAIS}/query`;
 

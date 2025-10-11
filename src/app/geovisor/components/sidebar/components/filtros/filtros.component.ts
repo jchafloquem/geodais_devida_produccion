@@ -4,9 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { GeovisorSharedService, OficinaStats } from '../../../../services/geovisor.service';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
-import StatisticDefinition from '@arcgis/core/rest/support/StatisticDefinition.js';
 
 
+/**
+ * @Component FiltrosComponent
+ * @description
+ * Componente encargado de gestionar los filtros por Oficina Zonal.
+ * Permite al usuario seleccionar una oficina, visualizarla en el mapa y
+ * obtener estadísticas detalladas sobre hectáreas y familias participantes.
+ */
 @Component({
   selector: 'app-filtros',
   standalone: true,
@@ -25,13 +31,23 @@ export class FiltrosComponent implements OnInit {
   public isStatsLoading = false;
 
   private pirdaisLayer = new FeatureLayer({
-    url: "https://siscod.devida.gob.pe/server/rest/services/LIMITES_CULTIVOS/MapServer/0"
+    url: "https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer/1"
   });
 
+  /**
+   * Hook del ciclo de vida de Angular. Se ejecuta al inicializar el componente.
+   * Llama al método para cargar la lista de oficinas zonales.
+   */
   ngOnInit(): void {
     this.cargarOficinas();
   }
 
+  /**
+   * Carga la lista de oficinas zonales desde el servicio compartido.
+   * Actualiza el estado de carga mientras se realiza la petición.
+   * @private
+   * @async
+   */
   private async cargarOficinas(): Promise<void> {
     this.isLoading = true;
     try {
@@ -43,6 +59,11 @@ export class FiltrosComponent implements OnInit {
     }
   }
 
+  /**
+   * Manejador del evento de búsqueda.
+   * Si hay una oficina seleccionada, solicita al servicio hacer zoom a su ubicación
+   * y dispara el cálculo de sus estadísticas.
+   */
   buscarOficina(): void {
     if (this.selectedOficina) {
       this._geovisorSharedService.zoomToOficinaZonal(this.selectedOficina);
@@ -52,24 +73,28 @@ export class FiltrosComponent implements OnInit {
     }
   }
 
+  /**
+   * Orquesta la carga de estadísticas para una oficina zonal específica.
+   * Gestiona el estado de carga y muestra notificaciones si no se encuentran datos.
+   * @param oficina El nombre de la oficina zonal a consultar.
+   * @private
+   * @async
+   */
   private async cargarEstadisticas(oficina: string): Promise<void> {
     this.stats = null;
     this.isStatsLoading = true;
     try {
       const calculatedStats = await this.calcularEstadisticasOficina(oficina);
 
-      // Si no se encuentran polígonos, mostrar un mensaje y no actualizar las estadísticas.
+      // Si no se encuentran polígonos, mostrar un mensaje, pero seguir mostrando las tarjetas con valor 0.
       if (calculatedStats.totalFamilias === 0 && calculatedStats.totalHectareas === 0) {
-        this.stats = null; // Limpiamos stats anteriores
         this._geovisorSharedService.showToast(`No se encontraron polígonos para la oficina ${oficina}.`, 'warning', true);
-        return; // Detenemos la ejecución aquí
       }
 
+      // Asignamos siempre las estadísticas para que las tarjetas se muestren, incluso si los valores son cero.
       this.stats = {
         ...calculatedStats
       };
-      console.log('Estadísticas finales calculadas:', this.stats);
-      console.log('Valor de totalHectareas:', this.stats.totalHectareas);
     } catch (error) {
       console.error(`Error al cargar estadísticas para ${oficina}`, error);
       this.stats = null;
@@ -78,71 +103,80 @@ export class FiltrosComponent implements OnInit {
     }
   }
 
+  /**
+   * Realiza la consulta al servicio de ArcGIS para obtener los datos de una oficina
+   * y calcula las estadísticas de hectáreas y familias.
+   * Utiliza paginación para manejar grandes volúmenes de datos y normaliza los
+   * nombres de los cultivos para asegurar la consistencia del conteo.
+   * @param oficina El nombre de la oficina zonal.
+   * @returns Una promesa que resuelve a un objeto `OficinaStats` con los datos calculados.
+   * @private
+   * @async
+   */
   private async calcularEstadisticasOficina(oficina: string): Promise<OficinaStats> {
-    const dnisCacao = new Set<string>();
-    const dnisCafe = new Set<string>();
-    const dnisTotal = new Set<string>();
-    let totalHectareas = 0;
-    let hectareasCacao = 0;
-    let hectareasCafe = 0;
+    const oficinaUpper = oficina.trim().toUpperCase();
+    const whereClause = `UPPER(oficina_zonal) = '${oficinaUpper}'`;
+
+    // Se replica la lógica del dashboard para asegurar consistencia en los cálculos.
+    // Esto implica descargar los registros y procesarlos en el cliente para manejar
+    // posibles inconsistencias en los datos de 'tipo_cultivo'.
 
     try {
-      // Normalización del nombre de la oficina para corregir inconsistencias de datos entre servicios.
-      // Esto asegura que los nombres coincidan con los valores en la capa de polígonos.
-      let oficinaParaQuery = oficina.trim().toUpperCase();
-
-      // Caso específico: 'SAN JUAN DEL ORO' en el servicio de oficinas vs 'SAN JUAN DE ORO' en polígonos.
-      if (oficinaParaQuery === 'SAN JUAN DEL ORO') {
-        oficinaParaQuery = 'SAN JUAN DE ORO';
-      }
-      // Caso genérico: Eliminar tildes como en 'TINGO MARÍA' vs 'TINGO MARIA'.
-      oficinaParaQuery = oficinaParaQuery.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
+      const allFeatures: __esri.Graphic[] = [];
       const query = this.pirdaisLayer.createQuery();
-      // 1. Filtramos DIRECTAMENTE en el servidor. Es mucho más eficiente.
-      // Usamos UPPER() para una comparación insensible a mayúsculas/minúsculas, lo que resuelve el problema.
-      query.where = `UPPER(oficina_zonal) = '${oficinaParaQuery}'`;
+      query.where = whereClause;
       query.outFields = ["dni_participante", "tipo_cultivo", "area_cultivo"];
       query.returnGeometry = false;
 
-      console.log(`Consultando al servidor con el filtro: ${query.where}`);
+      // Paginación para manejar el límite de transferencia de registros del servidor.
+      const pageSize = 2000;
+      let start = 0;
+      let hasMore = true;
+      while (hasMore) {
+        query.start = start;
+        query.num = pageSize;
+        const featureSet = await this.pirdaisLayer.queryFeatures(query);
+        allFeatures.push(...featureSet.features);
+        start += featureSet.features.length;
+        hasMore = featureSet.exceededTransferLimit === true;
+      }
 
-      const featureSet = await this.pirdaisLayer.queryFeatures(query);
-      const officeFeatures = featureSet.features;
-
-      console.log(`Encontrados ${officeFeatures.length} registros para la oficina '${oficina}' desde el servidor.`);
-
-      // 2. Si el servidor no devuelve resultados, retornamos estadísticas en cero.
-      if (officeFeatures.length === 0) {
-        console.warn(`No se encontraron polígonos para la oficina ${oficina}.`);
+      if (allFeatures.length === 0) {
         return { totalHectareas: 0, hectareasCacao: 0, hectareasCafe: 0, totalFamilias: 0, familiasCacao: 0, familiasCafe: 0, familiasAmbos: 0 };
       }
 
-      // 3. Calculamos las estadísticas sobre los datos ya filtrados por el servidor.
-      officeFeatures.forEach(feature => {
-          const attrs = feature.attributes;
-          const dni = attrs.dni_participante;
-          const area = attrs.area_cultivo || 0;
-          const cultivo = (attrs.tipo_cultivo || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const dnisCacao = new Set<string>();
+      const dnisCafe = new Set<string>();
+      const dnisTotal = new Set<string>();
+      let totalHectareas = 0;
+      let hectareasCacao = 0;
+      let hectareasCafe = 0;
 
-          // Sumar hectáreas
-          totalHectareas += area;
+      allFeatures.forEach(feature => {
+        const attrs = feature.attributes;
+        const dni = attrs.dni_participante;
+        const area = attrs.area_cultivo || 0;
+        // Lógica de normalización robusta, igual a la del dashboard.
+        const cultivoRaw = (attrs.tipo_cultivo || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim();
 
-          if (dni) {
-            dnisTotal.add(dni);
-          }
+        totalHectareas += area;
+        if (dni) dnisTotal.add(dni);
 
-          if (cultivo.includes("cacao")) {
-            hectareasCacao += area;
-            if (dni) dnisCacao.add(dni);
-          }
-          if (cultivo.includes("cafe")) {
-            hectareasCafe += area;
-            if (dni) dnisCafe.add(dni);
-          }
-        });
+        if (cultivoRaw.includes("cacao")) {
+          hectareasCacao += area;
+          if (dni) dnisCacao.add(dni);
+        }
+        if (cultivoRaw.includes("cafe")) {
+          hectareasCafe += area;
+          if (dni) dnisCafe.add(dni);
+        }
+      });
 
-      const dnisAmbos = new Set([...dnisCacao].filter(dni => dnisCafe.has(dni))).size;
+      const familiasAmbos = [...dnisCacao].filter(dni => dnisCafe.has(dni)).length;
 
       return {
         totalHectareas,
@@ -151,7 +185,7 @@ export class FiltrosComponent implements OnInit {
         totalFamilias: dnisTotal.size,
         familiasCacao: dnisCacao.size,
         familiasCafe: dnisCafe.size,
-        familiasAmbos: dnisAmbos
+        familiasAmbos: familiasAmbos
       };
     } catch (error) {
       console.error("Error al calcular estadísticas de la oficina:", error);
@@ -159,6 +193,11 @@ export class FiltrosComponent implements OnInit {
     }
   }
 
+  /**
+   * Restablece el filtro.
+   * Limpia la oficina seleccionada, quita cualquier resaltado del mapa
+   * y oculta el panel de estadísticas.
+   */
   limpiarFiltro(): void {
     this.selectedOficina = null;
     this._geovisorSharedService.clearHighlights();
