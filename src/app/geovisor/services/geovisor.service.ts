@@ -21,6 +21,7 @@ import proj4 from 'proj4';
 import StatisticDefinition from '@arcgis/core/rest/support/StatisticDefinition.js';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
+import UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
 import WebTileLayer from '@arcgis/core/layers/WebTileLayer';
 import Zoom from '@arcgis/core/widgets/Zoom.js';
 
@@ -470,6 +471,48 @@ const restCaribRecopilacion = new PopupTemplate({
   ],
 });
 
+// Renderer para la capa de polígonos de cultivo basado en el campo 'tipo_cultivo'
+const cultivosRenderer = new UniqueValueRenderer({
+  field: 'tipo_cultivo',
+  // Símbolo por defecto para cualquier cultivo que no sea Cacao o Café
+  defaultLabel: 'OTROS', // ✅ Esta es la propiedad correcta para la etiqueta en la leyenda
+  defaultSymbol: {
+    type: 'simple-fill',
+    color: [150, 150, 150, 0.5], // Gris
+    outline: {
+      color: 'white',
+      width: 1,
+    },
+  } as any,
+  uniqueValueInfos: [
+    {
+      // Valor del campo 'tipo_cultivo'
+      value: 'CACAO',
+      label: 'CACAO',
+      symbol: {
+        type: 'simple-fill',
+        color: '#734C24', // Color Marrón (personalizable)
+        outline: {
+          color: 'yellow',
+          width: 1
+        },
+      } as any,
+    },
+    {
+      value: 'CAFE',
+      label: 'CAFÉ',
+      symbol: {
+        type: 'simple-fill',
+        color: '#4C7300', // Color Verde Oscuro (personalizable)
+        outline: {
+          color: 'white',
+          width: 1
+        },
+      } as any,
+    },
+  ],
+});
+
 export interface OficinaStats {
   totalHectareas: number;
   hectareasCacao: number;
@@ -776,11 +819,11 @@ export class GeovisorSharedService {
   };
   public layers: LayerConfig[] = [
     {
-      type: 'feature',
-      title: 'POLIGONOS DE CULTIVO',
-      url: this.restSISCOD,
+      type: 'map-image',
+      //title: 'POLIGONOS DE CULTIVO',
+      url: `${this.restSISCOD}`,
       visible: true,
-      opacity: 1,
+      opacity: 0.8,
       minScale: 0,
       maxScale: 0,
       group: '(PIRDAIS)',
@@ -793,12 +836,13 @@ export class GeovisorSharedService {
           minScale: 0,
           maxScale: 0,
           popupTemplate: popupPoligonoCultivo,
+          renderer: cultivosRenderer,
         },
       ],
     },
     {
       type: 'map-image',
-      title: 'ANP - AREAS NATURALES PROTEGIDAS',
+      //title: 'ANP - AREAS NATURALES PROTEGIDAS',
       url: `https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/OCAPAS_SERNANP/MapServer`,
       visible: false,
       opacity: 0.5,
@@ -816,7 +860,7 @@ export class GeovisorSharedService {
     },
     {
       type: 'map-image',
-      title: 'MONITOREO DEFORESTACION',
+      //title: 'MONITOREO DEFORESTACION',
       url: `https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/Monitoreo_Deforestacion_Tala/MapServer`,
       visible: false,
       opacity: 0.5,
@@ -835,7 +879,7 @@ export class GeovisorSharedService {
     },
     {
       type: 'map-image',
-      title: 'COMUNIDADES NATIVAS',
+      //title: 'COMUNIDADES NATIVAS',
       url: `https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/OCAPAS_SERNANP/MapServer`,
       visible: false,
       opacity: 0.5,
@@ -854,7 +898,7 @@ export class GeovisorSharedService {
     },
     {
       type: 'map-image',
-      title: 'ZA-ZONAS DE AMORTIGUAMIENTO',
+      //title: 'ZA-ZONAS DE AMORTIGUAMIENTO',
       url: `https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/OCAPAS_SERNANP/MapServer`,
       visible: false,
       opacity: 0.5,
@@ -873,7 +917,7 @@ export class GeovisorSharedService {
     },
     {
       type: 'map-image',
-      title: 'ACR-AREAS DE CONSERVACION REGIONAL',
+      //title: 'ACR-AREAS DE CONSERVACION REGIONAL',
       url: `https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/OCAPAS_SERNANP/MapServer`,
       visible: false,
       opacity: 0.5,
@@ -891,8 +935,8 @@ export class GeovisorSharedService {
       ],
     },
     {
-      type: 'feature',
-      title: 'BPP-BOSQUE DE PRODUCCION PERMANENTE',
+      type: 'map-image',
+      //title: 'BPP-BOSQUE DE PRODUCCION PERMANENTE',
       url: `https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/Ordenamiento_Forestal/MapServer`,
       visible: true,
       opacity: 0.5,
@@ -911,7 +955,7 @@ export class GeovisorSharedService {
     },
     {
       type: 'map-image',
-      title: 'OFICINAS ZONALES',
+      //title: 'OFICINAS ZONALES',
       url: this.restSISCOD,
       visible: false, // Establecer la visibilidad por defecto en false
       opacity: 1,
@@ -931,7 +975,7 @@ export class GeovisorSharedService {
     //(Limites Politicos)
     {
       type: 'map-image',
-      title: 'DISTRITOS',
+      //title: 'DISTRITOS',
       url: this.restSISCOD,
       visible: true,
       opacity: 0.9,
@@ -950,7 +994,7 @@ export class GeovisorSharedService {
     },
     {
       type: 'map-image',
-      title: 'PROVINCIA',
+      //title: 'PROVINCIA',
       url: this.restSISCOD,
       visible: true,
       opacity: 0.9,
@@ -969,7 +1013,7 @@ export class GeovisorSharedService {
     },
     {
       type: 'map-image',
-      title: 'DEPARTAMENTO',
+      //title: 'DEPARTAMENTO',
       url: this.restSISCOD,
       visible: true,
       opacity: 0.9,
@@ -998,7 +1042,7 @@ export class GeovisorSharedService {
     },
     {
       type: 'map-image',
-      title: 'PERU',
+      //title: 'PERU',
       url: this.restSISCOD,
       visible: true,
       opacity: 0.9,
@@ -1017,7 +1061,7 @@ export class GeovisorSharedService {
     },
     {
       type: 'feature',
-      title: 'VISITAS DE MONITOREO',
+      //title: 'VISITAS DE MONITOREO',
       url: `${this.restCaribSurvey.serviceBase}/${this.restCaribSurvey.capas.recopilacion}`,
       labelingInfo: [],
       popupTemplate: restCaribRecopilacion,
@@ -1128,10 +1172,10 @@ export class GeovisorSharedService {
           .load()
           .then(() => this.actualizarSelectCapas());
       } else if (lyr.type === 'map-image') {
-        (lyr as __esri.MapImageLayer).sublayers?.forEach((sub) => {
-          (sub as unknown as __esri.FeatureLayer)
-            .load()
-            .then(() => this.actualizarSelectCapas());
+        (lyr as __esri.MapImageLayer).load().then(() => {
+          // Una vez que la capa de imagen de mapa está cargada,
+          // sus subcapas también lo están.
+          this.actualizarSelectCapas();
         });
       }
     });
