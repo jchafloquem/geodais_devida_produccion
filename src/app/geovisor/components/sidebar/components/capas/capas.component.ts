@@ -38,10 +38,13 @@ export class CapasComponent implements OnInit {
 			layers: groupedLayers[groupTitle],
 		}));
 	}
-	toggleLayer(title: string): void {
+	toggleLayer(title: string | undefined): void {
+		if (!title) {
+			return;
+		}
 		const currentVisibility = this._geovisorSharedService.getLayerVisibility(title);
 		this._geovisorSharedService.layers.forEach((layer) => {
-			if (layer.title === title!) {
+			if (layer.title === title) {
 				layer.visible = !currentVisibility;
 			}
 		});
