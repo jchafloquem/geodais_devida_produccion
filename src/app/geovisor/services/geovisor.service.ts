@@ -543,6 +543,7 @@ export class GeovisorSharedService {
     { zIndex: string; position: string; boxShadow: string }
   > = new Map();
   private previousLayerVisibility: Map<string, boolean> = new Map();
+  private _oficinasZonalesCache: { nombre: string }[] | null = null;
 
   //Método auxiliar para mostrar los mensajes toast.
     public showToast(
@@ -1082,6 +1083,7 @@ export class GeovisorSharedService {
   public utmEast = '00.00';
   public utmNorth = '00.00';
   public scale = '00.00';
+  private scaleWatcher: __esri.WatchHandle | null = null;
   public legend!: Legend;
 
   constructor() {
@@ -1186,11 +1188,16 @@ export class GeovisorSharedService {
       this.mapa.layers.on('change', () => {
         this.actualizarSelectCapas();
       });
-      reactiveUtils.watch(
+      // Limpiamos cualquier watcher anterior para evitar fugas de memoria.
+      if (this.scaleWatcher) {
+        this.scaleWatcher.remove();
+      }
+      // Creamos un nuevo watcher y guardamos su manejador para poder limpiarlo después.
+      this.scaleWatcher = reactiveUtils.watch(
         () => this.view!.scale,
         (scale) => {
           this.scale = this.formatScale(scale);
-        }
+        }, { initial: true } // { initial: true } para que se ejecute una vez al inicio
       );
     });
     //Arreglo para control de busqueda
@@ -1669,7 +1676,12 @@ export class GeovisorSharedService {
     this.coordinateMarkerLayer.removeAll();
   }
 
-  public async getOficinasZonales(): Promise<{ nombre: string }[]> {
+  public async getOficinasZonales(forceRefresh = false): Promise<{ nombre: string }[]> {
+    // Si tenemos datos en caché y no se fuerza la actualización, los devolvemos directamente.
+    if (this._oficinasZonalesCache && !forceRefresh) {
+      return this._oficinasZonalesCache;
+    }
+
     const layerUrl = `${this.restSISCOD}/0`;
     const layer = new FeatureLayer({ url: layerUrl });
 
@@ -1679,11 +1691,17 @@ export class GeovisorSharedService {
       query.outFields = ["nombre"];
       query.returnGeometry = false;
       query.orderByFields = ["nombre"];
+      // Pedimos todos los resultados para evitar paginación en una lista que debería ser corta.
+      query.num = 200;
 
       const featureSet = await layer.queryFeatures(query);
 
       const nombresUnicos = new Set(featureSet.features.map(f => f.attributes.nombre));
-      return Array.from(nombresUnicos).sort().map(nombre => ({ nombre }));
+      const resultado = Array.from(nombresUnicos).sort().map(nombre => ({ nombre }));
+
+      // Guardamos el resultado en caché para futuras llamadas.
+      this._oficinasZonalesCache = resultado;
+      return resultado;
 
     } catch (error) {
       console.error("Error al obtener las oficinas zonales:", error);
@@ -1862,7 +1880,38 @@ export class GeovisorSharedService {
     this.previousLayerVisibility.clear();
   }
 
-    destroyMap(): void {if (this.view) {this.view.container = null;}}
+    destroyMap(): void {
+      // Es crucial remover los watchers para evitar que se ejecuten sobre una vista destruida.
+      if (this.scaleWatcher) {
+        this.scaleWatcher.remove();
+        this.scaleWatcher = null;
+      }
+
+      if (this.view) {
+        // view.destroy() es el método oficial para limpiar completamente la vista
+        // y todos sus recursos asociados (widgets, listeners, watchers, etc.).
+        // Esto previene fugas de memoria y errores como el que experimentas.
+        this.view.destroy();
+        this.view = null;
+      }
+    }
+
+    public resetMapState(): void {
+      this.destroyMap();
+      if (this.mapa) {
+        this.mapa.destroy();
+      }
+      // Se vuelve a crear el mapa base.
+      this.mapa = new EsriMap({ basemap: 'satellite' });
+
+      // Es CRUCIAL volver a crear estas capas, ya que se destruyen junto con el mapa anterior.
+      // Si no se recrean, se intentará añadir capas destruidas al nuevo mapa, causando errores.
+      this.highlightLayer = new GraphicsLayer({ id: 'highlight-overlaps' });
+      this.coordinateMarkerLayer = new GraphicsLayer({ id: 'coordinate-marker' });
+
+      this.mapa.add(this.highlightLayer);
+      this.mapa.add(this.coordinateMarkerLayer);
+    }
     //Inicio del Toogle
     toggleLayerVisibility(layerTitle: string, visibility: boolean): void {
       const layer = this.mapa.layers.find((layer) => layer.title === layerTitle);
