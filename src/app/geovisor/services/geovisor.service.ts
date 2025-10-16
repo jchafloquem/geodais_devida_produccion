@@ -118,7 +118,7 @@ export class GeovisorSharedService {
       opacity: 0.8,
       minScale: 0,
       maxScale: 0,
-      group: '(PIRDAIS)',
+      group: '(DAIS)',
       // 🔹 Aquí defines las subcapas visibles
       sublayers: [
         {
@@ -361,7 +361,7 @@ export class GeovisorSharedService {
       visible: false,
       labelsVisible: false,
       opacity: 1,
-      group: '(PIRDAIS)',
+      group: '(DAIS)',
     },
   ];
 
@@ -1946,7 +1946,7 @@ export class GeovisorSharedService {
       let capaBSelTitle = "capa seleccionada";
 
       try {
-        console.log("📡 Cargando capa PIRDAIS...");
+        console.log("📡 Cargando capa DAIS...");
         const capaDevida = new FeatureLayer({
           url: "https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer/1"
         });
@@ -2025,7 +2025,7 @@ export class GeovisorSharedService {
                 } as any,
                 popupTemplate: {
                   title: "Superposición detectada",
-                  content: `Polígono de <b>${capaBSelTitle}</b> se superpone con PIRDAIS.`
+                  content: `Polígono de <b>${capaBSelTitle}</b> se superpone con DAIS.`
                 }
               });
             }
