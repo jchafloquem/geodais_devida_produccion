@@ -7,8 +7,6 @@ export interface LayerConfig {
   opacity?: number;
   minScale?: number;
   maxScale?: number;
-
-
   // 🔹 Propios de FeatureLayer
   popupTemplate?: __esri.PopupTemplate;
   renderer?: __esri.Renderer;
@@ -16,8 +14,6 @@ export interface LayerConfig {
   labelsVisible?: boolean;
   outFields?: string[];
   featureReduction?: any;
-
-
   // 🔹 Propios de MapImageLayer
   sublayers?: {
     id: number;
