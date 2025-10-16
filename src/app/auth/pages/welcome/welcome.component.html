@@ -1,124 +1,83 @@
-<div
-  class="relative min-h-screen flex items-center justify-center overflow-hidden bg-gray-900"
->
+<div class="relative min-h-screen flex items-center justify-center overflow-hidden bg-gray-900">
   <!-- Imagen de fondo con animación -->
-  <div
-    class="absolute inset-0 bg-cover bg-center bg-no-repeat animate-zoom animate-background"
-  ></div>
+  <div class="absolute inset-0 bg-cover bg-center bg-no-repeat animate-zoom animate-background"></div>
 
   <!-- Overlay oscuro para mejorar contraste -->
   <div class="absolute inset-0 bg-black bg-opacity-50"></div>
   <!-- Logo en la esquina superior izquierda -->
   <div class="absolute top-4 left-4">
-    <img
-      class="h-16 w-auto hidden sm:block"
-      src="assets/images/logos/logoWelBN.png"
-      alt="DEVIDA"
-    />
-    <img
-      class="h-16 w-auto sm:hidden"
-      src="assets/images/logos/logoWelBNMini.png"
-      alt="DEVIDA"
-    />
+    <img class="h-16 w-auto hidden sm:block" src="assets/images/logos/logoWelBN.png" alt="DEVIDA" />
+    <img class="h-16 w-auto sm:hidden" src="assets/images/logos/logoWelBNMini.png" alt="DEVIDA" />
   </div>
 
   <!-- Contenido principal -->
   <div class="relative z-10 text-white text-center px-6">
     <!-- Título -->
-    <h1
-      id="welcome-title"
-      class="mt-2 text-4xl md:text-6xl font-bold flex items-center justify-center gap-3 flex-wrap"
-    >
-      <img
-        src="assets/images/geoico.png"
-        alt="Ícono Geoportal"
-        class="w-12 h-12 md:w-16 md:h-16"
-      />
-      <span class="hover:text-[#0D9BD7] transition-colors duration-300"
-        >GeoCULTIVOS</span
-      >
+    <h1 id="welcome-title" class="mt-2 text-4xl md:text-6xl font-bold flex items-center justify-center gap-3 flex-wrap">
+      <img src="assets/images/geoico.png" alt="Ícono Geoportal" class="w-12 h-12 md:w-16 md:h-16" />
+      <span class="hover:text-primary transition-colors duration-300">GeoCULTIVOS DAIS</span>
     </h1>
 
     <!-- Subtítulo -->
-    <h2
-      class="mt-2 text-2xl md:text-4xl font-bold hover:text-[#0D9BD7] transition-colors duration-300"
-    >
+    <h2 class="mt-2 text-2xl md:text-4xl font-bold hover:text-primary transition-colors duration-300">
       DIRECCIÓN DE PROMOCION Y MONITOREO
     </h2>
 
     <!-- Descripción -->
-    <p
-      class="text-lg md:text-xl lg:text-2xl mt-4 max-w-xl mx-auto text-gray-300"
-    >
-      Accede a información cartográfica georreferenciada de manera fácil y
-      rápida.
+    <p class="text-lg md:text-xl lg:text-2xl mt-4 max-w-xl mx-auto text-white hover:text-primary">
+      Accede fácilmente a información cartográfica georreferenciada del DAIS para el seguimiento y análisis territorial.
     </p>
 
-    <!-- Botón para iniciar el tour -->
-    <div class="mt-8">
-      <button (click)="startTour()" class="bg-[#0D9BD7] hover:bg-[#0Da642] text-white font-bold py-2 px-4 rounded-full transition-all duration-300">
-        ✨ Iniciar Tour Virtual
-      </button>
-    </div>
-
     <!-- Contenedor de botones -->
-    <div
-      id="main-buttons"
-      class="mt-8 bg-opacity-60 rounded-lg mx-auto p-6 flex flex-wrap justify-center gap-6"
-    >
-      <div *ngFor="let boton of botones" class="flex flex-col items-center" [id]="'button-' + boton.texto.toLowerCase()">
-        <a
-        [routerLink]="boton.link"
-        class="flex w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 justify-center items-center bg-[#0D9BD7] text-white rounded-full border-2 border-white shadow-lg hover:scale-110 transition-transform duration-300 focus:ring-4 focus:ring-blue-500"
-      >
-        <img
-          [src]="boton.icono"
-          [alt]="boton.alt"
-          class="w-3/4 h-3/4 object-contain"
-        />
-      </a>
-      <span class="mt-2 text-sm md:text-base font-semibold">
-        {{ boton.texto }}
-      </span>
-    </div>
-  </div>
+    <div id="main-buttons" class="mt-8 bg-opacity-60 rounded-lg mx-auto p-6 flex flex-wrap justify-center gap-6">
+      <!-- Botón para Iniciar Tour Virtual -->
+      <div id="button-tour" class="flex flex-col items-center group">
+        <!-- Wrapper para el efecto de borde animado -->
+        <div class="animated-border-wrapper group-hover:scale-110 transition-all duration-300">
+          <button (click)="startTour()"
+            class="flex w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 justify-center items-center bg-primary text-white rounded-full shadow-lg focus:ring-4 focus:bg-secondary focus:ring-primary">
+            <img src="https://cdn-icons-png.freepik.com/512/6554/6554183.png" alt="Iniciar Tour Virtual" class="w-2/3 h-2/3 object-contain" />
+          </button>
+        </div>
+        <span class="mt-2 text-sm md:text-base font-semibold">
+          TOUR VIRTUAL
+        </span>
+      </div>
 
+      <div *ngFor="let boton of botones" class="flex flex-col items-center group"
+        [id]="'button-' + boton.texto.toLowerCase()">
+        <!-- Wrapper para el efecto de borde animado -->
+        <div class="animated-border-wrapper group-hover:scale-110 transition-all duration-300">
+          <a [routerLink]="boton.link"
+            class="flex w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 justify-center items-center bg-primary text-white rounded-full shadow-lg focus:ring-4 focus:bg-secondary focus:ring-primary">
+            <img [src]="boton.icono" [alt]="boton.alt" class="w-2/3 h-2/3 object-contain" />
+          </a>
+        </div>
+        <span class="mt-2 text-sm md:text-base font-semibold">
+          {{ boton.texto }}
+        </span>
+      </div>
+    </div>
 
     <!-- Redes Sociales -->
     <div id="social-media-links" class="mt-8 flex justify-center gap-6 text-2xl">
-      <a
-        href="https://web.facebook.com/PCMDEVIDA"
-        target="_blank"
-        class="hover:text-[#0D9BD7] transition-colors duration-300"
-      >
+      <a href="https://web.facebook.com/PCMDEVIDA" target="_blank"
+        class="hover:text-[#0D9BD7] transition-colors duration-300">
         <i class="fab fa-facebook"></i>
       </a>
-      <a
-        href="https://x.com/DEVIDAPERU"
-        target="_blank"
-        class="hover:text-gray-400 transition-colors duration-300"
-      >
+      <a href="https://x.com/DEVIDAPERU" target="_blank" class="hover:text-gray-400 transition-colors duration-300">
         <i class="fab fa-x-twitter"></i>
       </a>
-      <a
-        href="https://www.instagram.com/devidaperu"
-        target="_blank"
-        class="hover:text-[#e4405f] transition-colors duration-300"
-      >
+      <a href="https://www.instagram.com/devidaperu" target="_blank"
+        class="hover:text-[#e4405f] transition-colors duration-300">
         <i class="fab fa-instagram"></i>
       </a>
-      <a
-        href="https://pe.linkedin.com/company/devida-per-"
-        target="_blank"
-        class="hover:text-[#0077b5] transition-colors duration-300"
-      >
+      <a href="https://pe.linkedin.com/company/devida-per-" target="_blank"
+        class="hover:text-[#0077b5] transition-colors duration-300">
         <i class="fab fa-linkedin"></i>
       </a>
-      <a
-        href="https://www.threads.net/@devidaperu"
-        target="_blank"
-        class="hover:text-gray-400 transition-colors duration-300"
-      >
+      <a href="https://www.threads.net/@devidaperu" target="_blank"
+        class="hover:text-gray-400 transition-colors duration-300">
         <i class="fab fa-threads"></i>
       </a>
     </div>

@@ -20,3 +20,64 @@
 .animate-background {
   animation: backgroundChange 10s ease-in-out infinite;
 }
+/*
+ * Define la animación de rotación antihoraria.
+ * Al estar en el SCSS del componente, este @keyframes solo existe para este componente.
+ */
+ @keyframes rotate-border {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+/*
+ * Para asegurar que la animación compleja con pseudo-elementos funcione
+ * correctamente con la encapsulación de estilos de Angular, usamos :host
+ * para apuntar al componente y ::ng-deep para aplicar los estilos de forma fiable.
+ */
+:host {
+  // Usamos ::ng-deep para asegurar que los estilos complejos (pseudo-elementos, animación)
+  // no sean bloqueados por la encapsulación de estilos de Angular.
+  ::ng-deep {
+    .animated-border-wrapper {
+      position: relative;
+      border-radius: 9999px; // fully-rounded
+
+      // Este pseudo-elemento es la "luz" que gira.
+      &::before {
+        content: '';
+        position: absolute;
+        z-index: 0;
+        // Lo hacemos un poco más grande que el botón para que parezca un borde
+        top: -5px;
+        left: -5px;
+        right: -5px;
+        bottom: -5px;
+        border-radius: inherit; // Hereda la forma redondeada del contenedor
+        background: conic-gradient(
+          from 180deg at 50% 50%,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0) 70%,
+          #ffffff 95%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        animation: rotate-border 4s linear infinite;
+        animation-play-state: paused; // La animación está pausada por defecto
+        opacity: 0;
+        transition: opacity 0.4s ease-in-out;
+      }
+
+      // Nos aseguramos de que el botón/enlace real esté siempre por encima.
+      & > * {
+        position: relative;
+        z-index: 1;
+      }
+    }
+
+    // Cuando el contenedor padre 'group' está en hover, activamos la animación.
+    // Esto sincroniza el efecto de luz con el efecto de escala del botón.
+    .group:hover .animated-border-wrapper::before {
+      opacity: 1; // Aumentamos la opacidad para un brillo máximo
+      animation-play-state: running;
+    }
+  }
+}
