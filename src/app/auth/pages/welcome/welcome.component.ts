@@ -26,7 +26,7 @@ export default class WelcomeComponent implements AfterViewInit {
 
   ngAfterViewInit(): void { }
 
-  startTour() {
+  startTourWelcome() {
     const driverObj = driver({
       showProgress: true,
       nextBtnText: 'Siguiente →',
