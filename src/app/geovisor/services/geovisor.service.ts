@@ -24,14 +24,14 @@ import {
   Legend,
   Zoom,
   StatisticDefinition
-} from './arcgis-imports';
+} from '../interfaces/arcgis-imports';
 //Importación de Popup Template de ArcGIS 4.33
 import {
   cultivosRenderer,
   popupPoligonoCultivo,
   recopilacionRenderer,
   restCaribRecopilacion,
-} from './popup-templates';
+} from '../interfaces/popup-templates';
 import { TourService } from './tour.service';
 
 export interface OficinaStats {

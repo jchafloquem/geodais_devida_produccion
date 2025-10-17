@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { MapView } from './arcgis-imports';
+import { MapView } from '../interfaces/arcgis-imports';
 
 @Injectable({
   providedIn: 'root',

@@ -18,7 +18,7 @@ export default [
 				path: 'reportes',
         title:'Reportes',
         canActivate: [publicGuard()],
-				loadComponent: () => import('./pages/report/report.component').then ( m => m.ReportComponent),
+				loadComponent: () => import('./pages/reporte/report.component').then ( m => m.ReportComponent),
 			},
 			{
 				path: 'repositorio',

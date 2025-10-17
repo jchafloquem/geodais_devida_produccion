@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { AuthStateService } from '../../../auth/shared/access/auth-state.service';
-import { GeovisorSharedService } from '../../services/geovisor.service';
+import { AuthStateService } from '../../../../../auth/shared/access/auth-state.service';
+import { GeovisorSharedService } from '../../../../services/geovisor.service';
 
 @Component({
   selector: 'app-navbarmenu',
