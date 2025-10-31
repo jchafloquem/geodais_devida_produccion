@@ -527,6 +527,7 @@ export class DashboardComponent implements AfterViewInit {
     // 🔹 Colores por Oficina Zonal
     const colorMap: Record<string, string> = {
       'SAN FRANCISCO': '#FEEFD8',
+      'JAEN': '#FFBEBE',
       'PUCALLPA': '#B7D9FE',
       'LA MERCED': '#FFC0B6',
       'TINGO MARIA': '#D6F9FD',
