@@ -45,8 +45,8 @@ export default class LoginComponent {
       const { usuario, password } = this.form.value;
       if (!usuario || !password) return;
 
-      // URL completa del servicio de autenticación. Requiere que el servidor de destino tenga CORS configurado.
-      const apiUrl = 'https://wsautenticacionside.devida.gob.pe/api/Seguridad/AutenticarSIGA';
+      // URL relativa para que sea interceptada por el proxy (local y en Netlify).
+      const apiUrl = '/api/Seguridad/AutenticarSIGA';
       const body = {
         login: usuario,
         clave: password
