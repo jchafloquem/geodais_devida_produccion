@@ -41,7 +41,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     const userSessionData = localStorage.getItem('userSessionData');
-    // Plan A (Ideal): Intentar cargar los datos completos de la sesión.
+    // La única fuente de verdad: leer los datos completos de la sesión del usuario.
     if (userSessionData) {
       try {
         this.usuario = JSON.parse(userSessionData);
@@ -49,27 +49,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       } catch (error) {
         console.error('Error al parsear los datos de sesión desde localStorage', error);
         this.usuario = null;
-      }
-    } else {
-      // Plan B (Respaldo): Si no hay datos de sesión, intentar decodificar el token.
-      // Esto hará visible el componente aunque los nombres de propiedad no coincidan.
-      const authToken = localStorage.getItem('authToken');
-      if (authToken) {
-        try {
-          const tokenParts = authToken.split('.');
-          if (tokenParts.length > 1) {
-            this.usuario = JSON.parse(atob(tokenParts[1]));
-            // --- INICIO DE CAMBIO: Diagnóstico ---
-            // Imprimimos el contenido real del token en la consola del navegador (F12)
-            // para ver qué propiedades tiene y usar el nombre correcto en el HTML.
-            console.log('Datos decodificados del token:', this.usuario);
-            // --- FIN DE CAMBIO ---
-            this.iniciarContadorSesion();
-          }
-        } catch (error) {
-          console.error('Error al decodificar el token JWT desde localStorage', error);
-          this.usuario = null;
-        }
       }
     }
   }

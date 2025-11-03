@@ -4,17 +4,9 @@ import { Router, RouterModule } from '@angular/router';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { isRequired } from '../../utils/validators';
+import { Usuario } from '../../interfaces/usuario';
 import { toast } from 'ngx-sonner';
 import { CommonModule } from '@angular/common';
-
-interface AuthResponse {
-  Operacion: number;
-  Autenticado: boolean;
-  Token: string;
-  Mensaje: string;
-  NombreCompleto: string;
-  // ... puedes agregar el resto de las propiedades si las necesitas
-}
 
 @Component({
     imports: [CommonModule, RouterModule, ReactiveFormsModule, HttpClientModule],
@@ -26,8 +18,7 @@ export default class LoginComponent {
 	private _router = inject(Router);
 	private _http = inject(HttpClient);
 
-	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	isRequired(field: 'usuario' | 'password') {
+	isRequired(field: 'usuario' | 'password'): boolean | null {
 		return isRequired(field, this.form);
 	}
 
@@ -35,7 +26,7 @@ export default class LoginComponent {
 		usuario: this._formBuilder.nonNullable.control('', [Validators.required]),
 		password: this._formBuilder.nonNullable.control('', [Validators.required])
 	});
-	//eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+
   async submit(): Promise<void> {
     if (this.form.invalid) {
       toast.warning('Por favor, complete todos los campos.');
@@ -52,12 +43,12 @@ export default class LoginComponent {
         clave: password
       };
 
-      const response = await lastValueFrom(this._http.post<AuthResponse>(apiUrl, body));
+      const response = await lastValueFrom(this._http.post<Usuario>(apiUrl, body));
 
       if (response && response.Autenticado) {
-        // Guardar el token y el nombre del usuario en localStorage
+        // Guardar el token para la autenticación y el objeto de sesión completo para los datos del usuario.
         localStorage.setItem('authToken', response.Token);
-        localStorage.setItem('userName', response.NombreCompleto);
+        localStorage.setItem('userSessionData', JSON.stringify(response));
 
         toast.success(`Bienvenido, ${response.NombreCompleto}`);
 
