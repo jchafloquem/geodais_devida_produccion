@@ -17,7 +17,7 @@ export default [
       {
 				path: 'reportes',
         title:'Reportes',
-        canActivate: [publicGuard()],
+        canActivate: [privateGuard()],
 				loadComponent: () => import('./pages/reporte/report.component').then ( m => m.ReportComponent),
 			},
 			{

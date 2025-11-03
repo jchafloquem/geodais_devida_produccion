@@ -31,11 +31,6 @@
                 "glob": "**/*",
                 "input": "node_modules/@arcgis/core/assets",
                 "output": "assets"
-              },
-              {
-                "glob": "_redirects",
-                "input": "src",
-                "output": "/"
               }
 						],
 						"styles": [
