@@ -9,57 +9,62 @@
     <img class="h-16 w-auto sm:hidden" src="assets/images/logos/logoWelBNMini.png" alt="DEVIDA" />
   </div>
   <!-- Contenedor principal -->
-  <div class="relative z-10 flex flex-col justify-center px-6 py-12 w-full max-w-md">
-    <!-- Título -->
-    <h2 class="text-center text-3xl sm:text-4xl py-6 font-extrabold text-white font-poppins">
-      INICIAR SESIÓN
-    </h2>
-    <div class="flex justify-center"><app-google-buttom (onClick)="submitWithGoogle()"></app-google-buttom></div>
-    <!-- Formulario -->
-    <div class="mt-8">
-      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">
-        <!-- Campo Correo -->
-        <div>
-          <label for="email" class="block text-lg font-medium text-white">Correo</label>
-          <input
-            type="email"
-            id="email"
-            placeholder="Correo electrónico"
-            formControlName="email"
-            class="w-full p-3 rounded-lg border border-gray-300 bg-gray-50 focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-          />
-          <small *ngIf="isRequired('email')" class="text-white">Este campo es requerido</small>
-          <small *ngIf="hasEmailError()" class="text-white">El correo o formato es incorrecto</small>
+  <div class="relative z-10 w-full max-w-4xl mx-auto p-4">
+    <div class="flex bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden border border-white/20 shadow-[0_0_25px_rgba(255,255,255,0.3)]">
+      <!-- Columna Izquierda: Imagen -->
+      <div class="w-1/2 hidden md:block bg-cover bg-center animate-column-image">
+        <!-- La imagen de fondo se controla por CSS con animación -->
+      </div>
+
+      <!-- Columna Derecha: Formulario -->
+      <div class="w-full md:w-1/2 p-6 sm:p-12 flex flex-col justify-center">
+        <!-- Logo del componente -->
+        <div class="flex justify-center mb-4">
+          <img class="h-24 w-auto" src="assets/images/login/usuario.png" alt="Logo GeoCultivos" />
         </div>
-        <!-- Campo Contraseña -->
-        <div>
-          <label for="password" class="block text-lg font-medium text-white">Contraseña</label>
-          <input
-            type="password"
-            id="password"
-            placeholder="Contraseña"
-            formControlName="password"
-            class="w-full p-3 rounded-lg border border-gray-300 bg-gray-50 focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-          />
-          <small *ngIf="isRequired('password')" class="text-white">Este campo es requerido</small>
+        <!-- Título -->
+        <h2 class="text-center text-3xl sm:text-4xl py-6 font-extrabold text-white font-poppins">
+          INICIAR SESIÓN
+        </h2>
+        <!-- Formulario -->
+        <div class="mt-8">
+          <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">
+            <!-- Campo Correo -->
+            <div>
+              <label for="usuario" class="block text-lg font-medium text-white">Usuario</label>
+              <input
+                type="text"
+                id="usuario"
+                placeholder="Ingrese su usuario"
+                formControlName="usuario"
+                class="w-full p-3 rounded-lg border border-gray-300 bg-gray-50 focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              />
+              <small *ngIf="isRequired('usuario')" class="text-white">Este campo es requerido</small>
+            </div>
+            <!-- Campo Contraseña -->
+            <div>
+              <label for="password" class="block text-lg font-medium text-white">Contraseña</label>
+              <input
+                type="password"
+                id="password"
+                placeholder="Contraseña"
+                formControlName="password"
+                class="w-full p-3 rounded-lg border border-gray-300 bg-gray-50 focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              />
+              <small *ngIf="isRequired('password')" class="text-white">Este campo es requerido</small>
+            </div>
+            <!-- Botón de Ingreso -->
+            <div class="flex flex-col items-center gap-4">
+              <button
+                type="submit"
+                class="w-full bg-primary hover:bg-secondary transition-all text-white font-medium rounded-lg text-lg px-5 py-3 focus:ring-4 focus:outline-none focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
+              >
+                Ingresar
+              </button>
+            </div>
+          </form>
         </div>
-        <!-- Botón de Ingreso -->
-        <div class="flex flex-col items-center gap-4">
-          <button
-            type="submit"
-            class="w-full bg-primary hover:bg-secondary transition-all text-white font-medium rounded-lg text-lg px-5 py-3 focus:ring-4 focus:outline-none focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
-          >
-            Ingresar
-          </button>
-        </div>
-        <!-- Registro -->
-        <p class="text-center text-sm text-gray-300">
-          ¿Aún no tienes una cuenta?
-          <a [routerLink]="['auth/register']" class="font-medium text-primary-400 hover:underline">
-            Crear una cuenta
-          </a>
-        </p>
-      </form>
+      </div>
     </div>
   </div>
 </div>

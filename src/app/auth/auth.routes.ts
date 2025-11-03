@@ -12,12 +12,7 @@ export default [
         title:'Bienvenidos',
 				loadComponent: () => import('./pages/welcome/welcome.component'),
 			},
-			{
-				path: 'register',
-        title:'Registrar',
-				loadComponent: () => import('./pages/register/register.component'),
-			},
-			{
+	  	{
 				path: 'error',
 				loadComponent: () => import('./pages/error404/error404.component'),
 			},
