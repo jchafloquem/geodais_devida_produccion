@@ -1,77 +1,18 @@
-/* Clase para el Footer Coordenadas*/
-footer {
-	position: relative;
-	z-index: 300;
-	background-color: #fff;
-	display: grid;
-	border-radius: 5px 5px 0px 0px;
-	width: 50vw;
-	min-width: 720px;
-	height: 18px;
-	bottom: 50px;
-	left: 0;
-	right: 0;
-	margin: auto;
-	grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr 1.2fr;
-	text-align: center;
-}
+// El :host se refiere al elemento <app-info-coordenadas>.
+// Al posicionarlo de forma absoluta, creamos un nuevo contexto de apilamiento.
+// Le damos un z-index inferior al de la barra lateral (que usa z-50) para que
+// el panel de la barra lateral se muestre por encima.
+:host {
+  position: absolute;
+  // Lo colocamos en la parte inferior del contenedor padre.
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  // Altura 0 para que el host no ocupe espacio por sí mismo, ya que sus hijos
+  // también están posicionados de forma absoluta.
+  height: 0;
 
-footer .datum {
-	background-color: #fff;
-	color: black;
-	border-radius: 4px 0px 0px 0px;
-	font-size: 12px;
-	text-align: center;
-	cursor: pointer;
-	height: 20px;
-	margin: 0;
-	padding-top: 0px;
-}
-
-footer label {
-	height: 15px;
-	color: black;
-	font-size: 12px;
-	border-right: 1px solid black;
-	padding-top: 3px;
-}
-footer {
-	width: 60vw;
-	min-width: 60vw;
-	height: 34px;
-	grid-template-columns: 1fr 1.2fr 1fr;
-	grid-template-rows: repeat(2, 18px);
-	border-bottom: 1px solid var(--color-text);
-}
-
-footer .datum {
-	height: 15px;
-	padding-top: 4px;
-	border-radius: 0px;
-}
-
-footer label {
-	font-size: 10px;
-	height: 15px;
-	border-bottom: 1px solid var(--color-text);
-}
-footer .datum {
-	height: 18px;
-	border-radius: 0px;
-}
-
-footer label {
-	height: 18px;
-	background-color: var(--color-claro);
-	border-top: 1px solid var(--color-text);
-	font-size: 10px;
-}
-footer {
-	width: 100vw;
-	min-width: 360px;
-	grid-template-columns: 1fr 1.2fr 1fr;
-	grid-template-rows: repeat(2, 18px);
-	border-bottom: 1px solid var(--color-text);
-	bottom: 18px;
-	position: fixed;
+  // El sidebar usa z-50. Al usar 40, nos aseguramos de que este componente
+  // se renderice por debajo del sidebar.
+  z-index: 40;
 }
