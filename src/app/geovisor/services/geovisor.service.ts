@@ -457,19 +457,17 @@ export class GeovisorSharedService {
 
     // Ajustar la vista inicial para dispositivos móviles para mostrar todo el Perú
     const isMobile = window.innerWidth < 768;
-    const center = isMobile ? [-75.0, -9.5] : [-74.0, -9.0];
-    const zoom = isMobile ? 5 : 6;
 
     //Creacion de la Vista del Mapa
     this.view = new MapView({
       container: mapViewEl.nativeElement,
       map: this.mapa,
-      center: center,
-      zoom: zoom,
+      center: [-74.0, -8.80],
+      zoom: isMobile ? 5 : 6,
       rotation: 0,
       constraints: {
         maxZoom: 25,
-        minZoom: 6,
+        minZoom: isMobile ? 5 : 6,
         snapToZoom: false,
       },
       padding: { top: 0 },
