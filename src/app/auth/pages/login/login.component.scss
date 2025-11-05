@@ -21,19 +21,19 @@
 
 @keyframes backgroundChange {
   0% {
-    background-image: url('/geodais/assets/images/login/login1.jpg');
+    background-image: url('/assets/images/wallpapers/wallpaper1.png');
   }
   25% {
-    background-image: url('/geodais/assets/images/login/login2.avif');
+    background-image: url('/assets/images/wallpapers/wallpaper2.png');
   }
   50% {
-    background-image: url('/geodais/assets/images/login/login3.jpg');
+    background-image: url('/assets/images/wallpapers/wallpaper3.png');
   }
   75% {
-    background-image: url('/geodais/assets/images/login/login2.avif');
+    background-image: url('/assets/images/wallpapers/wallpaper2.png');
   }
   100% {
-    background-image: url('/geodais/assets/images/login/login1.jpg');
+    background-image: url('/assets/images/wallpapers/wallpaper1.png');
   }
 }
 .animate-background {
@@ -43,10 +43,10 @@
 @keyframes columnImageChange {
   0%,
   100% {
-    background-image: url('/geodais/assets/images/login/cacao.jpg');
+    background-image: url('/assets/images/logos/cacao.png');
   }
   50% {
-    background-image: url('/geodais/assets/images/login/cafe.webp');
+    background-image: url('/assets/images/logos/cafe.png');
   }
 }
 .animate-column-image {
