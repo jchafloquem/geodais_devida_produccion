@@ -15,11 +15,11 @@ import "driver.js/dist/driver.css";
 export default class WelcomeComponent implements OnInit, OnDestroy {
 
   public botones = [
-    { link: '/auth/login', icono: 'assets/images/welcome/geoico1.png', alt: 'Ícono de acceso al visor GIS', label: 'Ingresar al Geovisor', texto: 'VISOR' },
-    { link: '/geovisor/dashboard', icono: 'assets/images/welcome/geoico3.png', alt: 'Ícono de acceso al dashboard', label: 'Ingresar al Dashboard', texto: 'DASHBOARD' },
-    { link: '/geovisor/reportes', icono: 'assets/images/welcome/geoico5.png', alt: 'Ícono de acceso a reportes', label: 'Ingresar a Reportes', texto: 'REPORTES' },
-    { link: '/geovisor/repositorio', icono: 'assets/images/welcome/geoico2.png', alt: 'Ícono de acceso a documentación', label: 'Ingresar a Documentacion', texto: 'REPOSITORIO' },
-    { link: '/geovisor/metadata', icono: 'assets/images/welcome/geoico4.png', alt: 'Ícono de acceso a metadatos', label: 'Ingresar a Metadatos', texto: 'METADATA' }
+    { link: '/auth/login', icono: 'assets/images/logos/geoico1.png', alt: 'Ícono de acceso al visor GIS', label: 'Ingresar al Geovisor', texto: 'VISOR' },
+    { link: '/geovisor/dashboard', icono: 'assets/images/logos/geoico3.png', alt: 'Ícono de acceso al dashboard', label: 'Ingresar al Dashboard', texto: 'DASHBOARD' },
+    { link: '/geovisor/reportes', icono: 'assets/images/logos/geoico5.png', alt: 'Ícono de acceso a reportes', label: 'Ingresar a Reportes', texto: 'REPORTES' },
+    { link: '/geovisor/repositorio', icono: 'assets/images/logos/geoico2.png', alt: 'Ícono de acceso a documentación', label: 'Ingresar a Documentacion', texto: 'REPOSITORIO' },
+    { link: '/geovisor/metadata', icono: 'assets/images/logos/geoico4.png', alt: 'Ícono de acceso a metadatos', label: 'Ingresar a Metadatos', texto: 'METADATA' }
   ];
 
   private readonly backgroundImages = [
