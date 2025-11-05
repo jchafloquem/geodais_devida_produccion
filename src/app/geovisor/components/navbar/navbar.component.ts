@@ -38,20 +38,26 @@ export class NavbarComponent implements AfterViewInit {
 
 		const searchElement = this.arcgisSearchEl.nativeElement;
 
-		// Escuchamos el evento que se dispara cuando el usuario selecciona un resultado.
-		searchElement.addEventListener('arcgisSelectResult', () => {
-			const view = this._geovisorSharedService.view;
-			if (view) {
-				// El componente de búsqueda navega automáticamente. Usamos reactiveUtils
-				// para esperar a que la vista del mapa deje de navegar.
-				reactiveUtils.whenOnce(() => !view.navigating).then(() => {
-					// Forzamos un redibujado del mapa. Un pequeño retardo ayuda a que
-					// Safari procese la desaparición del panel de sugerencias.
+		// Esperamos a que el componente <arcgis-search> esté completamente definido y listo.
+		customElements.whenDefined('arcgis-search').then(() => {
+			// El <input> real está dentro del "shadow DOM" del componente.
+			const searchInput = searchElement.shadowRoot?.querySelector('input');
+
+			if (searchInput) {
+				// Escuchamos el evento 'blur', que se dispara cuando el input pierde el foco.
+				// Esto ocurre cuando el usuario selecciona un resultado o simplemente toca fuera del buscador.
+				searchInput.addEventListener('blur', () => {
+					const view = this._geovisorSharedService.view;
+					if (!view) return;
+
+					// Usamos un pequeño retardo. Esto es CRUCIAL para Safari.
+					// Le da al navegador un instante para terminar de ocultar el teclado
+					// y el panel de sugerencias ANTES de forzar el redibujado del mapa.
 					setTimeout(() => {
-						// Forzamos el redibujado. Usamos `as any` para evitar el error de TypeScript,
-						// ya que el método `resize()` sí existe en el objeto real en tiempo de ejecución.
+						// Forzamos el redibujado. Usamos `as any` para evitar el error de TypeScript, ya que
+						// el método `resize()` sí existe en el objeto real en tiempo de ejecución.
 						(view as any).resize();
-					}, 150); // 150ms es un valor seguro.
+					}, 300); // 300ms es un valor más seguro para dar tiempo a las animaciones de iOS.
 				});
 			}
 		});
