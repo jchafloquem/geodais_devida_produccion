@@ -11,6 +11,7 @@
   z-index: 10;
   display: block;
   overflow-x: hidden; /* Contiene cualquier desbordamiento del buscador interno */
+  width: 100vw; /* Fuerza a la navbar a ocupar el 100% del ancho del viewport */
 }
 
 /*
