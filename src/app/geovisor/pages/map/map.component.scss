@@ -34,9 +34,13 @@
    * - `direction: ltr` asegura la dirección de renderizado de izquierda a derecha.
    * - `transform: translateZ(0)` fuerza la aceleración por hardware (GPU), lo que
    *   a menudo resuelve bugs de renderizado en navegadores móviles.
+   * - `backface-visibility: hidden` es otra técnica para forzar la composición en la GPU.
   */
   direction: ltr;
+  -webkit-transform: translateZ(0);
   transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /*
