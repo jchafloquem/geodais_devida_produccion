@@ -1,5 +1,6 @@
 import { Component, AfterViewInit, LOCALE_ID } from '@angular/core';
 import { CommonModule, registerLocaleData } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import StatisticDefinition from '@arcgis/core/rest/support/StatisticDefinition.js';
 import Chart from 'chart.js/auto';
@@ -45,7 +46,7 @@ registerLocaleData(localeEsPE, 'es-PE');
 @Component({
   selector: 'app-resumen',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './resumen.component.html',
   styleUrl: './resumen.component.scss',
   providers: [{ provide: LOCALE_ID, useValue: 'es-PE' }],
