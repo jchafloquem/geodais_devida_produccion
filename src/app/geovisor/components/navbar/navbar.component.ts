@@ -31,6 +31,10 @@ export class NavbarComponent implements AfterViewInit {
 		this._router.navigateByUrl('auth/welcome');
 	}
 
+	reajustarMapa(): void {
+		this._geovisorSharedService.forceMapResize();
+	}
+
 	ngAfterViewInit(): void {
 		if (!this.arcgisSearchEl) {
 			return;

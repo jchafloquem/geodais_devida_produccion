@@ -954,6 +954,15 @@ export class GeovisorSharedService {
     });
   }
 
+  public forceMapResize(): void {
+    // Forzar un reflow para arreglar glitches de renderizado en Safari después del zoom/popup.
+    // Se usa un setTimeout para asegurar que el DOM se haya actualizado.
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+      this.showToast('Mapa reajustado.', 'info');
+    }, 150);
+  }
+
 
   public goToCoordinates(lat: number, lon: number): void {
     if (!this.view) {
