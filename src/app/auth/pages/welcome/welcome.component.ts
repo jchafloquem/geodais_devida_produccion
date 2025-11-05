@@ -1,4 +1,4 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -12,7 +12,7 @@ import "driver.js/dist/driver.css";
   templateUrl: './welcome.component.html',
   styleUrls: ['./welcome.component.scss']
 })
-export default class WelcomeComponent implements AfterViewInit {
+export default class WelcomeComponent implements OnInit, OnDestroy {
 
   public botones = [
     { link: '/auth/login', icono: 'assets/images/welcome/geoico1.png', alt: 'Ícono de acceso al visor GIS', label: 'Ingresar al Geovisor', texto: 'VISOR' },
@@ -22,9 +22,40 @@ export default class WelcomeComponent implements AfterViewInit {
     { link: '/geovisor/metadata', icono: 'assets/images/welcome/geoico4.png', alt: 'Ícono de acceso a metadatos', label: 'Ingresar a Metadatos', texto: 'METADATA' }
   ];
 
+  private readonly backgroundImages = [
+    '/assets/images/wallpapers/wallpaper1.png',
+    '/assets/images/wallpapers/wallpaper2.png',
+    '/assets/images/wallpapers/wallpaper3.png',
+    '/assets/images/wallpapers/wallpaper2.png' // Se repite para el efecto de ida y vuelta
+  ];
+
+  public currentBackgroundImage = '';
+  private intervalId: any;
+  private imageIndex = 0;
+
   constructor() { }
 
-  ngAfterViewInit(): void { }
+  ngOnInit(): void {
+    this.startImageCarousel();
+  }
+
+  ngOnDestroy(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
+
+  private startImageCarousel(): void {
+    this.currentBackgroundImage = `url('${this.backgroundImages[this.imageIndex]}')`;
+
+    // Duración basada en la animación original de 35s con 4 pasos (0, 25, 50, 75)
+    const intervalDuration = 35000 / 4; // 8750ms por imagen
+
+    this.intervalId = setInterval(() => {
+      this.imageIndex = (this.imageIndex + 1) % this.backgroundImages.length;
+      this.currentBackgroundImage = `url('${this.backgroundImages[this.imageIndex]}')`;
+    }, intervalDuration);
+  }
 
   startTourWelcome() {
     const driverObj = driver({

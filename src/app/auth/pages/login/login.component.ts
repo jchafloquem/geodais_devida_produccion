@@ -37,7 +37,7 @@ export default class LoginComponent {
       if (!usuario || !password) return;
 
       // URL relativa para que sea interceptada por el proxy (local y en Netlify).
-      const apiUrl = '/api/Seguridad/AutenticarSIGA';
+      const apiUrl = 'https://wsautenticacionside.devida.gob.pe/api/Seguridad/AutenticarSIGA';
       const body = {
         login: usuario,
         clave: password
