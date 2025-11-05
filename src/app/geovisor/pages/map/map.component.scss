@@ -60,22 +60,30 @@
 */
 
 ::ng-deep {
+  /*
+   * Bloqueo global para `html` y `body` para prevenir desbordamientos
+   * a nivel de documento, una causa común de problemas en Safari.
+  */
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden !important;
+  }
+
   /* Ajusta la barra de navegación superior */
   app-navbar {
-    .navbar-container {
-      /*
-       * Solución para el desbordamiento horizontal en iOS/Safari.
-       * Usar left: 0 y right: 0 es más robusto que width: 100% para elementos fijos,
-       * ya que evita que el elemento se expanda más allá de la pantalla cuando
-       * el teclado virtual aparece o cambia la orientación.
-      */
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 10; // Asegura que la barra de navegación esté sobre el mapa.
+    /*
+     * Hacemos que el componente anfitrión sea el elemento fijo.
+     * Esto es más estable en Safari que tener un elemento fijo anidado.
+    */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    overflow-x: hidden; /* Contiene cualquier desbordamiento del buscador */
 
-      overflow-x: hidden; /* ¡Solución Clave! Evita que el contenido interno (buscador) expanda el contenedor. */
+    .navbar-container {
       // Aplica padding para respetar todas las áreas seguras del iPhone (notch, isla, barra de gestos).
       padding-top: env(safe-area-inset-top, 1rem);
       padding-left: env(safe-area-inset-left, 1rem);
