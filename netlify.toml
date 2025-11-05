@@ -1,0 +1,6 @@
+[build]
+  # Este es el comando que Netlify usará para compilar tu app.
+  command = "ng build --configuration production"
+
+  # Este es el directorio donde se encuentran los archivos compilados.
+  publish = "dist/geodais/browser"
