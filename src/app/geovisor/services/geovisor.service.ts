@@ -533,6 +533,16 @@ export class GeovisorSharedService {
     });
     this.view.ui.add(expand, { position: 'top-right', index: 4 });
 
+    function toggleGalleryWidget() {
+      if (!expand.container) return;
+      if (window.innerWidth < 768) {
+        expand.container.style.display = 'none';
+        expand.collapse();
+      } else {
+        expand.container.style.display = 'block';
+      }
+    }
+
     //Widget para cargar GeoJSON
     const uploadEl = document.createElement('div');
     uploadEl.className = 'file-upload-widget p-2 bg-white rounded shadow';
@@ -799,6 +809,8 @@ export class GeovisorSharedService {
 
     this.tourService.setMasterSteps(masterTourSteps);
 
+    toggleGalleryWidget();
+    window.addEventListener('resize', toggleGalleryWidget);
     toggleUploadWidget();
     window.addEventListener('resize', toggleUploadWidget);
     toggleClearGeoJSONWidget();
