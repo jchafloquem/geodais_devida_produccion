@@ -18,6 +18,7 @@
  * Usamos padding para respetar las áreas seguras de iOS (notch, Dynamic Island).
 */
 .navbar-container {
+  width: 100%;
   padding-top: env(safe-area-inset-top, 1rem);
   padding-left: env(safe-area-inset-left, 1rem);
   padding-right: env(safe-area-inset-right, 1rem);
