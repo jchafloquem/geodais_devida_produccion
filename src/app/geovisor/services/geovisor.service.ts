@@ -34,6 +34,12 @@ import {
 } from '../interfaces/popup-templates';
 import { TourService } from './tour.service';
 
+export interface CustomSearchResult {
+  feature: Graphic;
+  layerName: string;
+  displayValue: string;
+}
+
 export interface OficinaStats {
   totalHectareas: number;
   hectareasCacao: number;
@@ -380,68 +386,6 @@ export class GeovisorSharedService {
   constructor(private tourService: TourService) {
     this.mapa.add(this.highlightLayer);
     this.mapa.add(this.coordinateMarkerLayer);
-  }
-
-  public initializeSearchWidget(searchElement: any): void {
-    if (!searchElement || !this.view) {
-      this.showToast("El widget de búsqueda o la vista del mapa no están disponibles.", "error");
-      return;
-    }
-
-    const buscaCapasDEVIDA = [
-      {
-        layer: new FeatureLayer({
-          url: `https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer/1`,
-        }),
-        searchFields: ['dni_participante', 'nombres'],
-        displayField: 'nombres',
-        exactMatch: true,
-        outFields: ['*'],
-        name: 'CULTIVOS',
-        placeholder: 'Nro DNI',
-        maxResults: 5,
-        maxSuggestions: 20,
-        suggestionsEnabled: true,
-        minSuggestCharacters: 1,
-      },
-      {
-        layer: new FeatureLayer({
-          url: `${this.restCaribSurvey.serviceBase}/${this.restCaribSurvey.capas.recopilacion}`,
-        }),
-        searchFields: ['dni_participante', 'nombre_participante'],
-        displayField: 'nombre_participante',
-        exactMatch: true,
-        outFields: ['*'],
-        name: 'VISITAS DE MONITOREO',
-        placeholder: 'Digite el DNI',
-        maxResults: 10,
-        maxSuggestions: 10,
-        suggestionsEnabled: true,
-        minSuggestCharacters: 1,
-      },
-      {
-        layer: new FeatureLayer({
-          url: `${this.restSISCOD}/0`,
-        }),
-        searchFields: ['nombre'],
-        displayField: 'nombre',
-        exactMatch: false,
-        outFields: ['*'],
-        name: 'OFICINA ZONAL',
-        placeholder: 'Nombre',
-        maxResults: 5,
-        maxSuggestions: 5,
-        suggestionsEnabled: true,
-        minSuggestCharacters: 1,
-      },
-    ];
-
-    // Se espera a que el componente esté definido para evitar race conditions
-    customElements.whenDefined('arcgis-search').then(() => {
-      searchElement.view = this.view;
-      searchElement.sources = buscaCapasDEVIDA;
-      searchElement.activeSourceIndex = 0; // Establece "CULTIVOS" como fuente por defecto
-    });
   }
 
   initializeMap(mapViewEl: ElementRef): Promise<void> {
@@ -802,7 +746,7 @@ export class GeovisorSharedService {
     // --- Inicio del Tour Guiado ---
     this.tourService.createTourButton(this.view);
 
-    const masterTourSteps = [
+    const masterTourSteps: any[] = [
       {
         element: this.view.container,
         title: '¡Bienvenido al Geovisor!',
@@ -810,7 +754,7 @@ export class GeovisorSharedService {
         position: 'center'
       },
       {
-        element: 'arcgis-search',
+        element: 'app-buscar', // Cambiado para apuntar al nuevo componente
         title: 'Buscador Inteligente',
         content: 'Utiliza esta barra para buscar polígonos de cultivo por DNI o nombre, oficinas zonales y más.',
         position: 'bottom'
@@ -886,6 +830,113 @@ export class GeovisorSharedService {
       });
     }
     return this.view.when();
+  }
+
+  public async searchFeatures(searchTerm: string): Promise<CustomSearchResult[]> {
+    if (!this.view || !searchTerm || searchTerm.trim() === '') {
+      return [];
+    }
+
+    const buscaCapasDEVIDA = [
+      {
+        layer: new FeatureLayer({
+          url: `https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer/1`,
+          popupTemplate: popupPoligonoCultivo,
+        }),
+        searchFields: ['dni_participante', 'nombres'],
+        displayField: 'nombres',
+        outFields: ['*'],
+        name: 'CULTIVOS',
+        maxResults: 10,
+      },
+      {
+        layer: new FeatureLayer({
+          url: `${this.restCaribSurvey.serviceBase}/${this.restCaribSurvey.capas.recopilacion}`,
+          popupTemplate: restCaribRecopilacion,
+        }),
+        searchFields: ['dni_participante', 'nombre_participante'],
+        displayField: 'nombre_participante',
+        outFields: ['*'],
+        name: 'VISITAS DE MONITOREO',
+        maxResults: 10,
+      },
+      {
+        layer: new FeatureLayer({
+          url: `${this.restSISCOD}/0`,
+          popupTemplate: { title: '{nombre}', content: 'Oficina Zonal' } as any,
+        }),
+        searchFields: ['nombre'],
+        displayField: 'nombre',
+        outFields: ['*'],
+        name: 'OFICINA ZONAL',
+        maxResults: 5,
+      },
+    ];
+
+    const allResults: CustomSearchResult[] = [];
+    const searchPromises: Promise<void>[] = [];
+
+    for (const source of buscaCapasDEVIDA) {
+      const whereClause = source.searchFields
+        .map(field => {
+          if (/^\d+$/.test(searchTerm) && field.toLowerCase().includes('dni')) {
+            return `${field} = '${searchTerm}'`;
+          }
+          return `UPPER(${field}) LIKE '%${searchTerm.toUpperCase()}%'`;
+        })
+        .join(' OR ');
+
+      const query = source.layer.createQuery();
+      query.where = whereClause;
+      query.outFields = source.outFields;
+      query.returnGeometry = true;
+      query.num = source.maxResults;
+
+      const promise = source.layer.queryFeatures(query).then(featureSet => {
+        featureSet.features.forEach(feature => {
+          allResults.push({
+            feature: feature,
+            layerName: source.name,
+            displayValue: feature.attributes[source.displayField],
+          });
+        });
+      }).catch(error => {
+        console.error(`Error al buscar en la capa ${source.name}:`, error);
+      });
+      searchPromises.push(promise);
+    }
+
+    await Promise.all(searchPromises);
+
+    return allResults;
+  }
+
+  public goToSearchResult(result: CustomSearchResult): void {
+    // La geometría puede ser nula, así que debemos protegernos contra eso.
+    if (!this.view || !result.feature.geometry) {
+      this.showToast('No se puede navegar al resultado porque no tiene geometría.', 'error');
+      return;
+    }
+
+    // Captura la geometría en una `const`. El análisis de flujo de control de TypeScript
+    // puede inferir correctamente que no es nula dentro de la clausura de la promesa.
+    const geometry = result.feature.geometry;
+
+    this.view.goTo({
+      target: result.feature,
+      zoom: 18
+    }).then(() => {
+      // También es una buena práctica verificar si la vista aún existe antes de usarla.
+      if (!this.view) {
+        return;
+      }
+      this.view.openPopup({
+        features: [result.feature],
+        location: geometry.type === 'point'
+            ? (geometry as __esri.Point)
+            : (geometry as __esri.Polygon).centroid ?? undefined,
+      });
+    });
   }
 
 

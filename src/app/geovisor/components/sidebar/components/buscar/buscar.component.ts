@@ -1,26 +1,40 @@
-import { Component, AfterViewInit, ElementRef, inject, ViewChild, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { GeovisorSharedService } from '../../../../services/geovisor.service';
 
+import { Component, inject } from '@angular/core';
+import { GeovisorSharedService, CustomSearchResult } from '../../../../services/geovisor.service';
+import { CommonModule } from '@angular/common'; // Importa CommonModule
 
 @Component({
   selector: 'app-buscar',
-  // Asumo que es standalone porque está en los imports de sidebar.component.ts
   standalone: true,
-  imports: [],
+  imports: [CommonModule], // Añade CommonModule a los imports
   templateUrl: './buscar.component.html',
   styleUrl: './buscar.component.scss',
-  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
-export class BuscarComponent implements AfterViewInit {
-  // Obtenemos la referencia al elemento del template
-  @ViewChild('searchWidget') searchWidgetEl!: ElementRef<HTMLElement>;
-
+export class BuscarComponent {
+  resultados: CustomSearchResult[] = [];
+  isLoading = false;
+  searchPerformed = false;
   private geovisorService = inject(GeovisorSharedService);
 
-  ngAfterViewInit(): void {
-    // Nos aseguramos de que el elemento exista antes de inicializar
-    if (this.searchWidgetEl) {
-      this.geovisorService.initializeSearchWidget(this.searchWidgetEl.nativeElement);
+  async buscar(termino: string) {
+    this.searchPerformed = true;
+    if (!termino || termino.trim() === '') {
+      this.resultados = [];
+      return;
     }
+    this.isLoading = true;
+    this.resultados = [];
+    try {
+      this.resultados = await this.geovisorService.searchFeatures(termino);
+    } catch (error) {
+      console.error("Error en la búsqueda:", error);
+      this.geovisorService.showToast('Ocurrió un error al buscar.', 'error');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  seleccionarResultado(resultado: CustomSearchResult) {
+    this.geovisorService.goToSearchResult(resultado);
   }
 }
