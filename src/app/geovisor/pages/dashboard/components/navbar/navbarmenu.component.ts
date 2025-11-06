@@ -1,4 +1,5 @@
-import { Component, EventEmitter, inject, Output } from '@angular/core';
+import { isPlatformBrowser, Location } from '@angular/common';
+import { Component, EventEmitter, inject, Inject, Output, PLATFORM_ID } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { AuthStateService } from '../../../../../auth/shared/access/auth-state.service';
 import { GeovisorSharedService } from '../../../../services/geovisor.service';
@@ -12,6 +13,21 @@ import { GeovisorSharedService } from '../../../../services/geovisor.service';
 })
 export class NavbarmenuComponent {
   @Output() menuToggle = new EventEmitter<void>();
+
+  /** Ruta base para los assets (imágenes, etc.), calculada dinámicamente. */
+  public assetPath = '';
+
+  /**
+   * @constructor
+   * @description
+   * Inyecta dependencias y calcula la ruta base para los assets de forma dinámica.
+   */
+  constructor(@Inject(PLATFORM_ID) private platformId: Object, private location: Location) {
+    if (isPlatformBrowser(this.platformId)) {
+      // `prepareExternalUrl` antepone el `base-href` a la ruta proporcionada ('assets').
+      this.assetPath = this.location.prepareExternalUrl('assets');
+    }
+  }
 
   private _authState = inject(AuthStateService);
 	private _router = inject(Router);
