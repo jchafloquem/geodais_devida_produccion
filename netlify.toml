@@ -1,6 +1,13 @@
 [build]
   # Este es el comando que Netlify usará para compilar tu app.
-  command = "ng build --configuration production"
+  # Se cambió a 'netlify' para que use la configuración con baseHref="/"
+  command = "ng build --configuration netlify"
 
   # Este es el directorio donde se encuentran los archivos compilados.
   publish = "dist/geodais/browser"
+
+# Regla de redirección para que funcionen las rutas de la SPA (Single Page Application)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
