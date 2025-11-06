@@ -37,4 +37,10 @@ export class BuscarComponent {
   seleccionarResultado(resultado: CustomSearchResult) {
     this.geovisorService.goToSearchResult(resultado);
   }
+  limpiarBusqueda(inputElement: HTMLInputElement) {
+    this.resultados = [];
+    this.searchPerformed = false;
+    inputElement.value = '';
+    inputElement.focus();
+  }
 }

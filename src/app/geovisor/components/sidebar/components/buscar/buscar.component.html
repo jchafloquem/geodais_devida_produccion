@@ -1,33 +1,37 @@
 <div class="p-4">
   <div class="flex flex-col space-y-2">
-    <input
-      type="text"
+    <input type="text"
       class="px-4 py-2 shadow-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full text-sm border-gray-300 rounded-md"
-      placeholder="Buscar por DNI, nombre..."
-      #searchInput
-      (input)="searchInput.value = searchInput.value.toUpperCase()"
-      (keyup.enter)="buscar(searchInput.value)"
-    />
-    <button
-      (click)="buscar(searchInput.value)"
-      [disabled]="isLoading"
-      class="w-full flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:bg-primary disabled:bg-gray-400 disabled:cursor-not-allowed"
-    >
-      <svg *ngIf="isLoading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      placeholder="Buscar por DNI, nombre..." #searchInput (input)="searchInput.value = searchInput.value.toUpperCase()"
+      (keyup.enter)="buscar(searchInput.value)" />
+    <button (click)="buscar(searchInput.value)" [disabled]="isLoading"
+      class="w-full flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:bg-primary disabled:bg-gray-400 disabled:cursor-not-allowed">
+      <svg *ngIf="isLoading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+        viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <path class="opacity-75" fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
       </svg>
       <span *ngIf="!isLoading">BUSCAR</span>
     </button>
+    <!-- Botón para limpiar la búsqueda -->
+    <button *ngIf="searchPerformed || searchInput.value.length > 0" type="button"
+      class="text-sm font-medium p-2 bg-secondary text-white rounded-md hover:bg-primary" (click)="limpiarBusqueda(searchInput)">
+      LIMPIÍAR
+    </button>
+
   </div>
 
   <!-- Lista de Resultados -->
   <div *ngIf="resultados.length > 0" class="mt-4 flex-grow overflow-y-auto">
     <h4 class="text-md font-semibold mb-2 text-black">RESULTADOS:</h4>
     <ul class="divide-y divide-gray-600">
-      <li *ngFor="let resultado of resultados" class="group py-1 px-2 hover:bg-gray-700 cursor-pointer rounded-md" (click)="seleccionarResultado(resultado)">
+      <li *ngFor="let resultado of resultados" class="group py-1 px-2 hover:bg-gray-700 cursor-pointer rounded-md"
+        (click)="seleccionarResultado(resultado)">
         <p class="text-sm font-medium text-black group-hover:text-gray-100 break-words">{{ resultado.displayValue }}</p>
-        <p *ngIf="resultado.secondaryInfo" class="text-sm text-gray-300 group-hover:text-gray-100 break-words">{{ resultado.secondaryInfo }}</p>
+        <p *ngIf="resultado.secondaryInfo" class="text-sm text-gray-300 group-hover:text-gray-100 break-words">{{
+          resultado.secondaryInfo }}</p>
         <p class="text-sm text-gray-400 group-hover:text-white break-words">{{ resultado.layerName }}</p>
       </li>
     </ul>
