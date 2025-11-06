@@ -2,7 +2,7 @@
 <div class="absolute top-16 right-0 mt-4 mr-4 flex flex-col gap-2 z-50">
 	<div class="relative w-12 h-12 rounded-full bg-primary">
 		<div
-			id="animated-div"
+			id="animated-div" [style.background-image]="'url(' + wordImg + ')'"
 			(click)="mapaBaseView = !mapaBaseView"
 			(keyup)="mapaBaseView = !mapaBaseView"
 			class="btn-tool cursor-pointer flex justify-center items-center w-full h-full">
@@ -14,7 +14,7 @@
 				(click)="mapabase('satellite')"
 				(keyup)="mapabase('satellite')"
 				class="relative cursor-pointer flex justify-center items-center w-12 h-12 bg-black rounded-full">
-				<div id="animated-div-base" class="satelite btn-tool flex justify-center items-center w-full h-full">
+				<div id="animated-div-base" class="satelite btn-tool flex justify-center items-center w-full h-full" [style.background-image]="'url(' + sateliteImg + ')'">
 					<span></span>
 				</div>
 			</div>
@@ -22,7 +22,7 @@
 				(click)="mapabase('topo-vector')"
 				(keyup)="mapabase('topo-vector')"
 				class="relative cursor-pointer flex justify-center items-center w-12 h-12 bg-black rounded-full">
-				<div id="animated-div-base" class="osm btn-tool flex justify-center items-center w-full h-full">
+				<div id="animated-div-base" class="osm btn-tool flex justify-center items-center w-full h-full" [style.background-image]="'url(' + osmImg + ')'">
 					<span></span>
 				</div>
 			</div>
@@ -30,7 +30,7 @@
 				(click)="mapabase('streets')"
 				(keyup)="mapabase('streets')"
 				class="relative cursor-pointer flex justify-center items-center w-12 h-12 bg-black rounded-full">
-				<div id="animated-div-base" class="topo btn-tool flex justify-center items-center w-full h-full">
+				<div id="animated-div-base" class="topo btn-tool flex justify-center items-center w-full h-full" [style.background-image]="'url(' + topoImg + ')'">
 					<span></span>
 				</div>
 			</div>

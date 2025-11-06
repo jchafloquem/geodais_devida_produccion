@@ -26,22 +26,40 @@ export default class LoginComponent implements OnInit, OnDestroy {
     'assets/images/wallpapers/wallpaper2.png' // Se repite para el efecto de ida y vuelta
   ];
 
+  private readonly columnImages: string[] = [
+    'assets/images/logos/cacao.png',
+    'assets/images/logos/cafe.png'
+  ];
+
   public backgrounds = [
     { url: '', fade: false },
     { url: '', fade: false }
   ];
 
+  public currentColumnImage!: string;
+
   private intervalId: any;
+  private columnImageInterval: any;
   private imageIndex = 0;
+  private currentColumnImageIndex = 0;
   private activeBgIndex = 0;
+
+  constructor() {
+    // Inicializamos la primera imagen para la columna
+    this.currentColumnImage = `url('${this.columnImages[this.currentColumnImageIndex]}')`;
+  }
 
   ngOnInit(): void {
     this.startImageCarousel();
+    this.startColumnImageCarousel();
   }
 
   ngOnDestroy(): void {
     if (this.intervalId) {
       clearInterval(this.intervalId);
+    }
+    if (this.columnImageInterval) {
+      clearInterval(this.columnImageInterval);
     }
   }
 
@@ -62,6 +80,15 @@ export default class LoginComponent implements OnInit, OnDestroy {
       this.backgrounds[nextBgIndex].fade = false;
       this.activeBgIndex = nextBgIndex;
     }, intervalDuration);
+  }
+
+  private startColumnImageCarousel(): void {
+    const columnIntervalDuration = 4000; // 4 segundos por imagen, 8 en total
+
+    this.columnImageInterval = setInterval(() => {
+      this.currentColumnImageIndex = (this.currentColumnImageIndex + 1) % this.columnImages.length;
+      this.currentColumnImage = `url('${this.columnImages[this.currentColumnImageIndex]}')`;
+    }, columnIntervalDuration);
   }
 
   submit(): void {

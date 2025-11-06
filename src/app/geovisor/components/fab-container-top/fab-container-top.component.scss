@@ -42,18 +42,23 @@
 }
 
 .satelite {
-	background: url("/assets/icons/esrisatellite.webp") 0 0 / 200px 133px;
+	/* background: url("../../../../assets/icons/esrisatellite.webp") 0 0 / 200px 133px; */
+	background-position: 0 0; /* Mantener si es parte de la animación o estilo */
+	background-size: 200px 133px; /* Mantener si es parte de la animación o estilo */
 }
 .osm {
-	background: url("/assets/icons/osmmapnik.webp") 0 0 / 200px 133px;
+	/* background: url("../../../../assets/icons/osmmapnik.webp") 0 0 / 200px 133px; */
+	background-position: 0 0; /* Mantener si es parte de la animación o estilo */
+	background-size: 200px 133px; /* Mantener si es parte de la animación o estilo */
 }
 .topo {
-	background: url("/assets/icons/esriroad.webp") 0 0 / 200px 133px;
+	/* background: url("../../../../assets/icons/esriroad.webp") 0 0 / 200px 133px; */
+	background-position: 0 0; /* Mantener si es parte de la animación o estilo */
+	background-size: 200px 133px; /* Mantener si es parte de la animación o estilo */
 }
 #animated-div-base {
 	width: 48px;
 	height: 48px;
-	background-size: cover;
 	border-radius: 50%;
 	box-shadow: rgb(0 0 0 / 17%) 0px -11px 13px 0px inset,
 		rgb(0 0 0 / 15%) 0px -18px 15px 0px inset,
@@ -74,8 +79,9 @@
 #animated-div {
 	width: 48px;
 	height: 48px;
-	background: url("/assets/icons/word.webp") 0 0 / 167px 62px;
-	background-size: cover;
+	/* La URL de la imagen se establece en el HTML */
+	background-position: 0 0;
+	background-size: 167px 62px;
 	border-radius: 50%;
 	box-shadow: rgb(0 0 0 / 17%) 0px -11px 13px 0px inset,
 		rgb(0 0 0 / 15%) 0px -18px 15px 0px inset,

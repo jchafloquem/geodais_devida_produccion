@@ -19,7 +19,7 @@
 					"options": {
 						"outputPath": "dist/geodais",
 						"index": "src/index.html",
-						"baseHref": "/",
+						"baseHref": "/geodais/",
 						"browser": "src/main.ts",
 						"polyfills": ["zone.js"],
 						"tsConfig": "tsconfig.app.json",
@@ -37,6 +37,11 @@
                 "glob": "**/*",
                 "input": "node_modules/@arcgis/core/assets",
                 "output": "assets"
+              },
+              {
+                "glob": "web.xml",
+                "input": "src",
+                "output": "WEB-INF/"
               }
 						],
 						"styles": [
@@ -63,7 +68,7 @@
 									"maximumError": "150kB"
 								}
 							],
-							"baseHref": "/",
+							"baseHref": "/geodais/",
 							"outputHashing": "all"
 						},
 						"development": {

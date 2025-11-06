@@ -11,6 +11,11 @@ import {GeovisorSharedService} from '../../services/geovisor.service';
 export class FabContainerTopComponent {
 	public _geovisorSharedService = inject(GeovisorSharedService);
 	public mapaBaseView = true;
+	// Propiedades para las rutas de las imágenes
+	sateliteImg = 'assets/icons/esrisatellite.webp';
+	osmImg = 'assets/icons/osmmapnik.webp';
+	topoImg = 'assets/icons/esriroad.webp';
+	wordImg = 'assets/icons/word.webp';
 	mapabase(base: string): void {
 		this._geovisorSharedService.mapa.basemap = Basemap.fromId(base);
 	}

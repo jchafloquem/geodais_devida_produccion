@@ -28,16 +28,8 @@
 .background-image.fade-out {
   opacity: 0;
 }
-
-@keyframes columnImageChange {
-  0%,
-  100% {
-    background-image: url('/assets/images/logos/cacao.png');
-  }
-  50% {
-    background-image: url('/assets/images/logos/cafe.png');
-  }
-}
 .animate-column-image {
-  animation: columnImageChange 8s ease-in-out infinite;
+  background-size: cover;
+  background-position: center;
+  transition: background-image 1s ease-in-out;
 }
