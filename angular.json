@@ -100,7 +100,8 @@
 							"buildTarget": "geodais:build:production"
 						},
 						"development": {
-							"buildTarget": "geodais:build:development"
+							"buildTarget": "geodais:build:development",
+							"servePath": "/geodais/"
 						}
 					},
 					"defaultConfiguration": "development"
