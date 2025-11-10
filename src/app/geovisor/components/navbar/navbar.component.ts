@@ -24,11 +24,12 @@ export class NavbarComponent implements AfterViewInit {
 	private _authState = inject(AuthStateService);
 	private _router = inject(Router);
 
-	public _geovisorSharedService = inject(GeovisorSharedService);
+  public _geovisorSharedService = inject(GeovisorSharedService);
 
-	async logout(): Promise<void> {
-		await this._authState.logout();
-		this._router.navigateByUrl('auth/welcome');
+	logout(): void {
+		this._authState.logout().subscribe(() => {
+			this._router.navigateByUrl('auth/welcome');
+		});
 	}
 
 	reajustarMapa(): void {
@@ -40,8 +41,8 @@ export class NavbarComponent implements AfterViewInit {
 			return;
 		}
 
-
-  }}
+  }
+}
 
 interface HTMLArcgisSearchElement extends HTMLElement {
 	view?: __esri.MapView;

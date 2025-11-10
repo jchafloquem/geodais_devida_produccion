@@ -68,6 +68,10 @@
               >
                 Ingresar
               </button>
+              <!-- Contenedor para mostrar mensajes de error -->
+              <div *ngIf="loginError" class="w-full mt-2 text-center p-2 rounded-lg bg-red-500/20 border border-red-500 text-white">
+                {{ loginError }}
+              </div>
             </div>
           </form>
         </div>

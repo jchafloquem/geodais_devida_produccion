@@ -110,17 +110,28 @@ const pie3DPlugin = {
   }
 };
 
-// Se registra por instancia para evitar la doble registración que causa etiquetas duplicadas.
 registerLocaleData(localeEsPE, 'es-PE');
 
-/**
- * @Component DashboardComponent
- * @description
- * Componente principal para la visualización de estadísticas y gráficos del dashboard.
- * Carga datos desde un servicio de ArcGIS y los presenta en tarjetas y gráficos interactivos.
- * Permite filtrar la información por año, incluyendo una vista acumulada de "Todos" los años.
- * Gestiona la creación y destrucción de gráficos de Chart.js para un rendimiento óptimo.
- */
+interface GraficoData {
+  chart: Chart | null;
+  labels: string[];
+  data: number[];
+  backgroundColor: string[];
+  borderColor: string[];
+}
+
+interface Cultivo {
+  cultivo: string;
+  cantidad: number;
+}
+
+interface CultivoDepartamento {
+  departamento: string;
+  cultivo: string;
+  cantidad: number;
+}
+
+
 @Component({
   standalone: true,
   imports: [CommonModule, RouterModule, SidemenuComponent, NavbarmenuComponent, FooterComponent],
@@ -131,10 +142,10 @@ registerLocaleData(localeEsPE, 'es-PE');
 })
 export class DashboardComponent implements AfterViewInit {
   /** URL del servicio de features de ArcGIS que contiene los datos de los cultivos. */
-  private readonly SERVICIO_PIRDAIS = 'https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer/1';
-  /** URL base para realizar consultas (queries) al servicio de features. */
-  private readonly QUERY_SERVICIO = `${this.SERVICIO_PIRDAIS}/query`;
-
+  private readonly PROXY_MAP_BASE = 'http://localhost:8081/api/mapas/capa/1';
+  //private urlMapServerBase: string = '';
+  /** URL para realizar consultas (queries) al servicio de features. */
+  private queryServicio: string = '';
   /** Estado de visibilidad del menú lateral. */
   isMenuOpen = false;   // Estado inicial del menú
   /** Flag para detectar si la vista es de escritorio (pantalla grande). */
@@ -203,6 +214,11 @@ export class DashboardComponent implements AfterViewInit {
   /** Ruta base para los assets (imágenes, etc.), calculada dinámicamente. */
   public assetPath = '';
 
+  // --- Propiedades para el manejo de errores del backend ---
+  /** Flag para indicar si ha ocurrido un error de conexión con el backend. */
+  public isBackendError = false;
+  /** Mensaje de error que se mostrará si el backend falla. */
+  public backendErrorMessage = '';
   /**
    * @constructor
    * @description
@@ -210,6 +226,7 @@ export class DashboardComponent implements AfterViewInit {
    * asegurando que las imágenes se carguen en cualquier entorno (local, Netlify, producción).
    */
   constructor(
+
     @Inject(PLATFORM_ID) private platformId: Object,
     private location: Location
   ) {
@@ -221,6 +238,8 @@ export class DashboardComponent implements AfterViewInit {
     }
   }
 
+
+
   /**
    * @method ngAfterViewInit
    * @description
@@ -228,19 +247,32 @@ export class DashboardComponent implements AfterViewInit {
    * Inicia la carga de datos del dashboard.
    */
   async ngAfterViewInit(): Promise<void> {
-    const dashboardCultivos = new FeatureLayer({ url: this.SERVICIO_PIRDAIS });
+    this.inicializarDashboard();
+  }
+
+  /**
+   * @method inicializarDashboard
+   * @description
+   * Se ejecuta después de obtener la URL del backend. Prepara el dashboard,
+   * obtiene los años disponibles y lanza la carga de datos inicial.
+   * @async
+   */
+  async inicializarDashboard(): Promise<void> {
+
+    const dashboardCultivos = new FeatureLayer({ url: this.PROXY_MAP_BASE });
     try {
         await dashboardCultivos.load();
         this.availableYears = await this.getAvailableYears(dashboardCultivos);
-        // Establece el año 2025 como selección por defecto si está disponible.
         if (this.availableYears.includes(2025)) {
             this.selectedYear = 2025; // Selecciona 2025 por defecto
         } else if (this.availableYears.length > 0) {
             this.selectedYear = this.availableYears[0]; // Fallback al año más reciente
         }
-        // Carga todos los datos y gráficos del dashboard.
         await this.loadDashboardData();
     } catch (err) {
+      console.error("Error crítico de conexión con el backend:", err);
+      this.isBackendError = true;
+      this.backendErrorMessage = 'No fue posible establecer conexión con el servidor. Por favor, intente nuevamente más tarde o confirme que el sistema se encuentre en funcionamiento. Si el problema persiste, comuníquese con el área de Informática.';
     }
   }
 
@@ -310,18 +342,21 @@ export class DashboardComponent implements AfterViewInit {
         this.currentMetaFamilias = this.METAS_FAMILIAS[this.selectedYear] || 0;
     }
 
-    const dashboardCultivos = new FeatureLayer({ url: this.SERVICIO_PIRDAIS });
+    const dashboardCultivos = new FeatureLayer({ url: this.PROXY_MAP_BASE });
 
     try {
-        const [totalArea, cafeCacao, areaPorCultivo, totalDNIResult] = await Promise.all([
-            this.sumarAreaCultivoTotal(dashboardCultivos, yearFilter),
+        const [cafeCacao, areaPorCultivo, totalDNIResult] = await Promise.all([
             this.contarCafeCacao(dashboardCultivos, yearFilter),
             this.sumarAreaPorCultivo(dashboardCultivos, yearFilter),
             this.contarRegistrosUnicosPorDNI(dashboardCultivos, yearFilter),
         ]);
+
+        const totalArea = areaPorCultivo.reduce((sum, current) => sum + (current.total_area || 0), 0);
+
         this.totalAreaCultivo = totalArea;
         this.totalCafe = cafeCacao.cafe;
         this.totalCacao = cafeCacao.cacao;
+        this.totalRegistrosCultivos = this.totalCafe + this.totalCacao; // 🎯 CORRECCIÓN: Sumar los polígonos para la tarjeta de total.
         this.areaPorCultivo = areaPorCultivo;
         this.crearGraficoProgresoporHectareas(totalArea);
         this.crearGraficoProgresoporDNI(totalDNIResult["total"]);
@@ -336,7 +371,9 @@ export class DashboardComponent implements AfterViewInit {
         this.crearGraficoPorDepartamento(yearFilter);
         this.generarGraficoCultivosPorTipo(dashboardCultivos, yearFilter);
 
-    } catch (err) {}
+    } catch (err) {
+      console.error("Error al cargar los datos del dashboard:", err);
+    }
   }
 
   //Tarjetas sobre la Meta & Avance
@@ -382,29 +419,47 @@ export class DashboardComponent implements AfterViewInit {
    * @async
    */
   async sumarAreaPorCultivo(layer: FeatureLayer, whereClause: string = '1=1'): Promise<any[]> {
-    const statDef = new StatisticDefinition({
-      onStatisticField: 'area_cultivo',
-      outStatisticFieldName: 'total_area',
-      statisticType: 'sum',
-    });
-
-    const query = layer.createQuery();
-    query.where = whereClause;
-    query.outStatistics = [statDef];
-    query.groupByFieldsForStatistics = ['tipo_cultivo'];
-    query.returnGeometry = false;
+    const areasPorCultivo: Record<string, number> = {};
+    const pageSize = 2000;
 
     try {
-      const result = await layer.queryFeatures(query);
+      const total = await layer.queryFeatureCount({ where: whereClause });
+      let fetched = 0;
 
-      const data = result.features.map((f) => ({
-        cultivo: f.attributes['tipo_cultivo'],
-        total_area: f.attributes['total_area'],
+      while (fetched < total) {
+        const result = await layer.queryFeatures({
+          where: whereClause,
+          outFields: ['tipo_cultivo', 'area_cultivo'],
+          returnGeometry: false,
+          start: fetched,
+          num: pageSize,
+        });
+
+        if (!result.features.length) {
+          break;
+        }
+
+        result.features.forEach(feature => {
+          const cultivo = feature.attributes.tipo_cultivo;
+          const area = feature.attributes.area_cultivo;
+          if (cultivo && area != null) {
+            areasPorCultivo[cultivo] = (areasPorCultivo[cultivo] || 0) + area;
+          }
+        });
+
+        fetched += result.features.length;
+      }
+
+      const data = Object.keys(areasPorCultivo).map(cultivo => ({
+        cultivo: cultivo,
+        total_area: areasPorCultivo[cultivo]
       }));
 
-      // Guardar áreas de café y cacao
+      // Reset and save areas for cafe and cacao
+      this.totalAreaCafe = 0;
+      this.totalAreaCacao = 0;
       data.forEach((c) => {
-        const nombre = c.cultivo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const nombre = (c.cultivo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         if (nombre.includes('cafe')) this.totalAreaCafe = c.total_area;
         if (nombre.includes('cacao')) this.totalAreaCacao = c.total_area;
       });
@@ -501,44 +556,49 @@ export class DashboardComponent implements AfterViewInit {
    * @async
    */
   async crearGraficoProgresoporHectareasOZ(whereClause: string = '1=1') {
-    const baseUrl = this.QUERY_SERVICIO;
-    interface Cultivo {
-      org: string;
-      area_cultivo: number;
-    }
-    let allFeatures: any[] = [];
-    let offset = 0;
+    const ctx = document.getElementById('graficoMetaOZ') as HTMLCanvasElement;
+    if (!ctx) return;
+
+    const featureLayer = new FeatureLayer({ url: this.PROXY_MAP_BASE });
+    const areasPorOficina: Record<string, number> = {};
     const pageSize = 2000;
-    let hasMore = true;
 
-    while (hasMore) {
-      const url =
-        `${baseUrl}?where=${encodeURIComponent(whereClause)}&outFields=oficina_zonal,area_cultivo` +
-        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
+    try {
+      const total = await featureLayer.queryFeatureCount({ where: whereClause });
+      let fetched = 0;
 
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.features?.length) {
-        allFeatures = allFeatures.concat(data.features);
-        offset += pageSize;
-        hasMore = data.features.length === pageSize;
-      } else {
-        hasMore = false;
+      while (fetched < total) {
+        const result = await featureLayer.queryFeatures({
+          where: whereClause,
+          outFields: ['oficina_zonal', 'area_cultivo'],
+          returnGeometry: false,
+          start: fetched,
+          num: pageSize,
+        });
+
+        if (!result.features.length) {
+          break;
+        }
+
+        result.features.forEach(feature => {
+          const org = feature.attributes.oficina_zonal;
+          const area = feature.attributes.area_cultivo;
+          if (org && area != null) {
+            areasPorOficina[org] = (areasPorOficina[org] || 0) + area;
+          }
+        });
+
+        fetched += result.features.length;
       }
-    }
-    const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.oficina_zonal,
-      area_cultivo: feat.attributes.area_cultivo,
-    }));
-    // Agrupamos por Oficina Zonal
-    const agrupado: Record<string, number> = {};
-    rawData.forEach((item: Cultivo) => {
-      agrupado[item.org] = (agrupado[item.org] || 0) + item.area_cultivo;
-    });
-    // 🔹 Ordenar de mayor a menor
-    const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
+
+      if (Object.keys(areasPorOficina).length === 0) {
+        this.mostrarMensajeEnCanvas(ctx, 'No hay datos de hectáreas por Oficina Zonal.');
+        return;
+      }
+
+      const entries = Object.entries(areasPorOficina).sort((a, b) => b[1] - a[1]);
+      const labels = entries.map(e => e[0]);
+      const values = entries.map(e => e[1]);
 
     // 🔹 Colores por Oficina Zonal
     const colorMap: Record<string, string> = {
@@ -553,8 +613,6 @@ export class DashboardComponent implements AfterViewInit {
       'IQUITOS': '#CAFEDA',
     };
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
-    const ctx = document.getElementById('graficoMetaOZ') as HTMLCanvasElement;
-    if (!ctx) return;
 
     this.charts.push(new Chart(ctx, {
       type: 'bar',
@@ -583,9 +641,8 @@ export class DashboardComponent implements AfterViewInit {
         indexAxis: 'y',
         scales: {
           x: {
-            min: 0,
-            max: 20000,
             beginAtZero: true,
+            max: 20000,
             ticks: {
               callback: (value) =>
                 `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
@@ -626,6 +683,10 @@ export class DashboardComponent implements AfterViewInit {
       },
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
+    } catch (error) {
+      console.error('Error al crear gráfico de hectáreas por OZ:', error);
+      this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
+    }
   }
 
   //Grafico sobre la Meta por Oficina Zonal - CACAO
@@ -638,47 +699,50 @@ export class DashboardComponent implements AfterViewInit {
    * @async
    */
   async crearGraficoProgresoporHectareasOZCacao(whereClause: string = '1=1') {
-    const baseUrl = this.QUERY_SERVICIO;
+    const ctx = document.getElementById('graficoMetaOZCACAO') as HTMLCanvasElement;
+    if (!ctx) return;
 
-    interface Cultivo { org: string; area_cultivo: number; cultivo: string; }
-
-    let allFeatures: any[] = [];
-    let offset = 0;
+    const featureLayer = new FeatureLayer({ url: this.PROXY_MAP_BASE });
+    const finalWhereClause = `tipo_cultivo='CACAO' AND ${whereClause}`;
+    const areasPorOficina: Record<string, number> = {};
     const pageSize = 2000;
-    let hasMore = true;
 
-    while (hasMore) {
-      const finalWhere = `tipo_cultivo='CACAO' AND ${whereClause}`;
-      const url =
-        `${baseUrl}?where=${encodeURIComponent(finalWhere)}&outFields=oficina_zonal,area_cultivo,tipo_cultivo` +
-        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.features?.length) {
-        allFeatures = allFeatures.concat(data.features);
-        offset += pageSize;
-        hasMore = data.features.length === pageSize;
-      } else {
-        hasMore = false;
+    try {
+      const total = await featureLayer.queryFeatureCount({ where: finalWhereClause });
+      let fetched = 0;
+
+      while (fetched < total) {
+        const result = await featureLayer.queryFeatures({
+          where: finalWhereClause,
+          outFields: ['oficina_zonal', 'area_cultivo'],
+          returnGeometry: false,
+          start: fetched,
+          num: pageSize,
+        });
+
+        if (!result.features.length) {
+          break;
+        }
+
+        result.features.forEach(feature => {
+          const org = feature.attributes.oficina_zonal;
+          const area = feature.attributes.area_cultivo;
+          if (org && area != null) {
+            areasPorOficina[org] = (areasPorOficina[org] || 0) + area;
+          }
+        });
+
+        fetched += result.features.length;
       }
-    }
 
-    const rawData: Cultivo[] = allFeatures.map(feat => ({
-      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
-      area_cultivo: feat.attributes.area_cultivo,
-      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
-    }));
-
-    const agrupado: Record<string, number> = {};
-    rawData.forEach(item => {
-      if (item.cultivo === 'CACAO') {
-        agrupado[item.org] = (agrupado[item.org] || 0) + item.area_cultivo;
+      if (Object.keys(areasPorOficina).length === 0) {
+        this.mostrarMensajeEnCanvas(ctx, 'No hay datos de Cacao por Oficina Zonal.');
+        return;
       }
-    });
 
-    const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
+      const entries = Object.entries(areasPorOficina).sort((a, b) => b[1] - a[1]);
+      const labels = entries.map(e => e[0]);
+      const values = entries.map(e => e[1]);
 
     const metasOZ: Record<string, number> = {
       'SAN FRANCISCO': 4824,
@@ -704,8 +768,6 @@ export class DashboardComponent implements AfterViewInit {
       'IQUITOS': '#CAFEDA',
     };
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
-    const ctx = document.getElementById('graficoMetaOZCACAO') as HTMLCanvasElement;
-    if (!ctx) return;
 
     this.charts.push(new Chart(ctx, {
       type: 'bar', // ✅ barras verticales
@@ -800,6 +862,10 @@ export class DashboardComponent implements AfterViewInit {
       },
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
+    } catch (error) {
+      console.error('Error al crear gráfico de hectáreas Cacao vs Meta:', error);
+      this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
+    }
   }
   //Grafico sobre la Meta por Oficina Zonal - CAFE
   /**
@@ -811,49 +877,55 @@ export class DashboardComponent implements AfterViewInit {
    * @async
    */
   async crearGraficoProgresoporHectareasOZCAFE(whereClause: string = '1=1') {
-    const baseUrl = this.QUERY_SERVICIO;
-    interface Cultivo { org: string; area_cultivo: number; cultivo: string; }
-    let allFeatures: any[] = [];
-    let offset = 0;
+    const ctx = document.getElementById('graficoMetaOZCAFE') as HTMLCanvasElement;
+    if (!ctx) return;
+
+    const featureLayer = new FeatureLayer({ url: this.PROXY_MAP_BASE });
+    const finalWhereClause = `tipo_cultivo='CAFE' AND ${whereClause}`;
+    const areasPorOficina: Record<string, number> = {};
     const pageSize = 2000;
-    let hasMore = true;
 
-    while (hasMore) {
-      const finalWhere = `tipo_cultivo='CAFE' AND ${whereClause}`;
-      const url =
-        `${baseUrl}?where=${encodeURIComponent(finalWhere)}&outFields=oficina_zonal,area_cultivo,tipo_cultivo` +
-        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.features?.length) {
-        allFeatures = allFeatures.concat(data.features);
-        offset += pageSize;
-        hasMore = data.features.length === pageSize;
-      } else {
-        hasMore = false;
+    try {
+      const total = await featureLayer.queryFeatureCount({ where: finalWhereClause });
+      let fetched = 0;
+
+      while (fetched < total) {
+        const result = await featureLayer.queryFeatures({
+          where: finalWhereClause,
+          outFields: ['oficina_zonal', 'area_cultivo'],
+          returnGeometry: false,
+          start: fetched,
+          num: pageSize,
+        });
+
+        if (!result.features.length) {
+          break;
+        }
+
+        result.features.forEach(feature => {
+          const org = feature.attributes.oficina_zonal;
+          const area = feature.attributes.area_cultivo;
+          if (org && area != null) {
+            areasPorOficina[org] = (areasPorOficina[org] || 0) + area;
+          }
+        });
+
+        fetched += result.features.length;
       }
-    }
 
-    const rawData: Cultivo[] = allFeatures.map(feat => ({
-      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
-      area_cultivo: feat.attributes.area_cultivo,
-      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
-    }));
-
-    const agrupado: Record<string, number> = {};
-    rawData.forEach(item => {
-      if (item.cultivo === 'CAFE') {
-        agrupado[item.org] = (agrupado[item.org] || 0) + item.area_cultivo;
+      if (Object.keys(areasPorOficina).length === 0) {
+        this.mostrarMensajeEnCanvas(ctx, 'No hay datos de Café por Oficina Zonal.');
+        return;
       }
-    });
 
-    const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
+      const entries = Object.entries(areasPorOficina).sort((a, b) => b[1] - a[1]);
+      const labels = entries.map(e => e[0]);
+      const values = entries.map(e => e[1]);
 
     const metasOZ: Record<string, number> = {
       'SAN FRANCISCO': 2344,
       'PUCALLPA': 0,
+      'JAEN': 4300, // Dato de ejemplo, ajustar si es necesario
       'LA MERCED': 1973,
       'TINGO MARIA': 2133,
       'TARAPOTO': 688,
@@ -875,8 +947,6 @@ export class DashboardComponent implements AfterViewInit {
       'IQUITOS': '#CAFEDA',
     };
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
-    const ctx = document.getElementById('graficoMetaOZCAFE') as HTMLCanvasElement;
-    if (!ctx) return;
 
     this.charts.push(new Chart(ctx, {
       type: 'bar', // ✅ barras verticales
@@ -971,6 +1041,10 @@ export class DashboardComponent implements AfterViewInit {
       },
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
+    } catch (error) {
+      console.error('Error al crear gráfico de hectáreas Café vs Meta:', error);
+      this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
+    }
   }
 
 
@@ -1164,58 +1238,62 @@ export class DashboardComponent implements AfterViewInit {
    * @async
    */
   async crearGraficoProgresoporFamiliasOZ(whereClause: string = '1=1') {
-    const baseUrl = this.QUERY_SERVICIO;
-    interface Participante {
-      org: string;
-      dni: string;
-    }
+    const ctx = document.getElementById('graficoMetaParticipantes') as HTMLCanvasElement;
+    if (!ctx) return;
 
-    let allFeatures: any[] = [];
-    let offset = 0;
+    const featureLayer = new FeatureLayer({ url: this.PROXY_MAP_BASE });
+    const query = featureLayer.createQuery();
+    query.where = whereClause;
+    const dnisPorOficina: Record<string, Set<string>> = {};
     const pageSize = 2000;
-    let hasMore = true;
-    while (hasMore) {
-      const url =
-        `${baseUrl}?where=${encodeURIComponent(whereClause)}&outFields=oficina_zonal,dni_participante` +
-        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
 
-      const res = await fetch(url);
-      const data = await res.json();
+    try {
+      const total = await featureLayer.queryFeatureCount({ where: whereClause });
+      let fetched = 0;
 
-      if (data.features?.length) {
-        allFeatures = allFeatures.concat(data.features);
-        offset += pageSize;
-        hasMore = data.features.length === pageSize;
-      } else {
-        hasMore = false;
+      while (fetched < total) {
+        const result = await featureLayer.queryFeatures({
+          where: whereClause,
+          outFields: ['oficina_zonal', 'dni_participante'],
+          returnGeometry: false,
+          start: fetched,
+          num: pageSize,
+        });
+
+        if (!result.features.length) {
+          break;
+        }
+
+        result.features.forEach(feature => {
+          const org = feature.attributes.oficina_zonal;
+          const dni = feature.attributes.dni_participante;
+          if (org && dni) {
+            if (!dnisPorOficina[org]) {
+              dnisPorOficina[org] = new Set<string>();
+            }
+            dnisPorOficina[org].add(dni);
+          }
+        });
+
+        fetched += result.features.length;
       }
-    }
 
-    const rawData: Participante[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.oficina_zonal,
-      dni: feat.attributes.dni_participante,
-    }));
-
-    // 🔹 Agrupar por Oficina Zonal y contar DNIs únicos
-    const agrupado: Record<string, Set<string>> = {};
-    rawData.forEach((item: Participante) => {
-      if (!item.dni) return;
-      if (!agrupado[item.org]) {
-        agrupado[item.org] = new Set<string>();
+      if (Object.keys(dnisPorOficina).length === 0) {
+        this.mostrarMensajeEnCanvas(ctx, 'No hay datos de familias por Oficina Zonal.');
+        return;
       }
-      agrupado[item.org].add(item.dni);
-    });
 
-    // Convertir los sets a números
-    const entries = Object.entries(agrupado)
-      .map(([org, dnis]) => [org, dnis.size] as [string, number])
-      .sort((a, b) => b[1] - a[1]);
+      const agrupado: Record<string, number> = {};
+      for (const org in dnisPorOficina) {
+        agrupado[org] = dnisPorOficina[org].size;
+      }
 
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
+      const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
+      const labels = entries.map(e => e[0]);
+      const values = entries.map(e => e[1]);
 
-    // 🔹 Colores por ORG (mapa de referencia)
-    const colorMap: Record<string, string> = {
+      // 🔹 Colores por ORG (mapa de referencia)
+      const colorMap: Record<string, string> = {
       'SAN FRANCISCO': '#FEEFD8',
       'JAEN': '#FFBEBE',
       'PUCALLPA': '#B7D9FE',
@@ -1226,11 +1304,8 @@ export class DashboardComponent implements AfterViewInit {
       'QUILLABAMBA': '#FEFEB9',
       'IQUITOS': '#CAFEDA',
     };
-
-    // Asignar colores según el ORG, si no existe usar gris
-    const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
-    const ctx = document.getElementById('graficoMetaParticipantes') as HTMLCanvasElement;
-    if (!ctx) return;
+      // Asignar colores según el ORG, si no existe usar gris
+      const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
 
     this.charts.push(new Chart(ctx, {
       type: 'bar',
@@ -1259,9 +1334,8 @@ export class DashboardComponent implements AfterViewInit {
         indexAxis: 'y', // barras horizontales
         scales: {
           x: {
-            min: 0,
-            max: 14000,
             beginAtZero: true,
+            max: 14000,
             ticks: {
               callback: (value) =>
                 `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
@@ -1302,6 +1376,10 @@ export class DashboardComponent implements AfterViewInit {
       },
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
+    } catch (error) {
+      console.error('Error al crear gráfico de familias por OZ:', error);
+      this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
+    }
   }
 
   //Grafico sobre total poligonos
@@ -1449,62 +1527,61 @@ export class DashboardComponent implements AfterViewInit {
    * @async
    */
   async crearGraficoCantidadFamiliasOZCacao(whereClause: string = '1=1') {
-    const baseUrl = this.QUERY_SERVICIO;
-    interface Cultivo {
-      org: string;
-      cultivo: string;
-      dni: string;
-    }
+    const ctx = document.getElementById('graficoCantidadDNIOZCACAO') as HTMLCanvasElement;
+    if (!ctx) return;
 
-    let allFeatures: any[] = [];
-    let offset = 0;
+    const featureLayer = new FeatureLayer({ url: this.PROXY_MAP_BASE });
+    const finalWhereClause = `tipo_cultivo='CACAO' AND ${whereClause}`;
+    const dnisPorOficina: Record<string, Set<string>> = {};
     const pageSize = 2000;
-    let hasMore = true;
 
-    // 🔹 Paginación para traer TODOS los registros SOLO de CACAO
-    while (hasMore) {
-      const finalWhere = `tipo_cultivo='CACAO' AND ${whereClause}`;
-      const url =
-        `${baseUrl}?where=${encodeURIComponent(finalWhere)}&outFields=oficina_zonal,tipo_cultivo,dni_participante` +
-        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
+    try {
+      const total = await featureLayer.queryFeatureCount({ where: finalWhereClause });
+      let fetched = 0;
 
-      const res = await fetch(url);
-      const data = await res.json();
+      while (fetched < total) {
+        const result = await featureLayer.queryFeatures({
+          where: finalWhereClause,
+          outFields: ['oficina_zonal', 'dni_participante'],
+          returnGeometry: false,
+          start: fetched,
+          num: pageSize,
+        });
 
-      if (data.features?.length) {
-        allFeatures = allFeatures.concat(data.features);
-        offset += pageSize;
-        hasMore = data.features.length === pageSize;
-      } else {
-        hasMore = false;
+        if (!result.features.length) {
+          break;
+        }
+
+        result.features.forEach(feature => {
+          const org = feature.attributes.oficina_zonal;
+          const dni = feature.attributes.dni_participante;
+          if (org && dni) {
+            if (!dnisPorOficina[org]) {
+              dnisPorOficina[org] = new Set<string>();
+            }
+            dnisPorOficina[org].add(dni);
+          }
+        });
+
+        fetched += result.features.length;
       }
-    }
 
-    const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
-      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
-      dni: feat.attributes.dni_participante, // CAMBIO: 'dni' -> 'dni_participante'
-    }));
-
-    // 🔹 Contamos **DNI únicos** de CACAO por Oficina Zonal
-    const agrupado: Record<string, Set<string>> = {};
-    rawData.forEach((item: Cultivo) => {
-      if (item.cultivo === 'CACAO' && item.dni) {
-        if (!agrupado[item.org]) agrupado[item.org] = new Set<string>();
-        agrupado[item.org].add(item.dni);
+      if (Object.keys(dnisPorOficina).length === 0) {
+        this.mostrarMensajeEnCanvas(ctx, 'No hay datos de familias (Cacao) por Oficina Zonal.');
+        return;
       }
-    });
 
-    // 🔹 Convertimos los sets a números y ordenamos
-    const entries = Object.entries(agrupado)
-      .map(([org, dnis]) => [org, dnis.size] as [string, number])
-      .sort((a, b) => b[1] - a[1]);
+      const agrupado: Record<string, number> = {};
+      for (const org in dnisPorOficina) {
+        agrupado[org] = dnisPorOficina[org].size;
+      }
 
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
+      const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
+      const labels = entries.map(e => e[0]);
+      const values = entries.map(e => e[1]);
 
-    // 🔹 Colores por ORG
-    const colorMap: Record<string, string> = {
+      // 🔹 Colores por ORG
+      const colorMap: Record<string, string> = {
       'SAN FRANCISCO': '#FEEFD8',
       'JAEN': '#FFBEBE',
       'PUCALLPA': '#B7D9FE',
@@ -1516,9 +1593,7 @@ export class DashboardComponent implements AfterViewInit {
       'IQUITOS': '#CAFEDA',
     };
 
-    const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
-    const ctx = document.getElementById('graficoCantidadDNIOZCACAO') as HTMLCanvasElement;
-    if (!ctx) return;
+      const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
 
     this.charts.push(new Chart(ctx, {
       type: 'bar',
@@ -1547,9 +1622,8 @@ export class DashboardComponent implements AfterViewInit {
         indexAxis: 'y',
         scales: {
           x: {
-            min:0,
-            max: 10000,
             beginAtZero: true,
+            max:10000,
             ticks: {
               callback: (value) =>
                 `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
@@ -1588,6 +1662,10 @@ export class DashboardComponent implements AfterViewInit {
       },
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
+    } catch (error) {
+      console.error('Error al crear gráfico de familias (Cacao) por OZ:', error);
+      this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
+    }
   }
 
   //Participantes por oficina Zonal
@@ -1600,62 +1678,61 @@ export class DashboardComponent implements AfterViewInit {
    * @async
    */
   async crearGraficoCantidadFamiliasOZCafe(whereClause: string = '1=1') {
-    const baseUrl = this.QUERY_SERVICIO;
-    interface Cultivo {
-      org: string;
-      cultivo: string;
-      dni: string;
-    }
+    const ctx = document.getElementById('graficoCantidadDNIOZCAFE') as HTMLCanvasElement;
+    if (!ctx) return;
 
-    let allFeatures: any[] = [];
-    let offset = 0;
+    const featureLayer = new FeatureLayer({ url: this.PROXY_MAP_BASE });
+    const finalWhereClause = `tipo_cultivo='CAFE' AND ${whereClause}`;
+    const dnisPorOficina: Record<string, Set<string>> = {};
     const pageSize = 2000;
-    let hasMore = true;
 
-    // 🔹 Paginación para traer TODOS los registros SOLO de CAFÉ
-    while (hasMore) {
-      const finalWhere = `tipo_cultivo='CAFE' AND ${whereClause}`;
-      const url =
-        `${baseUrl}?where=${encodeURIComponent(finalWhere)}&outFields=oficina_zonal,tipo_cultivo,dni_participante` +
-        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
+    try {
+      const total = await featureLayer.queryFeatureCount({ where: finalWhereClause });
+      let fetched = 0;
 
-      const res = await fetch(url);
-      const data = await res.json();
+      while (fetched < total) {
+        const result = await featureLayer.queryFeatures({
+          where: finalWhereClause,
+          outFields: ['oficina_zonal', 'dni_participante'],
+          returnGeometry: false,
+          start: fetched,
+          num: pageSize,
+        });
 
-      if (data.features?.length) {
-        allFeatures = allFeatures.concat(data.features);
-        offset += pageSize;
-        hasMore = data.features.length === pageSize;
-      } else {
-        hasMore = false;
+        if (!result.features.length) {
+          break;
+        }
+
+        result.features.forEach(feature => {
+          const org = feature.attributes.oficina_zonal;
+          const dni = feature.attributes.dni_participante;
+          if (org && dni) {
+            if (!dnisPorOficina[org]) {
+              dnisPorOficina[org] = new Set<string>();
+            }
+            dnisPorOficina[org].add(dni);
+          }
+        });
+
+        fetched += result.features.length;
       }
-    }
 
-    const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
-      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
-      dni: feat.attributes.dni_participante, // CAMBIO: 'dni' -> 'dni_participante'
-    }));
-
-    // 🔹 Contamos **DNI únicos** de CAFÉ por Oficina Zonal
-    const agrupado: Record<string, Set<string>> = {};
-    rawData.forEach((item: Cultivo) => {
-      if (item.cultivo === 'CAFE' && item.dni) {
-        if (!agrupado[item.org]) agrupado[item.org] = new Set<string>();
-        agrupado[item.org].add(item.dni);
+      if (Object.keys(dnisPorOficina).length === 0) {
+        this.mostrarMensajeEnCanvas(ctx, 'No hay datos de familias (Café) por Oficina Zonal.');
+        return;
       }
-    });
 
-    // 🔹 Convertimos los sets a números y ordenamos
-    const entries = Object.entries(agrupado)
-      .map(([org, dnis]) => [org, dnis.size] as [string, number])
-      .sort((a, b) => b[1] - a[1]);
+      const agrupado: Record<string, number> = {};
+      for (const org in dnisPorOficina) {
+        agrupado[org] = dnisPorOficina[org].size;
+      }
 
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
+      const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
+      const labels = entries.map(e => e[0]);
+      const values = entries.map(e => e[1]);
 
-    // 🔹 Colores por ORG
-    const colorMap: Record<string, string> = {
+      // 🔹 Colores por ORG
+      const colorMap: Record<string, string> = {
       'SAN FRANCISCO': '#FEEFD8',
       'JAEN': '#FFBEBE',
       'PUCALLPA': '#B7D9FE',
@@ -1667,9 +1744,7 @@ export class DashboardComponent implements AfterViewInit {
       'IQUITOS': '#CAFEDA',
     };
 
-    const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
-    const ctx = document.getElementById('graficoCantidadDNIOZCAFE') as HTMLCanvasElement;
-    if (!ctx) return;
+      const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
 
     this.charts.push(new Chart(ctx, {
       type: 'bar',
@@ -1698,9 +1773,8 @@ export class DashboardComponent implements AfterViewInit {
         indexAxis: 'y',
         scales: {
           x: {
-            min:0,
-            max: 10000,
             beginAtZero: true,
+            max:10000,
             ticks: {
               callback: (value) =>
                 `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
@@ -1739,6 +1813,10 @@ export class DashboardComponent implements AfterViewInit {
       },
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
+    } catch (error) {
+      console.error('Error al crear gráfico de familias (Café) por OZ:', error);
+      this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
+    }
   }
 
 
@@ -1752,53 +1830,49 @@ export class DashboardComponent implements AfterViewInit {
    * @async
    */
   async crearGraficoCantidadPoligonosOZCacao(whereClause: string = '1=1') {
-    const baseUrl = this.QUERY_SERVICIO;
-    interface Cultivo {
-      org: string;
-      cultivo: string;
-    }
+    const ctx = document.getElementById('graficoCantidadOZCACAO') as HTMLCanvasElement;
+    if (!ctx) return;
 
-    let allFeatures: any[] = [];
-    let offset = 0;
+    const featureLayer = new FeatureLayer({ url: this.PROXY_MAP_BASE });
+    const finalWhereClause = `tipo_cultivo='CACAO' AND ${whereClause}`;
+    const conteoPorOficina: Record<string, number> = {};
     const pageSize = 2000;
-    let hasMore = true;
 
-    // 🔹 Paginación para traer TODOS los registros SOLO de CACAO
-    while (hasMore) {
-      const finalWhere = `tipo_cultivo='CACAO' AND ${whereClause}`;
-      const url =
-        `${baseUrl}?where=${encodeURIComponent(finalWhere)}&outFields=oficina_zonal,tipo_cultivo` +
-        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
+    try {
+      const total = await featureLayer.queryFeatureCount({ where: finalWhereClause });
+      let fetched = 0;
 
-      const res = await fetch(url);
-      const data = await res.json();
+      while (fetched < total) {
+        const result = await featureLayer.queryFeatures({
+          where: finalWhereClause,
+          outFields: ['oficina_zonal'],
+          returnGeometry: false,
+          start: fetched,
+          num: pageSize,
+        });
 
-      if (data.features?.length) {
-        allFeatures = allFeatures.concat(data.features);
-        offset += pageSize;
-        hasMore = data.features.length === pageSize;
-      } else {
-        hasMore = false;
+        if (!result.features.length) {
+          break;
+        }
+
+        result.features.forEach(feature => {
+          const org = feature.attributes.oficina_zonal;
+          if (org) {
+            conteoPorOficina[org] = (conteoPorOficina[org] || 0) + 1;
+          }
+        });
+
+        fetched += result.features.length;
       }
-    }
 
-    const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
-      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
-    }));
-
-    // 🔹 Contamos registros de CACAO por Oficina Zonal
-    const agrupado: Record<string, number> = {};
-    rawData.forEach((item: Cultivo) => {
-      if (item.cultivo === 'CACAO') {
-        agrupado[item.org] = (agrupado[item.org] || 0) + 1;
+      if (Object.keys(conteoPorOficina).length === 0) {
+        this.mostrarMensajeEnCanvas(ctx, 'No hay datos de polígonos de Cacao.');
+        return;
       }
-    });
 
-    // 🔹 Ordenar de mayor a menor
-    const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
+      const entries = Object.entries(conteoPorOficina).sort((a, b) => b[1] - a[1]);
+      const labels = entries.map(e => e[0]);
+      const values = entries.map(e => e[1]);
 
     // 🔹 Colores por ORG
     const colorMap: Record<string, string> = {
@@ -1814,8 +1888,6 @@ export class DashboardComponent implements AfterViewInit {
     };
 
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
-    const ctx = document.getElementById('graficoCantidadOZCACAO') as HTMLCanvasElement;
-    if (!ctx) return;
 
     this.charts.push(new Chart(ctx, {
       type: 'bar',
@@ -1844,9 +1916,8 @@ export class DashboardComponent implements AfterViewInit {
         indexAxis: 'y',
         scales: {
           x: {
-            min:0,
-            max: 10000,
             beginAtZero: true,
+            max:10000,
             ticks: {
               callback: (value) =>
                 `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
@@ -1885,6 +1956,10 @@ export class DashboardComponent implements AfterViewInit {
       },
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
+    } catch (error) {
+      console.error('Error al crear gráfico de polígonos de Cacao:', error);
+      this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
+    }
   }
   //Grafico por poligonos de cultivos de cafe por Oficina Zonal
   /**
@@ -1896,53 +1971,49 @@ export class DashboardComponent implements AfterViewInit {
    * @async
    */
   async crearGraficoCantidadPoligonosOZCafe(whereClause: string = '1=1') {
-    const baseUrl = this.QUERY_SERVICIO;
-    interface Cultivo {
-      org: string;
-      cultivo: string;
-    }
+    const ctx = document.getElementById('graficoCantidadOZCAFE') as HTMLCanvasElement;
+    if (!ctx) return;
 
-    let allFeatures: any[] = [];
-    let offset = 0;
+    const featureLayer = new FeatureLayer({ url: this.PROXY_MAP_BASE });
+    const finalWhereClause = `tipo_cultivo='CAFE' AND ${whereClause}`;
+    const conteoPorOficina: Record<string, number> = {};
     const pageSize = 2000;
-    let hasMore = true;
 
-    // 🔹 Paginación para traer TODOS los registros SOLO de CAFÉ
-    while (hasMore) {
-      const finalWhere = `tipo_cultivo='CAFE' AND ${whereClause}`;
-      const url =
-        `${baseUrl}?where=${encodeURIComponent(finalWhere)}&outFields=oficina_zonal,tipo_cultivo` +
-        `&returnGeometry=false&f=json&resultRecordCount=${pageSize}&resultOffset=${offset}`;
+    try {
+      const total = await featureLayer.queryFeatureCount({ where: finalWhereClause });
+      let fetched = 0;
 
-      const res = await fetch(url);
-      const data = await res.json();
+      while (fetched < total) {
+        const result = await featureLayer.queryFeatures({
+          where: finalWhereClause,
+          outFields: ['oficina_zonal'],
+          returnGeometry: false,
+          start: fetched,
+          num: pageSize,
+        });
 
-      if (data.features?.length) {
-        allFeatures = allFeatures.concat(data.features);
-        offset += pageSize;
-        hasMore = data.features.length === pageSize;
-      } else {
-        hasMore = false;
+        if (!result.features.length) {
+          break;
+        }
+
+        result.features.forEach(feature => {
+          const org = feature.attributes.oficina_zonal;
+          if (org) {
+            conteoPorOficina[org] = (conteoPorOficina[org] || 0) + 1;
+          }
+        });
+
+        fetched += result.features.length;
       }
-    }
 
-    const rawData: Cultivo[] = allFeatures.map((feat: any) => ({
-      org: feat.attributes.oficina_zonal, // CAMBIO: 'org' -> 'oficina_zonal'
-      cultivo: feat.attributes.tipo_cultivo, // CAMBIO: 'cultivo' -> 'tipo_cultivo'
-    }));
-
-    // 🔹 Contamos registros de CAFÉ por Oficina Zonal
-    const agrupado: Record<string, number> = {};
-    rawData.forEach((item: Cultivo) => {
-      if (item.cultivo === 'CAFE') {
-        agrupado[item.org] = (agrupado[item.org] || 0) + 1;
+      if (Object.keys(conteoPorOficina).length === 0) {
+        this.mostrarMensajeEnCanvas(ctx, 'No hay datos de polígonos de Café.');
+        return;
       }
-    });
 
-    // 🔹 Ordenar de mayor a menor
-    const entries = Object.entries(agrupado).sort((a, b) => b[1] - a[1]);
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
+      const entries = Object.entries(conteoPorOficina).sort((a, b) => b[1] - a[1]);
+      const labels = entries.map(e => e[0]);
+      const values = entries.map(e => e[1]);
 
     // 🔹 Colores por ORG
     const colorMap: Record<string, string> = {
@@ -1958,8 +2029,6 @@ export class DashboardComponent implements AfterViewInit {
     };
 
     const backgroundColors = labels.map(org => colorMap[org] || '#cccccc');
-    const ctx = document.getElementById('graficoCantidadOZCAFE') as HTMLCanvasElement;
-    if (!ctx) return;
 
     this.charts.push(new Chart(ctx, {
       type: 'bar',
@@ -1988,9 +2057,8 @@ export class DashboardComponent implements AfterViewInit {
         indexAxis: 'y',
         scales: {
           x: {
-            min: 0,
-            max: 10000,
             beginAtZero: true,
+            max:10000,
             ticks: {
               callback: (value) =>
                 `${Number(value).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
@@ -2029,6 +2097,10 @@ export class DashboardComponent implements AfterViewInit {
       },
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
+    } catch (error) {
+      console.error('Error al crear gráfico de polígonos de Café:', error);
+      this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
+    }
   }
 
   /**
@@ -2040,41 +2112,48 @@ export class DashboardComponent implements AfterViewInit {
    * @async
    */
   async crearGraficoPorDepartamento(whereClause: string = '1=1') {
-    // Se utiliza una consulta de estadísticas para que el servidor haga el conteo, es más eficiente.
-    const statDef = new StatisticDefinition({
-      onStatisticField: 'OBJECTID', // Se usa OBJECTID para contar cada registro (polígono).
-      outStatisticFieldName: 'count_registros',
-      statisticType: 'count',
-    });
-
-    const featureLayer = new FeatureLayer({ url: this.SERVICIO_PIRDAIS });
-    const query = featureLayer.createQuery();
-    query.where = whereClause;
-    query.outStatistics = [statDef];
-    query.groupByFieldsForStatistics = ['departamento'];
-    query.orderByFields = ['count_registros DESC']; // Ordenar de mayor a menor
-
     const ctx = document.getElementById('graficoPorDepartamento') as HTMLCanvasElement;
     if (!ctx) return;
 
-    try {
-      const result = await featureLayer.queryFeatures(query);
+    const featureLayer = new FeatureLayer({ url: this.PROXY_MAP_BASE });
+    const conteoPorDepto: Record<string, number> = {};
+    const pageSize = 2000;
 
-      // Valida si se obtuvieron resultados
-      if (!result.features || result.features.length === 0) {
-        const context = ctx.getContext('2d');
-        if (context) {
-            context.clearRect(0, 0, ctx.width, ctx.height);
-            context.textAlign = 'center';
-            context.fillStyle = '#999';
-            context.font = '16px Arial';
-            context.fillText('No hay datos disponibles para mostrar', ctx.width / 2, ctx.height / 2);
+    try {
+      const total = await featureLayer.queryFeatureCount({ where: whereClause });
+      let fetched = 0;
+
+      while (fetched < total) {
+        const result = await featureLayer.queryFeatures({
+          where: whereClause,
+          outFields: ['departamento'],
+          returnGeometry: false,
+          start: fetched,
+          num: pageSize,
+        });
+
+        if (!result.features.length) {
+          break;
         }
+
+        result.features.forEach(feature => {
+          const depto = feature.attributes.departamento;
+          if (depto) {
+            conteoPorDepto[depto] = (conteoPorDepto[depto] || 0) + 1;
+          }
+        });
+
+        fetched += result.features.length;
+      }
+
+      if (Object.keys(conteoPorDepto).length === 0) {
+        this.mostrarMensajeEnCanvas(ctx, 'No hay datos disponibles para mostrar.');
         return;
       }
 
-      const labels = result.features.map(f => f.attributes.departamento).filter(Boolean); // Filtra nulos o vacíos
-      const values = result.features.map(f => f.attributes.count_registros);
+      const entries = Object.entries(conteoPorDepto).sort((a, b) => b[1] - a[1]);
+      const labels = entries.map(e => e[0]);
+      const values = entries.map(e => e[1]);
 
       this.charts.push(new Chart(ctx, {
         type: 'bar', // Gráfico de barras verticales
@@ -2101,9 +2180,8 @@ export class DashboardComponent implements AfterViewInit {
           },
           scales: {
             y: {
-              min:0,
-              max: 10000,
               beginAtZero: true,
+              max: 15000,
               ticks: {
                 font: { size: 12, weight: 'bold' },
               },
@@ -2139,15 +2217,8 @@ export class DashboardComponent implements AfterViewInit {
         },
       plugins: [pseudo3DPlugin, ChartDataLabels],
       }));
-    } catch (err) {
-      const context = ctx.getContext('2d');
-      if (context) {
-          context.clearRect(0, 0, ctx.width, ctx.height);
-          context.textAlign = 'center';
-          context.fillStyle = '#D32F2F';
-          context.font = '16px Arial';
-          context.fillText('Error al cargar los datos del gráfico', ctx.width / 2, ctx.height / 2);
-      }
+    } catch (error) {
+      this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
     }
   }
 
@@ -2224,7 +2295,7 @@ export class DashboardComponent implements AfterViewInit {
     this.isModalVisible = true;
     this.isModalLoading = true;
     try {
-      const layer = new FeatureLayer({ url: this.SERVICIO_PIRDAIS });
+      const layer = new FeatureLayer({ url: this.PROXY_MAP_BASE });
       const yearFilter = this.selectedYear === 0 ? '1=1' : `EXTRACT(YEAR FROM fecha_levantamiento) = ${this.selectedYear}`;
       this.modalData = await this.getCafeYCacaoParticipantsDetails(layer, yearFilter);
     } catch (error) {
@@ -2478,5 +2549,32 @@ export class DashboardComponent implements AfterViewInit {
     } finally {
       this.isExportingPDF = false;
     }
+  }
+
+  /**
+   * @method mostrarMensajeEnCanvas
+   * @description
+   * Dibuja un mensaje de texto en el centro de un elemento canvas.
+   * Útil para notificar al usuario cuando no hay datos o ha ocurrido un error.
+   * @param {HTMLCanvasElement} canvas - El elemento canvas donde se dibujará el mensaje.
+   * @param {string} mensaje - El texto que se mostrará.
+   * @param {string} [color='#999'] - El color del texto.
+   */
+  private mostrarMensajeEnCanvas(canvas: HTMLCanvasElement, mensaje: string, color: string = '#999'): void {
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.textAlign = 'center';
+    context.fillStyle = color;
+    context.font = '16px Arial';
+    context.fillText(mensaje, canvas.width / 2, canvas.height / 2);
+  }
+
+  /**
+   * @method retryConnection
+   * @description Recarga la página para reintentar la conexión con el backend.
+   */
+  public retryConnection(): void {
+    window.location.reload();
   }
 }

@@ -3,10 +3,10 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(1.4);
+    transform: scale(1.1); /* Reducido de 1.4 a 1.1 para menor carga */
   }
   25%, 75% {
-    transform: scale(1.2);
+    transform: scale(1.05); /* Reducido de 1.2 a 1.05 */
   }
 }
 

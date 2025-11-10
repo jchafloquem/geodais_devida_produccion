@@ -1,1 +1,59 @@
 
+/*
+  NOTA: Añade estos estilos a tu archivo SCSS existente.
+  Puedes personalizarlos para que coincidan con el diseño de tu aplicación.
+*/
+
+.backend-error-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 80vh; // Ocupa casi toda la altura de la vista
+  text-align: center;
+  padding: 20px;
+  background-color: #f8f9fa;
+
+  .error-icon {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 20px;
+    opacity: 0.7;
+  }
+
+  h2 {
+    font-size: 2rem;
+    color: #dc3545; // Un color rojo para la alerta
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-size: 1.1rem;
+    color: #6c757d; // Un gris suave
+    max-width: 500px;
+    margin-bottom: 25px;
+  }
+
+  .retry-button {
+    // Aquí puedes usar los estilos de tus botones existentes
+    padding: 12px 25px;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 5px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #0056b3;
+    }
+  }
+}
+
+/* Estilo de ejemplo para el contenido del dashboard */
+.placeholder-content {
+  padding: 20px;
+  font-style: italic;
+  color: #6c757d;
+}

@@ -14,320 +14,341 @@
     <!-- 📊 Contenido Principal -->
     <main class="flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto space-y-6 transition-all duration-300 ease-in-out pb-20"
           [class.md:ml-64]="isMenuOpen" [class.md:ml-0]="!isMenuOpen"> <!-- Espacio para el footer -->
-    <h1 id="dashboard-title" class="text-base sm:text-lg md:text-xl font-semibold text-white bg-secondary px-3 py-2 rounded-lg shadow-md text-center">
-      <ng-container [ngSwitch]="selectedYear">
-        <ng-container *ngSwitchCase="0">
-          Información Acumulada (Todos los años)
-        </ng-container>
-        <ng-container *ngSwitchCase="2024">
-          Información de la Meta 2024
-        </ng-container>
-        <ng-container *ngSwitchCase="2025">
-          Información vigente al {{ currentDate | date:'longDate' }}
-        </ng-container>
-        <ng-container *ngSwitchDefault>
-          Información correspondiente al año {{ selectedYear }}
-        </ng-container>
-      </ng-container>
-    </h1>
-    <!-- Agrega esto donde quieras que aparezca el selector de año -->
-    <div class="flex flex-wrap items-center justify-center gap-4">
-      <div id="year-selector-container" class="inline-flex items-center bg-white rounded-lg shadow-sm border border-gray-300 p-1">
-        <label for="year-select" class="px-3 text-base sm:text-lg font-semibold text-gray-600">Seleccionar Año:</label>
-        <select id="year-select" (change)="onYearChange($event)" class="rounded-md border-transparent bg-transparent py-2 pl-2 pr-8 text-base sm:text-lg font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-          <option [value]="0" [selected]="selectedYear === 0">Todos</option>
-          <option *ngFor="let year of availableYears" [value]="year" [selected]="year === selectedYear">
-            {{ year }}
-          </option>
-        </select>
-      </div>
-    </div>
-    <!-- ESTADISTICA SOBRE HECTAREAS -->
-    <div id="hectareas-section" class="rounded-2xl bg-[#0D9BD7] p-6 shadow-md ring-1 ring-gray-200">
-      <!-- Título de la tarjeta principal -->
-      <h2 class="text-xl sm:text-2xl font-semibold text-black mb-6">
-        HECTÁREAS (CACAO & CAFÉ)
-      </h2>
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-4 text-white">
-        <!-- Meta Total -->
-        <div
-          class="flex items-start justify-between rounded-2xl bg-gray-800 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
-          <div>
-            <p class="text-base sm:text-lg font-medium leading-6 text-white">META</p>
-            <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ currentMetaHectareas | number :
-              "1.0-0" }}</p>
+
+      <!-- Contenedor condicional: Muestra el dashboard o el mensaje de error -->
+      <ng-container *ngIf="!isBackendError; else backendErrorTemplate">
+
+        <h1 id="dashboard-title" class="text-base sm:text-lg md:text-xl font-semibold text-white bg-secondary px-3 py-2 rounded-lg shadow-md text-center">
+          <ng-container [ngSwitch]="selectedYear">
+            <ng-container *ngSwitchCase="0">
+              Información Acumulada (Todos los años)
+            </ng-container>
+            <ng-container *ngSwitchCase="2024">
+              Información de la Meta 2024
+            </ng-container>
+            <ng-container *ngSwitchCase="2025">
+              Información vigente al {{ currentDate | date:'longDate' }}
+            </ng-container>
+            <ng-container *ngSwitchDefault>
+              Información correspondiente al año {{ selectedYear }}
+            </ng-container>
+          </ng-container>
+        </h1>
+        <!-- Todo el contenido del dashboard va aquí dentro -->
+
+        <!-- Agrega esto donde quieras que aparezca el selector de año -->
+        <div class="flex flex-wrap items-center justify-center gap-4">
+          <div id="year-selector-container" class="inline-flex items-center bg-white rounded-lg shadow-sm border border-gray-300 p-1">
+            <label for="year-select" class="px-3 text-base sm:text-lg font-semibold text-gray-600">Seleccionar Año:</label>
+            <select id="year-select" (change)="onYearChange($event)" class="rounded-md border-transparent bg-transparent py-2 pl-2 pr-8 text-base sm:text-lg font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <option [value]="0" [selected]="selectedYear === 0">Todos</option>
+              <option *ngFor="let year of availableYears" [value]="year" [selected]="year === selectedYear">
+                {{ year }}
+              </option>
+            </select>
           </div>
-          <img [src]="assetPath + '/images/logos/meta.png'" alt="icono"
-               class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
-        </div>
-        <!-- Hectáreas Total en Cultivos -->
-        <div
-          class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
-          <div>
-            <p class="text-base sm:text-lg font-medium leading-6">AVANCE CACAO & CAFÉ</p>
-            <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalAreaCultivo | number : "1.0-0"
-              }}</p>
-          </div>
-          <img [src]="assetPath + '/images/logos/avance.png'" alt="icono"
-               class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
-        </div>
-        <!-- Hectáreas de Cacao -->
-        <div
-          class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
-          <div>
-            <p class="text-base sm:text-lg font-medium leading-6">AVANCE CACAO</p>
-            <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalAreaCacao | number : "1.0-0"
-              }}</p>
-          </div>
-          <img [src]="assetPath + '/images/logos/grano_cacao.png'" alt="icono"
-               class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
-        </div>
-        <!-- Hectáreas de Café -->
-        <div
-          class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
-          <div>
-            <p class="text-base sm:text-lg font-medium leading-6">AVANCE CAFÉ</p>
-            <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalAreaCafe | number : "1.0-0"
-              }}</p>
-          </div>
-          <img [src]="assetPath + '/images/logos/grano_cafe.png'" alt="icono"
-               class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
-        </div>
-      </div>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg border p-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Gráfico 1 -->
-        <div class="relative h-80 md:h-96">
-          <canvas id="graficoMeta"></canvas>
-        </div>
-        <!-- Gráfico 2 (barras horizontales) -->
-        <div class="relative h-80 md:h-96">
-          <canvas id="graficoMetaOZ"></canvas>
-        </div>
-      </div>
-    </div>
-    <!-- estaditica con meta -->
-    <!-- <div class="bg-white rounded-2xl shadow-lg border p-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
-        <div class="w-full h-[280px] sm:h-[380px] md:h-[450px] lg:h-[500px] 3xl:h-[650px] max-w-full mx-auto">
-          <canvas id="graficoMetaOZCAFE" class="w-full h-full"></canvas>
-        </div>
-        <div class="w-full h-[280px] sm:h-[380px] md:h-[450px] lg:h-[500px] 3xl:h-[650px] max-w-full mx-auto">
-          <canvas id="graficoMetaOZCACAO" class="w-full h-full"></canvas>
-        </div>
-      </div>
-    </div> -->
-    <!-- ESTADISTICA SOBRE FAMILIAS -->
-    <div id="familias-section" class="rounded-2xl bg-[#0D9BD7] p-6 shadow-md ring-1 ring-gray-200">
-      <h2 class="text-xl sm:text-2xl font-bold text-black mb-6">
-        FAMILIAS PARTICIPANTES EN CULTIVOS DE CACAO & CAFÉ
-      </h2>
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-5 text-white">
-        <div
-          class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
-          <div>
-            <p class="text-base sm:text-lg font-medium leading-6 text-white">META</p>
-            <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ currentMetaFamilias | number :
-              "1.0-0" }}</p>
-          </div>
-          <img [src]="assetPath + '/images/logos/meta.png'" alt="icono"
-               class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
-        </div>
-        <div
-          class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
-          <div>
-            <p class="text-base sm:text-lg font-medium leading-6">AVANCE</p>
-            <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["total"] |
-              number : "1.0-0" }}</p>
-          </div>
-          <img [src]="assetPath + '/images/logos/avance.png'" alt="icono"
-               class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
-        </div>
-        <div
-          class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
-          <div>
-            <p class="text-base sm:text-lg font-medium leading-6">AVANCE CACAO</p>
-            <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["cacao"] |
-              number : "1.0-0" }}</p>
-          </div>
-          <img [src]="assetPath + '/images/logos/grano_cacao.png'" alt="icono"
-               class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
-        </div>
-        <div
-          class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
-          <div>
-            <p class="text-base sm:text-lg font-medium leading-6">AVANCE CAFÉ</p>
-            <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["cafe"] |
-              number : "1.0-0" }}</p>
-          </div>
-          <img [src]="assetPath + '/images/logos/grano_cafe.png'" alt="icono"
-               class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
-        </div>
-        <div class="rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer hover:bg-gray-700 transition-colors" (click)="showCafeYCacaoReport()">
-          <p class="text-sm sm:text-base font-medium leading-tight">PARTICIPANTES EN AMBOS</p>
-          <p class="mt-2 flex items-baseline gap-x-2">
-            <span class="text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">
-              {{ totalRegistrosUnicosDNI["cafe_y_cacao"] | number : "1.0-0" }}
-            </span>
-          </p>
-        </div>
-      </div>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg border p-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Gráfico 1 -->
-        <div class="relative h-80 md:h-96">
-          <canvas id="graficoMetaDNI"></canvas>
-        </div>
-        <!-- Gráfico 2 (barras horizontales) -->
-        <div class="relative h-80 md:h-96">
-          <canvas id="graficoMetaParticipantes"></canvas>
-        </div>
-      </div>
-    </div>
-    <!-- FIN ESTADISTICA SOBRE FAMILIAS -->
-    <div class="bg-white rounded-2xl shadow-lg border p-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Gráfico 2 (barras horizontales) -->
-        <div class="relative h-80 md:h-96">
-          <canvas id="graficoCantidadDNIOZCACAO"></canvas>
-        </div>
-        <!-- Gráfico 1 -->
-        <div class="relative h-80 md:h-96">
-          <canvas id="graficoCantidadDNIOZCAFE"></canvas>
-        </div>
-      </div>
-    </div>
-    <!-- ESTADISTICA POLIGONOS -->
-    <div id="poligonos-section" class="rounded-2xl bg-[#0D9BD7] p-6 shadow-md ring-1 ring-gray-200">
-      <h2 class="text-xl sm:text-2xl font-bold text-black mb-6">
-        POLÍGONOS DE CACAO & CAFÉ
-      </h2>
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 text-white">
-        <div
-          class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
-          <div>
-            <p class="text-base sm:text-lg font-medium leading-6 text-white">AVANCE</p>
-            <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosCultivos | number :
-              "1.0-0" }}</p>
-          </div>
-          <img [src]="assetPath + '/images/logos/avance.png'" alt="icono"
-               class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
         </div>
 
-        <div
-          class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
-          <div>
-            <p class="text-base sm:text-lg font-medium leading-6">AVANCE CACAO</p>
-            <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalCacao | number : "1.0-0"}}</p>
-          </div>
-          <img [src]="assetPath + '/images/logos/grano_cacao.png'" alt="icono"
-               class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
-        </div>
-        <div
-          class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
-          <div>
-            <p class="text-base sm:text-lg font-medium leading-6">AVANCE CAFÉ</p>
-            <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalCafe | number : "1.0-0"}}</p>
-          </div>
-          <img [src]="assetPath + '/images/logos/grano_cafe.png'" alt="icono"
-               class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
-        </div>
-      </div>
-    </div>
-    <!-- FIN ESTADISTICA POLIGONOS -->
-    <div class="bg-white rounded-2xl shadow-lg border p-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Gráfico 2 (barras horizontales) -->
-        <div class="relative h-80 md:h-96">
-          <canvas id="graficoCantidadOZCACAO"></canvas>
-        </div>
-        <!-- Gráfico 1 -->
-        <div class="relative h-80 md:h-96">
-          <canvas id="graficoCantidadOZCAFE"></canvas>
-        </div>
-      </div>
-    </div>
-    <!-- NUEVO GRÁFICO POR DEPARTAMENTO -->
-    <div id="departamento-section" class="bg-white rounded-2xl shadow-lg border p-6">
-      <h2 class="text-xl sm:text-2xl font-bold text-black mb-6">
-        CANTIDAD DE POLÍGONOS POR DEPARTAMENTO
-      </h2>
-      <div class="relative h-96">
-        <canvas id="graficoPorDepartamento"></canvas>
-      </div>
-    </div>
-    <!-- Modal para el Reporte de Participantes en Ambos Cultivos -->
-    <div *ngIf="isModalVisible" class="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" (click)="closeModal()">
-      <div class="bg-white rounded-lg shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
-        <!-- Cabecera del Modal -->
-        <div class="flex justify-between items-center p-4 border-b">
-          <h3 class="text-xl font-bold text-gray-800">Reporte: Participantes en Cacao y Café</h3>
-          <button (click)="closeModal()" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
-        </div>
-        <!-- Contenido del Modal -->
-        <div class="p-6 overflow-auto">
-          <!-- Estado de Carga -->
-          <div *ngIf="isModalLoading" class="flex flex-col items-center justify-center h-64">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p class="mt-4 text-gray-600">Cargando reporte...</p>
-          </div>
-          <!-- Tabla de Datos -->
-          <div *ngIf="!isModalLoading && modalData.length > 0" class="overflow-x-auto border border-gray-200 rounded-lg">
-            <table class="min-w-full border-collapse">
-              <thead class="bg-gray-200">
-                <tr>
-                  <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">DNI</th>
-                  <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Nombres</th>
-                  <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Código del Plan</th>
-                  <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Cultivo</th>
-                  <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Fecha Levantamiento</th>
-                  <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Oficina Zonal</th>
-                  <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Departamento</th>
-                  <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Provincia</th>
-                  <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Distrito</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white">
-                <tr *ngFor="let item of modalData" class="even:bg-gray-50 hover:bg-blue-100 transition-colors">
-                  <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800 border-b border-gray-200">{{ item.dni_participante }}</td>
-                  <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800 border-b border-gray-200">{{ item.nombres }}</td>
-                  <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.codigo_plan }}</td>
-                  <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.tipo_cultivo }}</td>
-                  <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.fecha_levantamiento | date:'dd/MM/yyyy' }}</td>
-                  <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.oficina_zonal }}</td>
-                  <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.departamento }}</td>
-                  <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.provincia }}</td>
-                  <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.distrito }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <!-- Sin Datos -->
-          <div *ngIf="!isModalLoading && modalData.length === 0" class="text-center text-gray-500 py-16">
-            <p>No se encontraron participantes en ambos cultivos para el período seleccionado.</p>
+        <!-- ESTADISTICA SOBRE HECTAREAS -->
+        <div id="hectareas-section" class="rounded-2xl bg-[#0D9BD7] p-6 shadow-md ring-1 ring-gray-200">
+          <!-- Título de la tarjeta principal -->
+          <h2 class="text-xl sm:text-2xl font-semibold text-black mb-6">
+            HECTÁREAS (CACAO & CAFÉ)
+          </h2>
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-4 text-white">
+            <!-- Meta Total -->
+            <div
+              class="flex items-start justify-between rounded-2xl bg-gray-800 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
+              <div>
+                <p class="text-base sm:text-lg font-medium leading-6 text-white">META</p>
+                <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ currentMetaHectareas | number :
+                  "1.0-0" }}</p>
+              </div>
+              <img [src]="assetPath + '/images/logos/meta.png'" alt="icono"
+                   class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
+            </div>
+            <!-- Hectáreas Total en Cultivos -->
+            <div
+              class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
+              <div>
+                <p class="text-base sm:text-lg font-medium leading-6">AVANCE CACAO & CAFÉ</p>
+                <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalAreaCultivo | number : "1.0-0"
+                  }}</p>
+              </div>
+              <img [src]="assetPath + '/images/logos/avance.png'" alt="icono"
+                   class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
+            </div>
+            <!-- Hectáreas de Cacao -->
+            <div
+              class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
+              <div>
+                <p class="text-base sm:text-lg font-medium leading-6">AVANCE CACAO</p>
+                <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalAreaCacao | number : "1.0-0"
+                  }}</p>
+              </div>
+              <img [src]="assetPath + '/images/logos/grano_cacao.png'" alt="icono"
+                   class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
+            </div>
+            <!-- Hectáreas de Café -->
+            <div
+              class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
+              <div>
+                <p class="text-base sm:text-lg font-medium leading-6">AVANCE CAFÉ</p>
+                <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalAreaCafe | number : "1.0-0"
+                  }}</p>
+              </div>
+              <img [src]="assetPath + '/images/logos/grano_cafe.png'" alt="icono"
+                   class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
+            </div>
           </div>
         </div>
-        <!-- Pie del Modal con botones de exportación -->
-        <div class="flex justify-end items-center p-4 border-t bg-gray-50 rounded-b-lg">
-          <button (click)="exportToExcel()" [disabled]="isModalLoading || modalData.length === 0"
-                  class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.5 1a.5.5 0 00-.5.5v2.5a.5.5 0 00.5.5h2.5a.5.5 0 00.5-.5V6a.5.5 0 00-.5-.5H5.5zM5.5 11a.5.5 0 00-.5.5v2.5a.5.5 0 00.5.5h2.5a.5.5 0 00.5-.5v-2.5a.5.5 0 00-.5-.5H5.5zM10 6a.5.5 0 00-.5.5v2.5a.5.5 0 00.5.5h2.5a.5.5 0 00.5-.5V6a.5.5 0 00-.5-.5h-2.5zm.5 5.5a.5.5 0 01.5-.5h2.5a.5.5 0 01.5.5v2.5a.5.5 0 01-.5.5h-2.5a.5.5 0 01-.5-.5v-2.5z" />
-            </svg>
-            Exportar a Excel
+        <div class="bg-white rounded-2xl shadow-lg border p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Gráfico 1 -->
+            <div class="relative h-80 md:h-96">
+              <canvas id="graficoMeta"></canvas>
+            </div>
+            <!-- Gráfico 2 (barras horizontales) -->
+            <div class="relative h-80 md:h-96">
+              <canvas id="graficoMetaOZ"></canvas>
+            </div>
+          </div>
+        </div>
+        <!-- estaditica con meta -->
+        <!-- <div class="bg-white rounded-2xl shadow-lg border p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
+            <div class="w-full h-[280px] sm:h-[380px] md:h-[450px] lg:h-[500px] 3xl:h-[650px] max-w-full mx-auto">
+              <canvas id="graficoMetaOZCAFE" class="w-full h-full"></canvas>
+            </div>
+            <div class="w-full h-[280px] sm:h-[380px] md:h-[450px] lg:h-[500px] 3xl:h-[650px] max-w-full mx-auto">
+              <canvas id="graficoMetaOZCACAO" class="w-full h-full"></canvas>
+            </div>
+          </div>
+        </div> -->
+        <!-- ESTADISTICA SOBRE FAMILIAS -->
+        <div id="familias-section" class="rounded-2xl bg-[#0D9BD7] p-6 shadow-md ring-1 ring-gray-200">
+          <h2 class="text-xl sm:text-2xl font-bold text-black mb-6">
+            FAMILIAS PARTICIPANTES EN CULTIVOS DE CACAO & CAFÉ
+          </h2>
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-5 text-white">
+            <div
+              class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
+              <div>
+                <p class="text-base sm:text-lg font-medium leading-6 text-white">META</p>
+                <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ currentMetaFamilias | number :
+                  "1.0-0" }}</p>
+              </div>
+              <img [src]="assetPath + '/images/logos/meta.png'" alt="icono"
+                   class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
+            </div>
+            <div
+              class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
+              <div>
+                <p class="text-base sm:text-lg font-medium leading-6">AVANCE</p>
+                <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["total"] |
+                  number : "1.0-0" }}</p>
+              </div>
+              <img [src]="assetPath + '/images/logos/avance.png'" alt="icono"
+                   class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
+            </div>
+            <div
+              class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
+              <div>
+                <p class="text-base sm:text-lg font-medium leading-6">AVANCE CACAO</p>
+                <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["cacao"] |
+                  number : "1.0-0" }}</p>
+              </div>
+              <img [src]="assetPath + '/images/logos/grano_cacao.png'" alt="icono"
+                   class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
+            </div>
+            <div
+              class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
+              <div>
+                <p class="text-base sm:text-lg font-medium leading-6">AVANCE CAFÉ</p>
+                <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosUnicosDNI["cafe"] |
+                  number : "1.0-0" }}</p>
+              </div>
+              <img [src]="assetPath + '/images/logos/grano_cafe.png'" alt="icono"
+                   class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
+            </div>
+            <div class="rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer hover:bg-gray-700 transition-colors" (click)="showCafeYCacaoReport()">
+              <p class="text-sm sm:text-base font-medium leading-tight">PARTICIPANTES EN AMBOS</p>
+              <p class="mt-2 flex items-baseline gap-x-2">
+                <span class="text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">
+                  {{ totalRegistrosUnicosDNI["cafe_y_cacao"] | number : "1.0-0" }}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg border p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Gráfico 1 -->
+            <div class="relative h-80 md:h-96">
+              <canvas id="graficoMetaDNI"></canvas>
+            </div>
+            <!-- Gráfico 2 (barras horizontales) -->
+            <div class="relative h-80 md:h-96">
+              <canvas id="graficoMetaParticipantes"></canvas>
+            </div>
+          </div>
+        </div>
+        <!-- FIN ESTADISTICA SOBRE FAMILIAS -->
+        <div class="bg-white rounded-2xl shadow-lg border p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Gráfico 2 (barras horizontales) -->
+            <div class="relative h-80 md:h-96">
+              <canvas id="graficoCantidadDNIOZCACAO"></canvas>
+            </div>
+            <!-- Gráfico 1 -->
+            <div class="relative h-80 md:h-96">
+              <canvas id="graficoCantidadDNIOZCAFE"></canvas>
+            </div>
+          </div>
+        </div>
+        <!-- ESTADISTICA POLIGONOS -->
+        <div id="poligonos-section" class="rounded-2xl bg-[#0D9BD7] p-6 shadow-md ring-1 ring-gray-200">
+          <h2 class="text-xl sm:text-2xl font-bold text-black mb-6">
+            POLÍGONOS DE CACAO & CAFÉ
+          </h2>
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 text-white">
+            <div
+              class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
+              <div>
+                <p class="text-base sm:text-lg font-medium leading-6 text-white">AVANCE</p>
+                <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalRegistrosCultivos | number :
+                  "1.0-0" }}</p>
+              </div>
+              <img [src]="assetPath + '/images/logos/avance.png'" alt="icono"
+                   class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
+            </div>
+
+            <div
+              class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
+              <div>
+                <p class="text-base sm:text-lg font-medium leading-6">AVANCE CACAO</p>
+                <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalCacao | number : "1.0-0"}}</p>
+              </div>
+              <img [src]="assetPath + '/images/logos/grano_cacao.png'" alt="icono"
+                   class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
+            </div>
+            <div
+              class="flex items-start justify-between rounded-2xl bg-gray-900 p-4 sm:p-6 shadow ring-1 ring-white/10 cursor-pointer">
+              <div>
+                <p class="text-base sm:text-lg font-medium leading-6">AVANCE CAFÉ</p>
+                <p class="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-green-400">{{ totalCafe | number : "1.0-0"}}</p>
+              </div>
+              <img [src]="assetPath + '/images/logos/grano_cafe.png'" alt="icono"
+                   class="w-16 h-16 opacity-80 rounded-full drop-shadow-[0_0_10px_white] flex-shrink-0">
+            </div>
+          </div>
+        </div>
+        <!-- FIN ESTADISTICA POLIGONOS -->
+        <div class="bg-white rounded-2xl shadow-lg border p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Gráfico 2 (barras horizontales) -->
+            <div class="relative h-80 md:h-96">
+              <canvas id="graficoCantidadOZCACAO"></canvas>
+            </div>
+            <!-- Gráfico 1 -->
+            <div class="relative h-80 md:h-96">
+              <canvas id="graficoCantidadOZCAFE"></canvas>
+            </div>
+          </div>
+        </div>
+        <!-- NUEVO GRÁFICO POR DEPARTAMENTO -->
+        <div id="departamento-section" class="bg-white rounded-2xl shadow-lg border p-6 mb-16">
+          <h2 class="text-xl sm:text-2xl font-bold text-black mb-6">
+            CANTIDAD DE POLÍGONOS POR DEPARTAMENTO
+          </h2>
+          <div class="relative h-96">
+            <canvas id="graficoPorDepartamento"></canvas>
+          </div>
+        </div>
+        <br>
+        <br>
+        <!-- Modal para el Reporte de Participantes en Ambos Cultivos -->
+        <div *ngIf="isModalVisible" class="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" (click)="closeModal()">
+          <div class="bg-white rounded-lg shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
+            <!-- Cabecera del Modal -->
+            <div class="flex justify-between items-center p-4 border-b">
+              <h3 class="text-xl font-bold text-gray-800">Reporte: Participantes en Cacao y Café</h3>
+              <button (click)="closeModal()" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+            <!-- Contenido del Modal -->
+            <div class="p-6 overflow-auto">
+              <!-- Estado de Carga -->
+              <div *ngIf="isModalLoading" class="flex flex-col items-center justify-center h-64">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p class="mt-4 text-gray-600">Cargando reporte...</p>
+              </div>
+              <!-- Tabla de Datos -->
+              <div *ngIf="!isModalLoading && modalData.length > 0" class="overflow-x-auto border border-gray-200 rounded-lg">
+                <table class="min-w-full border-collapse">
+                  <thead class="bg-gray-200">
+                    <tr>
+                      <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">DNI</th>
+                      <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Nombres</th>
+                      <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Código del Plan</th>
+                      <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Cultivo</th>
+                      <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Fecha Levantamiento</th>
+                      <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Oficina Zonal</th>
+                      <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Departamento</th>
+                      <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Provincia</th>
+                      <th scope="col" class="px-4 py-2 text-left text-sm font-bold text-gray-600 uppercase tracking-wider border-b border-gray-300">Distrito</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white">
+                    <tr *ngFor="let item of modalData" class="even:bg-gray-50 hover:bg-blue-100 transition-colors">
+                      <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800 border-b border-gray-200">{{ item.dni_participante }}</td>
+                      <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800 border-b border-gray-200">{{ item.nombres }}</td>
+                      <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.codigo_plan }}</td>
+                      <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.tipo_cultivo }}</td>
+                      <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.fecha_levantamiento | date:'dd/MM/yyyy' }}</td>
+                      <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.oficina_zonal }}</td>
+                      <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.departamento }}</td>
+                      <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.provincia }}</td>
+                      <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600 border-b border-gray-200">{{ item.distrito }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <!-- Sin Datos -->
+              <div *ngIf="!isModalLoading && modalData.length === 0" class="text-center text-gray-500 py-16">
+                <p>No se encontraron participantes en ambos cultivos para el período seleccionado.</p>
+              </div>
+            </div>
+            <!-- Pie del Modal con botones de exportación -->
+            <div class="flex justify-end items-center p-4 border-t bg-gray-50 rounded-b-lg">
+              <button (click)="exportToExcel()" [disabled]="isModalLoading || modalData.length === 0"
+                      class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed mr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.5 1a.5.5 0 00-.5.5v2.5a.5.5 0 00.5.5h2.5a.5.5 0 00.5-.5V6a.5.5 0 00-.5-.5H5.5zM5.5 11a.5.5 0 00-.5.5v2.5a.5.5 0 00.5.5h2.5a.5.5 0 00.5-.5v-2.5a.5.5 0 00-.5-.5H5.5zM10 6a.5.5 0 00-.5.5v2.5a.5.5 0 00.5.5h2.5a.5.5 0 00.5-.5V6a.5.5 0 00-.5-.5h-2.5zm.5 5.5a.5.5 0 01.5-.5h2.5a.5.5 0 01.5.5v2.5a.5.5 0 01-.5.5h-2.5a.5.5 0 01-.5-.5v-2.5z" />
+                </svg>
+                Exportar a Excel
+              </button>
+              <button (click)="exportToPDF()" [disabled]="isModalLoading || modalData.length === 0"
+                      class="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v4.586A1 1 0 0115.414 9.5l-4.95-4.95a1 1 0 00-1.414 0l-4.95 4.95A1 1 0 014 8.586V4zm0 6.586a1 1 0 01.293-.707l4.95-4.95a1 1 0 011.414 0l4.95 4.95a1 1 0 01.293.707V16a2 2 0 01-2 2H6a2 2 0 01-2-2v-5.414z" clip-rule="evenodd" />
+                </svg>
+                Exportar a PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+      <!-- Plantilla para mostrar cuando el backend falla -->
+      <ng-template #backendErrorTemplate>
+        <div class="backend-error-container">
+          <img [src]="assetPath + '/images/error/error404.png'" alt="Error de Servidor" class="error-icon">
+          <h2>Servidor Fuera de Servicio</h2>
+          <p>{{ backendErrorMessage }}</p>
+          <button color="primary" (click)="retryConnection()" class="retry-button">
+            Reintentar Conexión
           </button>
-          <button (click)="exportToPDF()" [disabled]="isModalLoading || modalData.length === 0"
-                  class="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v4.586A1 1 0 0115.414 9.5l-4.95-4.95a1 1 0 00-1.414 0l-4.95 4.95A1 1 0 014 8.586V4zm0 6.586a1 1 0 01.293-.707l4.95-4.95a1 1 0 011.414 0l4.95 4.95a1 1 0 01.293.707V16a2 2 0 01-2 2H6a2 2 0 01-2-2v-5.414z" clip-rule="evenodd" />
-            </svg>
-            Exportar a PDF
-          </button>
         </div>
-      </div>
-    </div>
+      </ng-template>
     </main>
   </div>
   <!-- Botón Flotante para Exportar a PDF -->
