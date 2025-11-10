@@ -12,8 +12,11 @@ export interface LoginData {
 }
 
 export interface LoginResponse {
-  token: string;
-  user: any;
+  token?: string; // Para compatibilidad con la respuesta anterior
+  Token?: string; // Para la nueva respuesta del backend
+  user?: any; // Para compatibilidad con la respuesta anterior
+  NombreCompleto?: string; // Para la nueva respuesta del backend
+  [key: string]: any; // Para otras propiedades
 }
 
 @Injectable({
@@ -27,19 +30,45 @@ export class AuthStateService {
     return this._httpClient.post<LoginResponse>('http://localhost:8080/api/auth/login', loginData)
       .pipe(
         tap(response => {
-          console.log('Respuesta del login recibida del backend:', response); // Log para depurar la respuesta del login
-          localStorage.setItem('authToken', response.token);
-          if (response.user) {
-            console.log('Guardando userSessionData en localStorage:', response.user);
-            localStorage.setItem('userSessionData', JSON.stringify(response.user));
-          } else {
-            // WORKAROUND: Si el backend no devuelve el usuario,
-            // guardamos al menos la información de login que tenemos.
-            console.warn('La respuesta del login no contenía el objeto `user`. ' +
-                         'Guardando un objeto de sesión parcial solo con el LOGIN.');
-            const partialUser = { LOGIN: loginData.LOGIN };
-            localStorage.setItem('userSessionData', JSON.stringify(partialUser));
+          console.log('Respuesta del login recibida del backend:', response);
+
+          // Manejo del token: se adapta para manejar 'Token' (nueva respuesta) o 'token' (anterior).
+          const token = response.Token || response.token;
+          if (token) {
+            localStorage.setItem('authToken', token);
           }
+
+          let userToStore: any = {};
+
+          // Copiamos todas las propiedades de la respuesta directamente al objeto de sesión.
+          // Esto incluye 'Operacion', 'Autenticado', 'Mensaje', 'NombreCompleto', 'COD_PERSONA', etc.
+          Object.assign(userToStore, response);
+
+          // Si la respuesta incluye un objeto 'user' anidado (para compatibilidad con estructuras antiguas),
+          // fusionamos sus propiedades, pero las propiedades de la raíz tienen prioridad.
+          if (response.user) {
+            Object.assign(userToStore, response.user);
+          }
+
+          // FIX: Aseguramos que 'NombreCompleto' (PascalCase) exista para la UI,
+          // mapeándolo desde las posibles propiedades que puede enviar el backend.
+          // Prioridad: 1. NombreCompleto (raíz), 2. nombre_completo (raíz), 3. nombre_completo (anidado), 4. LOGIN (fallback).
+          if (!userToStore.NombreCompleto) {
+            userToStore.NombreCompleto = userToStore.nombre_completo || (response.user && response.user.nombre_completo);
+            if (!userToStore.NombreCompleto) {
+              // Como último recurso, si no se encontró ningún nombre, usamos el LOGIN.
+              userToStore.NombreCompleto = loginData.LOGIN;
+              console.warn('No se encontró "NombreCompleto" o "nombre_completo" en la respuesta del login. Usando "LOGIN" como fallback.');
+            }
+          }
+
+          // Aseguramos que la propiedad 'LOGIN' de los datos de inicio de sesión siempre esté disponible.
+          if (!userToStore.LOGIN) { // Solo si no se ha establecido ya por Object.assign(userToStore, response)
+            userToStore.LOGIN = loginData.LOGIN;
+          }
+
+          console.log('Guardando userSessionData en localStorage:', userToStore);
+          localStorage.setItem('userSessionData', JSON.stringify(userToStore));
         })
       );
   }
@@ -51,12 +80,11 @@ export class AuthStateService {
     if (userSession) {
       try {
         const parsedUser = JSON.parse(userSession);
-        // FIX: La propiedad en localStorage es probablemente 'login' en minúsculas.
-        // Se corrige a 'LOGIN' en mayúsculas para que coincida con la estructura de LoginData.
+        // Se utiliza 'LOGIN' para el logout, que es el identificador único del usuario.
         if (parsedUser && typeof parsedUser.LOGIN === 'string') {
           loginValue = parsedUser.LOGIN.trim();
         } else {
-          console.warn('userSessionData encontrado en localStorage, pero la propiedad "login" está ausente o no es una cadena de texto.', parsedUser);
+          console.warn('userSessionData encontrado en localStorage, pero la propiedad "LOGIN" está ausente o no es una cadena de texto.', parsedUser);
         }
       } catch (e) {
         console.error('Error al parsear userSessionData de localStorage:', e);
@@ -68,13 +96,19 @@ export class AuthStateService {
     // FIX: No enviar la solicitud si el valor de login es nulo o vacío.
     // Esto previene el error 400 (Bad Request) del backend.
     if (!loginValue) {
-      console.error('No se pudo obtener un nombre de usuario válido para el logout. Abortando la solicitud al backend.');
+      console.error('No se pudo obtener un identificador de usuario válido (LOGIN) para el logout. Abortando la solicitud al backend.');
       this.clearLocalSession(); // Limpiamos la sesión local de todas formas.
       return of(null); // Devolvemos un observable exitoso para que la UI pueda continuar.
     }
 
+    const now = new Date();
+    const fecha_logout = now.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    const hora_logout = now.toTimeString().split(' ')[0]; // Formato HH:MM:SS
+
     const payload = {
-      login: loginValue
+      login: loginValue,
+      fecha_logout,
+      hora_logout
     };
 
     console.log('Intentando enviar solicitud de logout con payload:', payload); // Log de depuración

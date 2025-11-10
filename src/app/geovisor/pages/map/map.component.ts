@@ -30,7 +30,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private _authStateService = inject(AuthStateService);
   public _geovisorSharedService = inject(GeovisorSharedService);
 
-  public usuario: { NombreCompleto: string } | null = null;
+  public usuario: { NombreCompleto?: string; [key: string]: any } | null = null;
   public tiempoSesion = '';
   private sesionInicio!: number;
   private intervaloSesion!: ReturnType<typeof setInterval>;
@@ -43,7 +43,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     // Leemos los datos de la sesión del usuario desde localStorage.
     if (userSessionData) {
       try {
-        this.usuario = JSON.parse(userSessionData);
+        const parsedUser = JSON.parse(userSessionData);
+
+        // FIX: Nos aseguramos de que la propiedad `NombreCompleto` exista para la vista.
+        // Si no existe, la creamos a partir de `nombre_completo` (del backend) o `LOGIN`.
+        if (parsedUser && !parsedUser.NombreCompleto) {
+          parsedUser.NombreCompleto = parsedUser.nombre_completo || parsedUser.LOGIN;
+        }
+        this.usuario = parsedUser;
         this.iniciarContadorSesion();
       } catch (error) {
         console.error('Error al parsear los datos de sesión desde localStorage', error);
