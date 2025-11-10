@@ -35,9 +35,10 @@ export class NavbarmenuComponent {
 	public _geovisorSharedService = inject(GeovisorSharedService);
 
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	async logout() {
-		await this._authState.logout();
-		this._router.navigateByUrl('auth/welcome')
+  logout(): void {
+		this._authState.logout().subscribe(() => {
+			this._router.navigateByUrl('auth/welcome');
+		});
 	}
 
 }

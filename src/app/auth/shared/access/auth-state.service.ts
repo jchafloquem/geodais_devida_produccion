@@ -8,6 +8,7 @@ export interface LoginData {
   LOGIN: string;
   clave: string;
   id_sistema: number;
+  coordenada_ingreso?: string | null;
 }
 
 export interface LoginResponse {

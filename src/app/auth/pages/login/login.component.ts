@@ -3,6 +3,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { Observable, of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { AuthStateService, LoginResponse } from '../../shared/access/auth-state.service';
 
 
@@ -108,38 +110,53 @@ export default class LoginComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Obtiene las coordenadas geográficas del navegador y las devuelve como un Observable.
+   * Emite una cadena "lat,lon" en caso de éxito, o null si el usuario deniega el permiso o hay un error.
+   */
+  private _getCoordinates(): Observable<string | null> {
+    return new Observable(subscriber => {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const coords = `${position.coords.latitude},${position.coords.longitude}`;
+            subscriber.next(coords);
+            subscriber.complete();
+          },
+          (error) => {
+            console.warn(`No se pudo obtener la geolocalización: ${error.message}`);
+            subscriber.next(null); // Continuar sin coordenadas
+            subscriber.complete();
+          }
+        );
+      } else {
+        console.warn('La geolocalización no es compatible con este navegador.');
+        subscriber.next(null); // Continuar sin coordenadas
+        subscriber.complete();
+      }
+    });
+  }
+
   submit(): void {
     if (this.form.valid) {
       this.loginError = null; // Limpiar errores previos al enviar
 
-      const loginData = {
-        LOGIN: this.form.value.usuario!,
-        clave: this.form.value.password!,
-        id_sistema: 21
-      };
-
-      console.log('Enviando datos de login:', loginData);
-
-      this._authState.login(loginData).subscribe({
-        next: (response: LoginResponse) => {
-          this._zone.run(() => {
-            //console.log('Login exitoso, respuesta recibida:', response);
-            const redirectUrl = localStorage.getItem('redirectUrl') || '/geovisor/map';
-            localStorage.removeItem('redirectUrl');
-            this._router.navigateByUrl(redirectUrl);
-          });
-        },
-        error: (err: unknown) => {
-          console.error('Fallo en el login, manejado en el componente:', err);
-          if (err instanceof HttpErrorResponse) {
-            // Aquí puedes construir un mensaje más amigable para el usuario
-            this.loginError = `Error de autenticación (código: ${err.status}). Por favor, verifique su usuario y contraseña.`;
-          } else {
-            this.loginError = 'Ocurrió un error inesperado. Por favor, intente más tarde.';
-          }
-          // Notificar a Angular que actualice la vista con el mensaje de error
-          this._cdr.detectChanges();
-        }
+      // 1. Obtener coordenadas primero
+      this._getCoordinates().pipe(
+        // 2. Usar switchMap para encadenar con la llamada de login
+        switchMap(coords => {
+          const loginData = {
+            LOGIN: this.form.value.usuario!,
+            clave: this.form.value.password!,
+            id_sistema: 21,
+            coordenada_ingreso: coords // Añadir las coordenadas (o null)
+          };
+          console.log('Enviando datos de login:', loginData);
+          return this._authState.login(loginData);
+        })
+      ).subscribe({
+        next: (response: LoginResponse) => this._handleLoginSuccess(response),
+        error: (err: unknown) => this._handleLoginError(err)
         });
     }
   }
@@ -147,5 +164,23 @@ export default class LoginComponent implements OnInit, OnDestroy {
   isRequired(fieldName: string): boolean {
     const field = this.form.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched) && field.hasError('required'));
+  }
+
+  private _handleLoginSuccess(response: LoginResponse): void {
+    this._zone.run(() => {
+      const redirectUrl = localStorage.getItem('redirectUrl') || '/geovisor/map';
+      localStorage.removeItem('redirectUrl');
+      this._router.navigateByUrl(redirectUrl);
+    });
+  }
+
+  private _handleLoginError(err: unknown): void {
+    console.error('Fallo en el login, manejado en el componente:', err);
+    if (err instanceof HttpErrorResponse) {
+      this.loginError = `Error de autenticación (código: ${err.status}). Por favor, verifique su usuario y contraseña.`;
+    } else {
+      this.loginError = 'Ocurrió un error inesperado. Por favor, intente más tarde.';
+    }
+    this._cdr.detectChanges();
   }
 }
