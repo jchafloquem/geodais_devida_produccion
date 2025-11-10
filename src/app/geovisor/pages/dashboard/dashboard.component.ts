@@ -142,7 +142,7 @@ interface CultivoDepartamento {
 })
 export class DashboardComponent implements AfterViewInit {
   /** URL del servicio de features de ArcGIS que contiene los datos de los cultivos. */
-  private readonly PROXY_MAP_BASE = 'http://localhost:8081/api/mapas/capa/1';
+  private readonly PROXY_MAP_BASE = 'http://localhost:8080/api/mapas/capa/1';
   //private urlMapServerBase: string = '';
   /** URL para realizar consultas (queries) al servicio de features. */
   private queryServicio: string = '';

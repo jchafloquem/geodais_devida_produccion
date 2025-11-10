@@ -856,7 +856,7 @@ export class GeovisorSharedService {
     const buscaCapasDEVIDA = [
       {
         layer: new FeatureLayer({
-          url: `https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer/1`,
+          url: `http://localhost:8080/api/mapas/capa/1`,
           popupTemplate: popupPoligonoCultivo,
         }),
         searchFields: ['dni_participante', 'nombres'],
@@ -2040,7 +2040,7 @@ export class GeovisorSharedService {
 
       try {
         const capaDevida = new FeatureLayer({
-          url: "https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer/1"
+          url: "http://localhost:8080/api/mapas/capa/1"
         });
         await capaDevida.load();
 
