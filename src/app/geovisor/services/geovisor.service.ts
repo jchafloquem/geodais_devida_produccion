@@ -856,7 +856,7 @@ export class GeovisorSharedService {
     const buscaCapasDEVIDA = [
       {
         layer: new FeatureLayer({
-          url: `http://localhost:8080/api/mapas/capa/1`,
+          url: `http://192.168.1.55:6019/api/mapas/capa/1`,
           popupTemplate: popupPoligonoCultivo,
         }),
         searchFields: ['dni_participante', 'nombres'],
@@ -2040,7 +2040,7 @@ export class GeovisorSharedService {
 
       try {
         const capaDevida = new FeatureLayer({
-          url: "http://localhost:8080/api/mapas/capa/1"
+          url: "https://192.168.1.55:6019/api/mapas/capa/1"
         });
         await capaDevida.load();
 

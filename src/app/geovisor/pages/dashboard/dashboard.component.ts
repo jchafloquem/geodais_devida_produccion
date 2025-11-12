@@ -142,7 +142,23 @@ interface CultivoDepartamento {
 })
 export class DashboardComponent implements AfterViewInit {
   /** URL del servicio de features de ArcGIS que contiene los datos de los cultivos. */
-  private readonly PROXY_MAP_BASE = 'http://localhost:8080/api/mapas/capa/1';
+  private readonly PROXY_MAP_BASE: string;
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private location: Location
+  ) {
+    const isLocal = isPlatformBrowser(this.platformId) && window.location.hostname === 'localhost';
+    this.PROXY_MAP_BASE = isLocal
+      ? 'http://localhost:8080/api/mapas/capa/1'
+      : 'https://192.168.1.55:6019/api/mapas/capa/1';
+
+    if (isPlatformBrowser(this.platformId)) {
+      // Usamos el servicio `Location` de Angular para obtener la ruta base correcta.
+      // `prepareExternalUrl` antepone el `base-href` a la ruta proporcionada.
+      // Esto crea una ruta relativa a la raíz del dominio que funciona en todos los entornos.
+      this.assetPath = this.location.prepareExternalUrl('assets');
+    }
+  }
   //private urlMapServerBase: string = '';
   /** URL para realizar consultas (queries) al servicio de features. */
   private queryServicio: string = '';
@@ -220,25 +236,6 @@ export class DashboardComponent implements AfterViewInit {
   /** Mensaje de error que se mostrará si el backend falla. */
   public backendErrorMessage = '';
   /**
-   * @constructor
-   * @description
-   * Inyecta dependencias y calcula la ruta base para los assets de forma dinámica,
-   * asegurando que las imágenes se carguen en cualquier entorno (local, Netlify, producción).
-   */
-  constructor(
-
-    @Inject(PLATFORM_ID) private platformId: Object,
-    private location: Location
-  ) {
-    if (isPlatformBrowser(this.platformId)) {
-      // Usamos el servicio `Location` de Angular para obtener la ruta base correcta.
-      // `prepareExternalUrl` antepone el `base-href` a la ruta proporcionada.
-      // Esto crea una ruta relativa a la raíz del dominio que funciona en todos los entornos.
-      this.assetPath = this.location.prepareExternalUrl('assets');
-    }
-  }
-
-
 
   /**
    * @method ngAfterViewInit

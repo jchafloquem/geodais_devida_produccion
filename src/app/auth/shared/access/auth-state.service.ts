@@ -27,7 +27,11 @@ export class AuthStateService {
   private _httpClient = inject(HttpClient);
 
   login(loginData: LoginData): Observable<LoginResponse> {
-    return this._httpClient.post<LoginResponse>('http://localhost:8080/api/auth/login', loginData)
+    const isLocal = window.location.hostname === 'localhost';
+    const loginUrl = isLocal
+      ? 'http://localhost:8080/api/auth/login'
+      : 'http://192.168.1.55:6019/api/auth/login';
+    return this._httpClient.post<LoginResponse>(loginUrl, loginData)
       .pipe(
         tap(response => {
           console.log('Respuesta del login recibida del backend:', response);
@@ -102,8 +106,17 @@ export class AuthStateService {
     }
 
     const now = new Date();
-    const fecha_logout = now.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-    const hora_logout = now.toTimeString().split(' ')[0]; // Formato HH:MM:SS
+    // FIX: Se ajusta la obtención de la fecha y hora para que siempre use la zona horaria local del cliente,
+    // evitando inconsistencias por conversiones a UTC que afectaban al backend.
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const fecha_logout = `${year}-${month}-${day}`; // Formato YYYY-MM-DD
+
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const hora_logout = `${hours}:${minutes}:${seconds}`; // Formato HH:MM:SS
 
     const payload = {
       login: loginValue,
@@ -115,7 +128,11 @@ export class AuthStateService {
 
     // Idealmente, el token de autorización se adjuntaría a través de un HttpInterceptor.
     // Este método asume que el backend invalida el token que recibe.
-    return this._httpClient.post('http://localhost:8080/api/auth/logout', payload, { responseType: 'text' }).pipe(
+    const isLocal = window.location.hostname === 'localhost';
+    const logoutUrl = isLocal
+      ? 'http://localhost:8080/api/auth/logout' // Asumiendo http para desarrollo local
+      : 'https://192.168.1.55:6019/api/auth/logout';
+    return this._httpClient.post(logoutUrl, payload, { responseType: 'text' }).pipe(
       tap((response) => {
         console.log('Respuesta del backend al cerrar sesión:', response);
         console.log('Logout exitoso en el backend. Limpiando sesión local.'); // Log de depuración
