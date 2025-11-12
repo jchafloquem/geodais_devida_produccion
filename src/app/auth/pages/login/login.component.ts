@@ -124,13 +124,13 @@ export default class LoginComponent implements OnInit, OnDestroy {
             subscriber.complete();
           },
           (error) => {
-            console.warn(`No se pudo obtener la geolocalización: ${error.message}`);
+            //console.warn(`No se pudo obtener la geolocalización: ${error.message}`);
             subscriber.next(null); // Continuar sin coordenadas
             subscriber.complete();
           }
         );
       } else {
-        console.warn('La geolocalización no es compatible con este navegador.');
+        //console.warn('La geolocalización no es compatible con este navegador.');
         subscriber.next(null); // Continuar sin coordenadas
         subscriber.complete();
       }
@@ -151,7 +151,7 @@ export default class LoginComponent implements OnInit, OnDestroy {
             id_sistema: 21,
             coordenada_ingreso: coords // Añadir las coordenadas (o null)
           };
-          console.log('Enviando datos de login:', loginData);
+          //console.log('Enviando datos de login:', loginData);
           return this._authState.login(loginData);
         })
       ).subscribe({
@@ -175,7 +175,7 @@ export default class LoginComponent implements OnInit, OnDestroy {
   }
 
   private _handleLoginError(err: unknown): void {
-    console.error('Fallo en el login, manejado en el componente:', err);
+    //console.error('Fallo en el login, manejado en el componente:', err);
     if (err instanceof HttpErrorResponse) {
       this.loginError = `Error de autenticación (código: ${err.status}). Por favor, verifique su usuario y contraseña.`;
     } else {

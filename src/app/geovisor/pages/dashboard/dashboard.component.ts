@@ -267,7 +267,7 @@ export class DashboardComponent implements AfterViewInit {
         }
         await this.loadDashboardData();
     } catch (err) {
-      console.error("Error crítico de conexión con el backend:", err);
+      //console.error("Error crítico de conexión con el backend:", err);
       this.isBackendError = true;
       this.backendErrorMessage = 'No fue posible establecer conexión con el servidor. Por favor, intente nuevamente más tarde o confirme que el sistema se encuentre en funcionamiento. Si el problema persiste, comuníquese con el área de Informática.';
     }
@@ -369,7 +369,7 @@ export class DashboardComponent implements AfterViewInit {
         this.generarGraficoCultivosPorTipo(dashboardCultivos, yearFilter);
 
     } catch (err) {
-      console.error("Error al cargar los datos del dashboard:", err);
+      //console.error("Error al cargar los datos del dashboard:", err);
     }
   }
 
@@ -681,7 +681,7 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
     } catch (error) {
-      console.error('Error al crear gráfico de hectáreas por OZ:', error);
+      //console.error('Error al crear gráfico de hectáreas por OZ:', error);
       this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
     }
   }
@@ -860,7 +860,7 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
     } catch (error) {
-      console.error('Error al crear gráfico de hectáreas Cacao vs Meta:', error);
+      //console.error('Error al crear gráfico de hectáreas Cacao vs Meta:', error);
       this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
     }
   }
@@ -1039,7 +1039,7 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
     } catch (error) {
-      console.error('Error al crear gráfico de hectáreas Café vs Meta:', error);
+      //console.error('Error al crear gráfico de hectáreas Café vs Meta:', error);
       this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
     }
   }
@@ -1374,7 +1374,7 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
     } catch (error) {
-      console.error('Error al crear gráfico de familias por OZ:', error);
+      //console.error('Error al crear gráfico de familias por OZ:', error);
       this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
     }
   }
@@ -1660,7 +1660,7 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
     } catch (error) {
-      console.error('Error al crear gráfico de familias (Cacao) por OZ:', error);
+      //console.error('Error al crear gráfico de familias (Cacao) por OZ:', error);
       this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
     }
   }
@@ -1811,7 +1811,7 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
     } catch (error) {
-      console.error('Error al crear gráfico de familias (Café) por OZ:', error);
+      //console.error('Error al crear gráfico de familias (Café) por OZ:', error);
       this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
     }
   }
@@ -1954,7 +1954,7 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
     } catch (error) {
-      console.error('Error al crear gráfico de polígonos de Cacao:', error);
+      //console.error('Error al crear gráfico de polígonos de Cacao:', error);
       this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
     }
   }
@@ -2095,7 +2095,7 @@ export class DashboardComponent implements AfterViewInit {
       plugins: [pseudo3DPlugin, ChartDataLabels],
     }));
     } catch (error) {
-      console.error('Error al crear gráfico de polígonos de Café:', error);
+      //console.error('Error al crear gráfico de polígonos de Café:', error);
       this.mostrarMensajeEnCanvas(ctx, 'Error al cargar los datos del gráfico.');
     }
   }

@@ -32,7 +32,7 @@ export class AuthStateService {
     return this._httpClient.post<LoginResponse>(loginUrl, loginData)
       .pipe(
         tap(response => {
-          console.log('Respuesta del login recibida del backend:', response);
+          //console.log('Respuesta del login recibida del backend:', response);
 
           // Manejo del token: se adapta para manejar 'Token' (nueva respuesta) o 'token' (anterior).
           const token = response.Token || response.token;
@@ -60,7 +60,7 @@ export class AuthStateService {
             if (!userToStore.NombreCompleto) {
               // Como último recurso, si no se encontró ningún nombre, usamos el LOGIN.
               userToStore.NombreCompleto = loginData.LOGIN;
-              console.warn('No se encontró "NombreCompleto" o "nombre_completo" en la respuesta del login. Usando "LOGIN" como fallback.');
+              //console.warn('No se encontró "NombreCompleto" o "nombre_completo" en la respuesta del login. Usando "LOGIN" como fallback.');
             }
           }
 
@@ -69,7 +69,7 @@ export class AuthStateService {
             userToStore.LOGIN = loginData.LOGIN;
           }
 
-          console.log('Guardando userSessionData en localStorage:', userToStore);
+          //console.log('Guardando userSessionData en localStorage:', userToStore);
           localStorage.setItem('userSessionData', JSON.stringify(userToStore));
         })
       );
@@ -86,19 +86,19 @@ export class AuthStateService {
         if (parsedUser && typeof parsedUser.LOGIN === 'string') {
           loginValue = parsedUser.LOGIN.trim();
         } else {
-          console.warn('userSessionData encontrado en localStorage, pero la propiedad "LOGIN" está ausente o no es una cadena de texto.', parsedUser);
+          //console.warn('userSessionData encontrado en localStorage, pero la propiedad "LOGIN" está ausente o no es una cadena de texto.', parsedUser);
         }
       } catch (e) {
-        console.error('Error al parsear userSessionData de localStorage:', e);
+        //console.error('Error al parsear userSessionData de localStorage:', e);
       }
     } else {
-      console.warn('userSessionData no encontrado en localStorage. El logout se enviará con login nulo.');
+      //console.warn('userSessionData no encontrado en localStorage. El logout se enviará con login nulo.');
     }
 
     // FIX: No enviar la solicitud si el valor de login es nulo o vacío.
     // Esto previene el error 400 (Bad Request) del backend.
     if (!loginValue) {
-      console.error('No se pudo obtener un identificador de usuario válido (LOGIN) para el logout. Abortando la solicitud al backend.');
+      //console.error('No se pudo obtener un identificador de usuario válido (LOGIN) para el logout. Abortando la solicitud al backend.');
       this.clearLocalSession(); // Limpiamos la sesión local de todas formas.
       return of(null); // Devolvemos un observable exitoso para que la UI pueda continuar.
     }
@@ -122,7 +122,7 @@ export class AuthStateService {
       hora_logout
     };
 
-    console.log('Intentando enviar solicitud de logout con payload:', payload); // Log de depuración
+    //console.log('Intentando enviar solicitud de logout con payload:', payload); // Log de depuración
 
     // Idealmente, el token de autorización se adjuntaría a través de un HttpInterceptor.
     // Este método asume que el backend invalida el token que recibe.
@@ -130,12 +130,12 @@ export class AuthStateService {
     const logoutUrl = 'https://sisqa.devida.gob.pe/geodais/api/auth/logout';
     return this._httpClient.post(logoutUrl, payload, { responseType: 'text' }).pipe(
       tap((response) => {
-        console.log('Respuesta del backend al cerrar sesión:', response);
-        console.log('Logout exitoso en el backend. Limpiando sesión local.'); // Log de depuración
+        //console.log('Respuesta del backend al cerrar sesión:', response);
+        //console.log('Logout exitoso en el backend. Limpiando sesión local.'); // Log de depuración
         this.clearLocalSession();
       }),
       catchError(error => {
-        console.error('Error al cerrar sesión en el backend, limpiando sesión local de todas formas.', error);
+        //console.error('Error al cerrar sesión en el backend, limpiando sesión local de todas formas.', error);
         // Es importante limpiar la sesión local incluso si el backend falla
         // para que el usuario no se quede "atascado" en un estado de sesión inválido.
         this.clearLocalSession();

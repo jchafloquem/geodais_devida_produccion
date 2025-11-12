@@ -53,7 +53,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.usuario = parsedUser;
         this.iniciarContadorSesion();
       } catch (error) {
-        console.error('Error al parsear los datos de sesión desde localStorage', error);
+        //console.error('Error al parsear los datos de sesión desde localStorage', error);
         this.usuario = null;
       }
     }

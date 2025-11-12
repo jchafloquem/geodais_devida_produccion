@@ -48,7 +48,7 @@ export class TourService {
     });
 
     if (this.tourSteps.length === 0) {
-      console.warn("No hay pasos del tour visibles para mostrar.");
+      //console.warn("No hay pasos del tour visibles para mostrar.");
       return;
     }
     // Crear overlay
@@ -134,7 +134,7 @@ export class TourService {
     }
 
     if (!targetElement) {
-      console.warn(`Elemento del tour no encontrado: ${step.element}`);
+      //console.warn(`Elemento del tour no encontrado: ${step.element}`);
       this.nextTourStep(); // Saltar al siguiente paso
       return;
     }

@@ -856,7 +856,7 @@ export class GeovisorSharedService {
     const buscaCapasDEVIDA = [
       {
         layer: new FeatureLayer({
-          url: `http://192.168.1.55:6019/api/mapas/capa/1`,
+          url: `https://sisqa.devida.gob.pe/geodais/api/mapas/capa/1`,
           popupTemplate: popupPoligonoCultivo,
         }),
         searchFields: ['dni_participante', 'nombres'],
@@ -927,7 +927,7 @@ export class GeovisorSharedService {
           });
         });
       }).catch(error => {
-        console.error(`Error al buscar en la capa ${source.name}:`, error);
+        //console.error(`Error al buscar en la capa ${source.name}:`, error);
       });
       searchPromises.push(promise);
     }
@@ -1571,9 +1571,9 @@ export class GeovisorSharedService {
             if (layer!.fullExtent && this.view) {
               this.view
                 .goTo(layer!.fullExtent)
-                .catch((err) =>
+                /* .catch((err) =>
                   console.warn('No se pudo hacer zoom a la capa:', err)
-                );
+                ); */
             }
             this.showModal(
               `Capa "${file.name}" cargada correctamente.`,
@@ -1581,14 +1581,14 @@ export class GeovisorSharedService {
             );
           })
           .catch((err) => {
-            console.error('Error cargando la capa:', err);
+            //console.error('Error cargando la capa:', err);
             this.showModal(
               'Ocurrió un error cargando la capa. Revisa la consola.',
               '⚠️ Error'
             );
           });
       } catch (err) {
-        console.error('Error procesando el archivo:', err);
+        //console.error('Error procesando el archivo:', err);
         this.showModal(
           'Ocurrió un error procesando el archivo. Revisa la consola.',
           '⚠️ Error'
@@ -1889,7 +1889,7 @@ export class GeovisorSharedService {
         this.highlightLayer.addMany(overlaps);
 
       } catch (error) {
-        console.error("Error analizando superposiciones:", error);
+        //console.error("Error analizando superposiciones:", error);
         this.showToast("❌ Ocurrió un error al analizar superposiciones.", "error");
       } finally {
         const overlapsCount = overlaps.length;
@@ -2133,7 +2133,7 @@ export class GeovisorSharedService {
         this.highlightLayer.addMany(overlaps);
 
       } catch (err) {
-        console.error("💥 Error en analizarSuperposicionCultivo:", err);
+        //console.error("💥 Error en analizarSuperposicionCultivo:", err);
         this.showToast("❌ Error en análisis de superposición.", "error");
       } finally {
         overlay.style.display = "none";

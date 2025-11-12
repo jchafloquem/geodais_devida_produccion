@@ -27,7 +27,7 @@ export class BuscarComponent {
     try {
       this.resultados = await this.geovisorService.searchFeatures(termino);
     } catch (error) {
-      console.error("Error en la búsqueda:", error);
+      //console.error("Error en la búsqueda:", error);
       this.geovisorService.showToast('Ocurrió un error al buscar.', 'error');
     } finally {
       this.isLoading = false;

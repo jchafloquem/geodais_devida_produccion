@@ -9,7 +9,7 @@ import {BrowserAnimationsModule, provideAnimations} from '@angular/platform-brow
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 
-import { AuthInterceptor } from './auth/shared/interceptors/auth.interceptor';
+import { AuthInterceptor } from './auth/interceptors/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
 	providers: [
