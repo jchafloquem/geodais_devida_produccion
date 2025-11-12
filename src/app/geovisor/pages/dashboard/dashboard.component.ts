@@ -150,7 +150,7 @@ export class DashboardComponent implements AfterViewInit {
     const isLocal = isPlatformBrowser(this.platformId) && window.location.hostname === 'localhost';
     this.PROXY_MAP_BASE = isLocal
       ? 'http://localhost:8080/api/mapas/capa/1'
-      : 'https://192.168.1.55:6019/api/mapas/capa/1';
+      : 'https://sisqa.devida.gob.pe/geodais/api/mapas/capa/1';
 
     if (isPlatformBrowser(this.platformId)) {
       // Usamos el servicio `Location` de Angular para obtener la ruta base correcta.

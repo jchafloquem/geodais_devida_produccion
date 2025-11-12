@@ -27,10 +27,8 @@ export class AuthStateService {
   private _httpClient = inject(HttpClient);
 
   login(loginData: LoginData): Observable<LoginResponse> {
-    const isLocal = window.location.hostname === 'localhost';
-    const loginUrl = isLocal
-      ? 'http://localhost:8080/api/auth/login'
-      : 'http://192.168.1.55:6019/api/auth/login';
+    // Apuntamos directamente a la IP del backend, ya que el servicio en localhost está desactivado.
+    const loginUrl = 'https://sisqa.devida.gob.pe/geodais/api/auth/login';
     return this._httpClient.post<LoginResponse>(loginUrl, loginData)
       .pipe(
         tap(response => {
@@ -128,10 +126,8 @@ export class AuthStateService {
 
     // Idealmente, el token de autorización se adjuntaría a través de un HttpInterceptor.
     // Este método asume que el backend invalida el token que recibe.
-    const isLocal = window.location.hostname === 'localhost';
-    const logoutUrl = isLocal
-      ? 'http://localhost:8080/api/auth/logout' // Asumiendo http para desarrollo local
-      : 'https://192.168.1.55:6019/api/auth/logout';
+    // Apuntamos directamente a la IP del backend.
+    const logoutUrl = 'https://sisqa.devida.gob.pe/geodais/api/auth/logout';
     return this._httpClient.post(logoutUrl, payload, { responseType: 'text' }).pipe(
       tap((response) => {
         console.log('Respuesta del backend al cerrar sesión:', response);
