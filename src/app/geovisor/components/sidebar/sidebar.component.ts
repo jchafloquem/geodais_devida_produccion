@@ -10,6 +10,7 @@ import { AcercaComponent } from './components/acerca/acerca.component';
 import { ResumenComponent } from './components/resumen/resumen.component';
 import { CoordenadasComponent } from './components/coordenadas/coordenadas.component';
 import { FiltrosComponent } from './components/filtros/filtros.component';
+import { ManualComponent } from './components/manual/manual.component';
 
 
 @Component({
@@ -24,6 +25,7 @@ import { FiltrosComponent } from './components/filtros/filtros.component';
     CoordenadasComponent,
     ResumenComponent,
     FiltrosComponent,
+    ManualComponent,
     AcercaComponent,
   ],
   templateUrl: './sidebar.component.html',
@@ -31,10 +33,10 @@ import { FiltrosComponent } from './components/filtros/filtros.component';
 })
 export class SidebarComponent {
   public _geovisorSharedService = inject(GeovisorSharedService);
-  public subMenu: 'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'| 'filtros'|'acerca' = 'capas';
+  public subMenu: 'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'| 'filtros'|'manual'|'acerca' = 'capas';
   public toogleMenu = false;
   public menuItems: {
-    key: 'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'|'filtros'|'acerca';
+    key: 'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'|'filtros'|'manual'|'acerca';
     icon: string;
     label: string;
   }[] = [
@@ -44,10 +46,11 @@ export class SidebarComponent {
       { key: 'resumen', icon: 'summarize', label: 'Resumen' },
       { key: 'coordenadas', icon: 'explore', label: 'Coordenadas' },
       { key: 'filtros', icon: 'filter_alt', label: 'Filtros' },
+      { key: 'manual', icon: 'auto_stories', label: 'Manual' },
       { key: 'acerca', icon: 'info', label: 'Acerca de' },
     ];
 
-  clickToogleMenu(filtro?: 'capas' | 'leyendas' | 'buscar' |'resumen' |'coordenadas'| 'filtros'|'acerca'): void {
+  clickToogleMenu(filtro?: 'capas' | 'leyendas' | 'buscar' |'resumen' |'coordenadas'| 'filtros'|'manual'|'acerca'): void {
     if (filtro == undefined) {
       this.toogleMenu = !this.toogleMenu;
     } else {
