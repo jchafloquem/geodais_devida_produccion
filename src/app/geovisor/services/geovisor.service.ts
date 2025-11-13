@@ -2040,7 +2040,7 @@ export class GeovisorSharedService {
 
       try {
         const capaDevida = new FeatureLayer({
-          url: "https://192.168.1.55:6019/api/mapas/capa/1"
+          url: `${this.restSISCOD}/1`
         });
         await capaDevida.load();
 
