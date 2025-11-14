@@ -40,18 +40,25 @@
           TOUR VIRTUAL
         </span>
       </div>
-      <div *ngFor="let boton of botones" class="flex flex-col items-center group"
-        [id]="'button-' + boton.texto.toLowerCase()">
-        <!-- Wrapper para el efecto de borde animado -->
-        <div class="animated-border-wrapper group-hover:scale-110 transition-all duration-300">
-          <a [routerLink]="boton.link"
-            class="flex w-16 h-16 md:w-24 md:h-24 lg:w-28 lg:h-28 justify-center items-center bg-primary text-white rounded-full shadow-lg focus:ring-4 focus:bg-secondary focus:ring-primary">
-            <img [src]="boton.icono" [alt]="boton.alt" class="w-2/3 h-2/3 object-contain" />
-          </a>
-        </div>
-        <span class="mt-2 text-sm md:text-base font-semibold">
-          {{ boton.texto }}
-        </span>
+      <div *ngFor="let boton of botones" class="flex flex-col items-center group relative pb-4" [id]="'button-' + boton.texto.toLowerCase()">
+        <ng-container *ngIf="{ disabled: (boton.texto === 'REPORTES' || boton.texto === 'REPOSITORIO' || boton.texto === 'METADATA') } as state">
+          <!-- Wrapper para el efecto de borde animado -->
+          <div class="animated-border-wrapper transition-all duration-300" [class.group-hover:scale-110]="!state.disabled">
+            <a [routerLink]="state.disabled ? null : boton.link" (click)="state.disabled && $event.preventDefault()"
+              class="flex w-16 h-16 md:w-24 md:h-24 lg:w-28 lg:h-28 justify-center items-center text-white rounded-full shadow-lg"
+              [ngClass]="state.disabled
+                ? 'bg-gray-600 opacity-70 cursor-not-allowed'
+                : 'bg-primary focus:ring-4 focus:bg-secondary focus:ring-primary'">
+              <img [src]="boton.icono" [alt]="boton.alt" class="w-2/3 h-2/3 object-contain" />
+            </a>
+          </div>
+          <span class="mt-2 text-sm md:text-base font-semibold" [class.text-gray-400]="state.disabled">
+            {{ boton.texto }}
+          </span>
+          <span *ngIf="state.disabled" class="absolute bottom-0 text-xs text-amber-400 font-semibold">
+            (En desarrollo)
+          </span>
+        </ng-container>
       </div>
     </div>
     <!-- Redes Sociales -->
