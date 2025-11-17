@@ -154,7 +154,7 @@ export class TourService {
     this.tourPopover = document.createElement('div');
     this.tourPopover.id = 'tour-popover';
     Object.assign(this.tourPopover.style, {
-      position: 'absolute',
+      position: 'fixed',
       visibility: 'hidden', // Ocultar para calcular dimensiones
       backgroundColor: 'white',
       padding: '15px',
@@ -197,28 +197,28 @@ export class TourService {
 
     switch (stepPosition) {
       case 'top-left':
-        top = targetRect.top + window.scrollY - popoverRect.height - margin;
-        left = targetRect.left + window.scrollX;
+        top = targetRect.top - popoverRect.height - margin;
+        left = targetRect.left;
         break;
       case 'top':
-        top = targetRect.top + window.scrollY - popoverRect.height - margin;
-        left = targetRect.left + window.scrollX + (targetRect.width - popoverRect.width) / 2;
+        top = targetRect.top - popoverRect.height - margin;
+        left = targetRect.left + (targetRect.width - popoverRect.width) / 2;
         break;
       case 'bottom':
-        top = targetRect.bottom + window.scrollY + margin;
-        left = targetRect.left + window.scrollX + (targetRect.width - popoverRect.width) / 2;
+        top = targetRect.bottom + margin;
+        left = targetRect.left + (targetRect.width - popoverRect.width) / 2;
         break;
       case 'left':
-        top = targetRect.top + window.scrollY + (targetRect.height - popoverRect.height) / 2;
-        left = targetRect.left + window.scrollX - popoverRect.width - margin;
+        top = targetRect.top + (targetRect.height - popoverRect.height) / 2;
+        left = targetRect.left - popoverRect.width - margin;
         break;
       case 'right':
-        top = targetRect.top + window.scrollY + (targetRect.height - popoverRect.height) / 2;
-        left = targetRect.right + window.scrollX + margin;
+        top = targetRect.top + (targetRect.height - popoverRect.height) / 2;
+        left = targetRect.right + margin;
         break;
       case 'center':
-        top = (window.innerHeight / 2) - (popoverRect.height / 2) + window.scrollY;
-        left = (window.innerWidth / 2) - (popoverRect.width / 2) + window.scrollX;
+        top = (window.innerHeight / 2) - (popoverRect.height / 2);
+        left = (window.innerWidth / 2) - (popoverRect.width / 2);
         break;
     }
 
