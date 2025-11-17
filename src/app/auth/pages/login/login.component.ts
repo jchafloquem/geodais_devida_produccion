@@ -3,9 +3,9 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { Observable, of } from 'rxjs';
+import { Observable, of, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { AuthStateService, LoginResponse } from '../../shared/access/auth-state.service';
+import { AuthStateService, LoginResponse } from '../../services/auth-state.service';
 
 
 @Component({
@@ -54,6 +54,7 @@ export default class LoginComponent implements OnInit, OnDestroy {
   private imageIndex = 0;
   private currentColumnImageIndex = 0;
   private activeBgIndex = 0;
+  private usuarioSubscription?: Subscription;
 
   constructor() {
     // Inicializamos la primera imagen para la columna
@@ -63,6 +64,12 @@ export default class LoginComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.startImageCarousel();
     this.startColumnImageCarousel();
+    this.usuarioSubscription = this.form.get('usuario')?.valueChanges.subscribe(val => {
+      const newVal = val.trim().toUpperCase();
+      if (val !== newVal) {
+        this.form.get('usuario')?.patchValue(newVal, { emitEvent: false });
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -72,6 +79,7 @@ export default class LoginComponent implements OnInit, OnDestroy {
     if (this.columnImageInterval) {
       clearInterval(this.columnImageInterval);
     }
+    this.usuarioSubscription?.unsubscribe();
   }
 
   private startImageCarousel(): void {

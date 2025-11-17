@@ -7,7 +7,7 @@ import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { FabContainerTopComponent } from '../../components/fab-container-top/fab-container-top.component';
 import { InfoCoordenadasComponent } from '../../components/info-coordenadas/info-coordenadas.component';
 import { MatIconModule } from '@angular/material/icon';
-import { AuthStateService } from '../../../auth/shared/access/auth-state.service';
+import { AuthStateService } from '../../../auth/services/auth-state.service';
 
 
 @Component({

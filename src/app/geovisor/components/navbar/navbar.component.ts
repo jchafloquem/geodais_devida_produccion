@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { GeovisorSharedService } from '../../services/geovisor.service';
-import { AuthStateService } from '../../../auth/shared/access/auth-state.service';
+import { AuthStateService } from '../../../auth/services/auth-state.service';
 
 
 @Component({

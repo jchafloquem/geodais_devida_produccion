@@ -1,7 +1,7 @@
 import { isPlatformBrowser, Location } from '@angular/common';
 import { Component, EventEmitter, inject, Inject, Output, PLATFORM_ID } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { AuthStateService } from '../../../../../auth/shared/access/auth-state.service';
+import { AuthStateService } from '../../../../../auth/services/auth-state.service';
 import { GeovisorSharedService } from '../../../../services/geovisor.service';
 
 @Component({
