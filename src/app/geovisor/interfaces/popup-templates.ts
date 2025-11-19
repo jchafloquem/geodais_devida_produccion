@@ -146,12 +146,19 @@ export const popupPoligonoCultivo = new PopupTemplate({
       : '';
     return `
       <div class="esri-feature-content" style="padding: 5px; font-family: Avenir, 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px;">
-        ${popupHeader}
-        ${poligonoTitle}
-        ${participanteInfo}
-        ${cultivoInfo}
-        ${ubicacionInfo}
-        ${observacionesInfo}
+        ${window.innerWidth < 768 ? `
+          ${popupHeader}
+          ${poligonoTitle}
+          ${participanteInfo}
+          ${cultivoInfo}
+        ` : `
+          ${popupHeader}
+          ${poligonoTitle}
+          ${participanteInfo}
+          ${cultivoInfo}
+          ${ubicacionInfo}
+          ${observacionesInfo}
+        `}
       </div>
     `;
   }
