@@ -475,6 +475,7 @@ export class GeovisorSharedService {
         components: [],
       },
     });
+    
 
     this.mapa.layers.on('after-add', (event) => {
       const lyr = event.item;
@@ -856,12 +857,12 @@ export class GeovisorSharedService {
     const buscaCapasDEVIDA = [
       {
         layer: new FeatureLayer({
-          url: `https://sisqa.devida.gob.pe/geodais/api/mapas/capa/1`,
+          url: `${this.restSISCOD}/1`,
           popupTemplate: popupPoligonoCultivo,
+          outFields: ['*', 'DEPARTAMENTO', 'PROVINCIA', 'DISTRITO'],
         }),
         searchFields: ['dni_participante', 'nombres'],
         displayField: 'nombres',
-        outFields: ['*'],
         name: 'CULTIVOS',
         maxResults: 10,
       },
@@ -869,10 +870,10 @@ export class GeovisorSharedService {
         layer: new FeatureLayer({
           url: `${this.restCaribSurvey.serviceBase}/${this.restCaribSurvey.capas.recopilacion}`,
           popupTemplate: restCaribRecopilacion,
+          outFields: ['*', 'DEPARTAMENTO', 'PROVINCIA', 'DISTRITO'],
         }),
         searchFields: ['dni_participante', 'nombre_participante'],
         displayField: 'nombre_participante',
-        outFields: ['*'],
         name: 'VISITAS DE MONITOREO',
         maxResults: 10,
       },
@@ -880,10 +881,10 @@ export class GeovisorSharedService {
         layer: new FeatureLayer({
           url: `${this.restSISCOD}/0`,
           popupTemplate: { title: '{nombre}', content: 'Oficina Zonal' } as any,
+          outFields: ['*', 'DEPARTAMENTO', 'PROVINCIA', 'DISTRITO'],
         }),
         searchFields: ['nombre'],
         displayField: 'nombre',
-        outFields: ['*'],
         name: 'OFICINA ZONAL',
         maxResults: 5,
       },
@@ -904,7 +905,7 @@ export class GeovisorSharedService {
 
       const query = source.layer.createQuery();
       query.where = whereClause;
-      query.outFields = source.outFields;
+      // La propiedad outFields ahora se establece en el constructor de FeatureLayer.
       query.returnGeometry = true;
       query.num = source.maxResults;
 
@@ -927,7 +928,7 @@ export class GeovisorSharedService {
           });
         });
       }).catch(error => {
-        //console.error(`Error al buscar en la capa ${source.name}:`, error);
+        console.error(`Error al buscar en la capa ${source.name}:`, error);
       });
       searchPromises.push(promise);
     }

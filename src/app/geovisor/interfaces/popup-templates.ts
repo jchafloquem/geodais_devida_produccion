@@ -32,49 +32,129 @@ const createFieldInfo = (
   };
 };
 
+/**
+ * Helper para formatear una fila de campo para el popup personalizado.
+ * @param label La etiqueta a mostrar.
+ * @param value El valor del campo.
+ * @param options Opciones como unidades o precisión para números.
+ * @returns Una cadena HTML con la fila del campo o una cadena vacía si el valor no es válido.
+ */
+function formatPopupField(label: string, value: any, options: { unit?: string, precision?: number } = {}): string {
+  if (value === null || value === undefined || value === '' || (typeof value === 'string' && value.trim() === '')) {
+    return `
+    <div style="display: grid; grid-template-columns: 130px 1fr; margin-bottom: 8px; font-size: 13px;">
+      <strong style="color: #1e40af;">${label}:</strong>
+      <span style="color: #9ca3af; font-style: italic;">No disponible</span>
+    </div>
+  `;
+  }
+
+  let displayValue = value;
+  if (typeof value === 'number' && options.precision !== undefined) {
+    displayValue = value.toFixed(options.precision);
+  }
+  if (options.unit) {
+    displayValue += ` ${options.unit}`;
+  }
+
+  return `
+    <div style="display: grid; grid-template-columns: 130px 1fr; margin-bottom: 8px; font-size: 13px;">
+      <strong style="color: #1e40af;">${label}:</strong>
+      <span style="color: #4b5563;">${displayValue}</span>
+    </div>
+  `;
+}
+
 // --- Definiciones de PopupTemplates y Renderers ---
 
 export const popupPoligonoCultivo = new PopupTemplate({
-  title: 'Tipo de Cultivo: {tipo_cultivo}',
+  title: '',
   outFields: ['*'],
-  content: [
-    {
-      type: 'text',
-      text: `<div style="text-align: center; font-weight: bold; font-size: 16px;">Datos del poligono de Cultivo: {nombre}</div>`,
-    },
-    {
-      type: 'fields',
-      fieldInfos: [
-        createFieldInfo('cod_dni', 'Codigo Unico del poligono:', { isBold: true }),
-        createFieldInfo('dni_participante', 'DNI del productor:', { isBold: true }),
-        createFieldInfo('nombres', 'Nombre completo del productor:', { isBold: true }),
-        createFieldInfo('celular_participante', 'Telefono del productor:', { isBold: true }),
-        createFieldInfo('departamento', 'Departamento del Cultivo:', { isBold: true }),
-        createFieldInfo('provincia', 'Provincia del Cultivo:', { isBold: true }),
-        createFieldInfo('distrito', 'Distrito del Cultivo:', { isBold: true }),
-        createFieldInfo('n_parcela', 'Numero del Cultivo:', { isBold: true }),
-        createFieldInfo('variedad', 'Variedad del Cultivo:', { isBold: true }),
-        createFieldInfo('oficina_zonal', 'Oficina Zonal:', { isBold: true }),
-        createFieldInfo('organizacion', 'Organizacion:', { isBold: true }),
-        createFieldInfo('fecha_regitro', 'Fecha de registro:', {
-          isBold: true,
-          format: { dateFormat: 'short-date' },
-        }),
-        createFieldInfo('area_cultivo', 'Area del Cultivo: (has)', {
-          isBold: true,
-          format: { places: 3, digitSeparator: true },
-        }),
-        createFieldInfo('codigo_plan', 'CODIGO DEL PLAN:', {
-          isBold: true,
-          format: { places: 3, digitSeparator: true },
-        }),
-        createFieldInfo('nombre_plan', 'NOMBRE DEL PLAN:', {
-          isBold: true,
-          format: { places: 3, digitSeparator: true },
-        }),
-      ],
-    },
-  ],
+  content: (feature: { graphic: __esri.Graphic }): string => {
+    const attrs = feature.graphic.attributes;
+
+    // Función para formatear fechas de manera segura
+    const formatDate = (dateValue: any) => {
+      if (!dateValue) return 'N/A';
+      // La fecha puede venir como número (timestamp) o string
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return 'Fecha inválida';
+      return date.toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    };
+
+    const popupHeader = `
+      <div style="background-color: #0D9BD7; color: white; font-weight: bold; font-size: 16px; padding: 15px; text-align: center; margin: -5px -5px 10px -5px; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+        TIPO DE CULTIVO: ${attrs.tipo_cultivo || 'No especificado'}
+      </div>`;
+
+    const participanteInfo = `
+      <details open>
+        <summary style="font-weight: bold; cursor: pointer; margin-bottom: 8px; padding: 9px 8px; background-color: #0D9BD7; color: white; border-radius: 4px;">Datos del Participante</summary>
+        <div style="padding-left: 15px; border-left: 2px solid #93c5fd; margin-left: 6px; padding-top: 8px;">
+          ${formatPopupField('DNI', attrs.dni_participante)}
+          ${formatPopupField('Nombre', attrs.nombres)}
+          ${formatPopupField('Fec. Nacimiento', formatDate(attrs['fecha_nacimiento ']))}
+          ${formatPopupField('Teléfono', attrs.celular_participante)}
+
+        </div>
+      </details>
+    `;
+    const cultivoInfo = `
+      <details>
+        <summary style="font-weight: bold; cursor: pointer; margin-top: 15px; margin-bottom: 8px; padding: 9px 8px; background-color: #0D9BD7; color: white; border-radius: 4px;">Datos del Cultivo</summary>
+        <div style="padding-left: 15px; border-left: 2px solid #93c5fd; margin-left: 6px; padding-top: 8px;">
+          ${formatPopupField('Código PPA', attrs.codigo_ppa)}
+          ${formatPopupField('Año Instalación', attrs.anio_instalacion)}
+          ${formatPopupField('Año Incorporación', attrs.anio_incorporacion)}
+          ${formatPopupField('Tipo', attrs.tipo_cultivo)}
+          ${formatPopupField('Variedad', attrs.variedad)}
+          ${formatPopupField('N° Parcela', attrs.n_parcela)}
+          ${formatPopupField('Área (ha)', attrs.area_cultivo, { precision: 3 })}
+          ${formatPopupField('Fec. Registro', formatDate(attrs['fecha_levantamiento ']))}
+          ${formatPopupField('Organización', attrs.organizacion)}
+        </div>
+      </details>
+    `;
+    const ubicacionInfo = `
+      <details>
+        <summary style="font-weight: bold; cursor: pointer; margin-top: 15px; margin-bottom: 8px; padding: 9px 8px; background-color: #0D9BD7; color: white; border-radius: 4px;">Ubicación y Plan</summary>
+        <div style="padding-left: 15px; border-left: 2px solid #93c5fd; margin-left: 6px; padding-top: 8px;">
+
+        ${formatPopupField('Oficina Zonal', attrs.oficina_zonal)}
+          ${formatPopupField('Departamento', attrs.departamento)}
+          ${formatPopupField('Provincia', attrs.provincia)}
+          ${formatPopupField('Distrito', attrs.distrito)}
+          ${formatPopupField('Caserío', attrs.caserio)}
+          ${formatPopupField('Cód. Único', attrs.cod_dni)}
+          ${formatPopupField('PTA / POA', attrs.codigo_plan)}
+          ${formatPopupField('Desc. Plan', attrs.nombre_plan)}
+          ${formatPopupField('Coordenada (X)', attrs.x_coord, { precision: 5 })}
+          ${formatPopupField('Coordenada (Y)', attrs.y_coord, { precision: 5 })}
+        </div>
+      </details>
+    `;
+    const observacionesInfo = `
+      <details>
+        <summary style="font-weight: bold; cursor: pointer; margin-top: 15px; margin-bottom: 8px; padding: 9px 8px; background-color: #0D9BD7; color: white; border-radius: 4px;">Observaciones</summary>
+        <div style="padding-left: 15px; border-left: 2px solid #93c5fd; margin-left: 6px; padding-top: 8px; color: #4b5563; font-style: italic;">
+          ${attrs.observaciones || 'Sin observaciones.'}
+        </div>
+      </details>
+    `;
+    const poligonoTitle = attrs.nombre
+      ? `<div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 12px; color: #1e3a8a;">Polígono: ${attrs.nombre}</div>`
+      : '';
+    return `
+      <div class="esri-feature-content" style="padding: 5px; font-family: Avenir, 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px;">
+        ${popupHeader}
+        ${poligonoTitle}
+        ${participanteInfo}
+        ${cultivoInfo}
+        ${ubicacionInfo}
+        ${observacionesInfo}
+      </div>
+    `;
+  }
 });
 
 export const popupLimitesOficinaZonal = new PopupTemplate({

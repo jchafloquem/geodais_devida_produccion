@@ -30,6 +30,21 @@
       <li *ngFor="let resultado of resultados" class="group py-1 px-2 hover:bg-gray-700 cursor-pointer rounded-md"
         (click)="seleccionarResultado(resultado)">
         <p class="text-sm font-medium text-black group-hover:text-gray-100 break-words">{{ resultado.displayValue }}</p>
+        <div *ngIf="resultado.feature?.attributes?.departamento || resultado.feature?.attributes?.provincia || resultado.feature?.attributes?.distrito"
+          class="my-2">
+          <p class="text-sm font-bold text-gray-600 group-hover:text-gray-200">Ubicación Geográfica:</p>
+          <div class="text-sm text-gray-500 group-hover:text-gray-300 break-words pl-3">
+            <p *ngIf="resultado.feature?.attributes?.departamento">
+              <span class="font-semibold">Departamento:</span> {{ resultado.feature.attributes.departamento }}
+            </p>
+            <p *ngIf="resultado.feature?.attributes?.provincia">
+              <span class="font-semibold">Provincia:</span> {{ resultado.feature.attributes.provincia }}
+            </p>
+            <p *ngIf="resultado.feature?.attributes?.distrito">
+              <span class="font-semibold">Distrito:</span> {{ resultado.feature.attributes.distrito }}
+            </p>
+          </div>
+        </div>
         <p *ngIf="resultado.secondaryInfo" class="text-sm text-gray-300 group-hover:text-gray-100 break-words">{{
           resultado.secondaryInfo }}</p>
         <p class="text-sm text-gray-400 group-hover:text-white break-words">{{ resultado.layerName }}</p>
