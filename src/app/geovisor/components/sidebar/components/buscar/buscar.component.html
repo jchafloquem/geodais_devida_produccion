@@ -18,11 +18,9 @@
     <!-- Botón para limpiar la búsqueda -->
     <button *ngIf="searchPerformed || searchInput.value.length > 0" type="button"
       class="text-sm font-medium p-2 bg-secondary text-white rounded-md hover:bg-primary" (click)="limpiarBusqueda(searchInput)">
-      LIMPIÍAR
+      LIMPÍAR
     </button>
-
   </div>
-
   <!-- Lista de Resultados -->
   <div *ngIf="resultados.length > 0" class="mt-4 flex-grow overflow-y-auto">
     <h4 class="text-md font-semibold mb-2 text-black">RESULTADOS:</h4>

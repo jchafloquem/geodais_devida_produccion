@@ -16,7 +16,7 @@ import jsPDF from 'jspdf';
 import localeEsPE from '@angular/common/locales/es-PE';
 import StatisticDefinition from '@arcgis/core/rest/support/StatisticDefinition.js';
 
-// Plugin personalizado para simular un efecto de sombra 3D en las barras.
+
 const pseudo3DPlugin = {
   id: 'pseudo3D',
   beforeDatasetsDraw: (chart: Chart) => {
@@ -84,7 +84,7 @@ const pseudo3DPlugin = {
   }
 };
 
-// Plugin para dar un efecto de sombra a los gráficos circulares (pie/doughnut)
+
 const pie3DPlugin = {
   id: 'pie3D',
   beforeDatasetsDraw: (chart: Chart) => {
@@ -137,32 +137,31 @@ interface CultivoDepartamento {
   imports: [CommonModule, RouterModule, SidemenuComponent, NavbarmenuComponent, FooterComponent],
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.scss'], // No hay cambios aquí, solo para contexto
+  styleUrls: ['./dashboard.component.scss'],
   providers: [{ provide: LOCALE_ID, useValue: 'es-PE' }],
 })
 export class DashboardComponent implements AfterViewInit {
   /** URL del servicio de features de ArcGIS que contiene los datos de los cultivos. */
-  private readonly PROXY_MAP_BASE: string;
+  private PROXY_MAP_BASE: string;
+  private readonly PROD_MAP_BASE = 'https://sistemas.devida.gob.pe/geodais/api/mapas/capa/1';
+
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private location: Location
   ) {
-    // Se apunta directamente a la URL del backend de producción para asegurar la conexión.
-    this.PROXY_MAP_BASE = 'https://sisqa.devida.gob.pe/geodais/api/mapas/capa/1';
+    // Se establece la URL de producción como la principal por defecto.
+    this.PROXY_MAP_BASE = this.PROD_MAP_BASE;
 
     if (isPlatformBrowser(this.platformId)) {
-      // Usamos el servicio `Location` de Angular para obtener la ruta base correcta.
-      // `prepareExternalUrl` antepone el `base-href` a la ruta proporcionada.
-      // Esto crea una ruta relativa a la raíz del dominio que funciona en todos los entornos.
+
       this.assetPath = this.location.prepareExternalUrl('assets');
     }
   }
-  //private urlMapServerBase: string = '';
-  /** URL para realizar consultas (queries) al servicio de features. */
+
   private queryServicio: string = '';
-  /** Estado de visibilidad del menú lateral. */
+
   isMenuOpen = false;   // Estado inicial del menú
-  /** Flag para detectar si la vista es de escritorio (pantalla grande). */
+
   isDesktop = false;   // Detecta si es pantalla grande
 
   /** Almacena el número total de polígonos de cultivos registrados. */
@@ -253,21 +252,30 @@ export class DashboardComponent implements AfterViewInit {
    * @async
    */
   async inicializarDashboard(): Promise<void> {
-
-    const dashboardCultivos = new FeatureLayer({ url: this.PROXY_MAP_BASE });
+    let dashboardCultivos: FeatureLayer;
     try {
-        await dashboardCultivos.load();
-        this.availableYears = await this.getAvailableYears(dashboardCultivos);
-        if (this.availableYears.includes(2025)) {
-            this.selectedYear = 2025; // Selecciona 2025 por defecto
-        } else if (this.availableYears.length > 0) {
-            this.selectedYear = this.availableYears[0]; // Fallback al año más reciente
-        }
-        await this.loadDashboardData();
-    } catch (err) {
-      //console.error("Error crítico de conexión con el backend:", err);
+      // Intento 1: Conectar a Producción
+      dashboardCultivos = new FeatureLayer({ url: this.PROD_MAP_BASE });
+      await dashboardCultivos.load();
+      this.PROXY_MAP_BASE = this.PROD_MAP_BASE; // Éxito, usar PROD
+    } catch (prodError) {
+      //console.error("Error crítico de conexión con el backend:", prodError);
       this.isBackendError = true;
       this.backendErrorMessage = 'No fue posible establecer conexión con el servidor. Por favor, intente nuevamente más tarde o confirme que el sistema se encuentre en funcionamiento. Si el problema persiste, comuníquese con el área de Informática.';
+      return; // Salir si falla
+    }
+
+    try {
+      this.availableYears = await this.getAvailableYears(dashboardCultivos);
+      if (this.availableYears.includes(2025)) {
+        this.selectedYear = 2025; // Selecciona 2025 por defecto
+      } else if (this.availableYears.length > 0) {
+        this.selectedYear = this.availableYears[0]; // Fallback al año más reciente
+      }
+      await this.loadDashboardData();
+    } catch (err) {
+      this.isBackendError = true;
+      this.backendErrorMessage = 'Ocurrió un error al procesar los datos del dashboard. Por favor, recargue la página.';
     }
   }
 
