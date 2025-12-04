@@ -5,7 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { Observable, of, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { AuthStateService, LoginResponse } from '../../services/auth-state.service';
+import { AuthStateService, LoginResponse } from 'src/app/auth/services/auth-state.service';
 
 
 @Component({
@@ -65,7 +65,7 @@ export default class LoginComponent implements OnInit, OnDestroy {
     this.startImageCarousel();
     this.startColumnImageCarousel();
     this.usuarioSubscription = this.form.get('usuario')?.valueChanges.subscribe(val => {
-      const newVal = val.trim().toUpperCase();
+      const newVal = val.trim().toLowerCase();
       if (val !== newVal) {
         this.form.get('usuario')?.patchValue(newVal, { emitEvent: false });
       }

@@ -4,4 +4,10 @@
     "secure": false,
     "changeOrigin": true
   }
+,
+  "/geodais/api": {
+    "target": "https://sisqa.devida.gob.pe",
+    "secure": false,
+    "changeOrigin": true
+  }
 }

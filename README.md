@@ -13,4 +13,7 @@ Proyecto de Geo DEVIDA (Noviembre 2024 - Julio 2025)
 ## PRODUCCION
 Fecha de envio 03/12/2025
 
+Desarrollo: ng serve o ng serve --configuration=development
+QA: ng serve --configuration=qa o ng build --configuration=qa
+Producción: ng build --configuration=production
 

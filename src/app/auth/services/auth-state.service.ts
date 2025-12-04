@@ -1,8 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
-import { GeovisorSharedService } from '../../geovisor/services/geovisor.service';
+import { catchError, finalize, tap } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
+import { GeovisorSharedService } from 'src/app/geovisor/services/geovisor.service';
 
 export interface LoginData {
   LOGIN: string;
@@ -26,12 +27,12 @@ export class AuthStateService {
   private _geovisorSharedService = inject(GeovisorSharedService);
   private _httpClient = inject(HttpClient);
 
-  private prodApiUrl = 'https://sistemas.devida.gob.pe/geodais/api/auth';
+  private authApiUrl = `${environment.apiUrl}/auth`;
 
   login(loginData: LoginData): Observable<LoginResponse> {
-    const prodLoginUrl = `${this.prodApiUrl}/login`;
+    const loginUrl = `${this.authApiUrl}/login`;
 
-    return this._httpClient.post<LoginResponse>(prodLoginUrl, loginData)
+    return this._httpClient.post<LoginResponse>(loginUrl, loginData)
       .pipe(
         catchError(error => {
           // If there's an error, re-throw it directly without trying QA
@@ -69,46 +70,41 @@ export class AuthStateService {
   }
 
   logout(): Observable<any> {
-    const userSession = localStorage.getItem('userSessionData');
-    let loginValue: string | null = null;
-
-    if (userSession) {
-      try {
-        const parsedUser = JSON.parse(userSession);
-
-        if (parsedUser && typeof parsedUser.LOGIN === 'string') {
-          loginValue = parsedUser.LOGIN.trim().toUpperCase();
-        }
-      } catch (e) { /* No hacer nada si hay un error al parsear */ }
-    }
+    const loginValue = this.getLoginFromSession();
 
     if (!loginValue) {
       this.clearLocalSession();
       return of(null);
     }
 
-    const payload = {
-      login: loginValue
-    };
+    const payload = { login: loginValue };
+    const logoutUrl = `${this.authApiUrl}/logout`;
 
-    const prodLogoutUrl = `${this.prodApiUrl}/logout`;
-
-    return this._httpClient.post(prodLogoutUrl, payload, { responseType: 'text' }).pipe(
-      catchError(error => {
-        // If there's an error during logout, clear session anyway and return null
-        this.clearLocalSession();
+    return this._httpClient.post(logoutUrl, payload, { responseType: 'text' }).pipe(
+      catchError((error) => {
+        // En caso de error en la petición de logout (ej. red caída),
+        // no propagamos el error. `finalize` se encargará de limpiar la sesión local
+        // para que el usuario vea que la sesión se cerró en la UI.
         return of(null);
       }),
-      tap((response) => {
-
-        this.clearLocalSession();
-      }),
-      catchError(error => {
-        this.clearLocalSession();
-        return of(null);
-      })
+      finalize(() => this.clearLocalSession())
     );
-}
+  }
+
+  private getLoginFromSession(): string | null {
+    const userSession = localStorage.getItem('userSessionData');
+    if (!userSession) {
+      return null;
+    }
+    try {
+      const parsedUser = JSON.parse(userSession);
+      const login = parsedUser?.LOGIN;
+      return typeof login === 'string' ? login.trim() : null;
+    } catch (e) {
+      console.error('Error al parsear los datos de sesión del localStorage', e);
+      return null;
+    }
+  }
 
   private clearLocalSession(): void {
     localStorage.removeItem('authToken');
