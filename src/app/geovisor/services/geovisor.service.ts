@@ -2,6 +2,7 @@ import { ElementRef, Injectable } from '@angular/core';
 //Libreria actual de ArcGIS 4.33
 import '@arcgis/map-components/components/arcgis-search';
 import { LayerConfig } from '../interfaces/layerConfig';
+import esriConfig from '@arcgis/core/config';
 import proj4 from 'proj4';
 import {
   EsriMap,
@@ -100,7 +101,12 @@ export class GeovisorSharedService {
     }
 
   //Servicio SISCOD-DEVIDA
-  public restSISCOD = 'https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer';
+  /**
+   * URL base del servicio de mapas de SISCOD (DPM_PIRDAIS_CULTIVOS_PRODUCCION).
+   * Se utiliza una URL de proxy para ofuscar el endpoint original y centralizar la gestión.
+   * El proxy debe apuntar a: https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer
+   */
+  public readonly restSISCOD = 'https://sistemas.devida.gob.pe/geodais/api/mapas/dpm-pirdais-cultivos-produccion';
   public restCaribSurvey = {
     serviceBase:
       'https://services8.arcgis.com/tPY1NaqA2ETpJ86A/ArcGIS/rest/services',
@@ -390,6 +396,13 @@ export class GeovisorSharedService {
   }
 
   initializeMap(mapViewEl: ElementRef): Promise<void> {
+    // 💡 SOLUCIÓN: Forzar el uso de POST para las peticiones de query.
+    // Esto puede solucionar errores 500 en proxies que no manejan bien URLs largas (GET).
+    // La API de ArcGIS enviará los parámetros de la consulta en el cuerpo de la petición.
+    // Se usa `as any` para evitar un error de TypeScript si las definiciones de tipo
+    // de la versión de ArcGIS no incluyen esta propiedad, aunque exista en tiempo de ejecución.
+    (esriConfig.request as any).usePost = true;
+
     // --- INICIO DE LA MEJORA ---
     // Si la vista ya existe, solo re-adjuntamos el contenedor y salimos.
     // Esto evita la recreación del mapa y la duplicación de widgets.
@@ -475,7 +488,7 @@ export class GeovisorSharedService {
         components: [],
       },
     });
-    
+
 
     this.mapa.layers.on('after-add', (event) => {
       const lyr = event.item;
