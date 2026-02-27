@@ -189,6 +189,7 @@ export class DashboardComponent implements AfterViewInit {
   private readonly METAS_HECTAREAS: { [key: number]: number } = {
     2024: 43364,
     2025: 5000,
+    2026: 5000,
   };
   /**
    * Define las metas de familias participantes a alcanzar por año.
@@ -197,6 +198,7 @@ export class DashboardComponent implements AfterViewInit {
   private readonly METAS_FAMILIAS: { [key: number]: number } = {
     2024: 38313,
     2025: 4000,
+    2026: 5000,
   };
 
   /** Almacena la meta de familias para el año seleccionado. */
@@ -267,10 +269,11 @@ export class DashboardComponent implements AfterViewInit {
 
     try {
       this.availableYears = await this.getAvailableYears(dashboardCultivos);
-      if (this.availableYears.includes(2025)) {
-        this.selectedYear = 2025; // Selecciona 2025 por defecto
+      const currentYear = new Date().getFullYear();
+      if (this.availableYears.includes(currentYear)) {
+        this.selectedYear = currentYear; // Selecciona el año actual por defecto
       } else if (this.availableYears.length > 0) {
-        this.selectedYear = this.availableYears[0]; // Fallback al año más reciente
+        this.selectedYear = this.availableYears[0]; // Fallback al año más reciente disponible
       }
       await this.loadDashboardData();
     } catch (err) {
