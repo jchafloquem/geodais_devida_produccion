@@ -128,7 +128,7 @@ export class GeovisorSharedService {
       type: 'webtile',
       title: 'Monitoreo Satelital Planet NICFI',
       url: 'https://tiles.planet.com/basemaps/v1/planet-tiles/series/planet_medres_analytic_monthly/gpn/{level}/{col}/{row}.png?api_key=PLAK2f3550ea95b046d5a8cc091fb51d6283',
-      
+
       visible: false,
       opacity: 1,
       minScale: 0,
@@ -1648,6 +1648,26 @@ export class GeovisorSharedService {
           }
         }
         if (!layer) return;
+
+        // Apagar capas excepto sistema, cultivos y SERFOR
+        const capasSerfor = [
+          'ANP - AREAS NATURALES PROTEGIDAS',
+          'MONITOREO DEFORESTACION',
+          'COMUNIDADES NATIVAS',
+          'ZA-ZONAS DE AMORTIGUAMIENTO',
+          'ACR-AREAS DE CONSERVACION REGIONAL',
+          'BPP-BOSQUE DE PRODUCCION PERMANENTE',
+        ];
+
+        this.mapa.layers.forEach((l) => {
+          const esSistema = l.id === this.highlightLayer.id || l.id === this.coordinateMarkerLayer.id;
+          const esCultivo = l.title === 'POLIGONOS DE CULTIVO';
+          const esSerfor = capasSerfor.includes(l.title || '');
+
+          // Se mantienen visibles (o se encienden) solo Cultivos, SERFOR y sistema
+          l.visible = esSistema || esCultivo || esSerfor;
+        });
+
         this.mapa.add(layer);
         layer
           .when(() => {
@@ -1689,6 +1709,14 @@ export class GeovisorSharedService {
       if (layersToRemove.length > 0) {
         this.mapa.removeMany(layersToRemove);
         this.showToast(`Se eliminaron ${layersToRemove.length} capas GeoJSON/CSV.`, 'success');
+
+        // Restaurar la visibilidad de las capas según la configuración inicial
+        this.layers.forEach((config) => {
+          const layer = this.mapa.layers.find((l) => l.title === config.title);
+          if (layer) {
+            layer.visible = config.visible ?? true;
+          }
+        });
       } else {
         this.showToast('No hay capas GeoJSON/CSV para eliminar.', 'info');
       }
@@ -2083,6 +2111,26 @@ export class GeovisorSharedService {
         return;
       }
       this.highlightLayer.removeAll();
+
+      // Apagar todas las capas excepto 'POLIGONOS DE CULTIVO' y las de 'SERFOR'
+      const capasSerfor = [
+        'ANP - AREAS NATURALES PROTEGIDAS',
+        'MONITOREO DEFORESTACION',
+        'COMUNIDADES NATIVAS',
+        'ZA-ZONAS DE AMORTIGUAMIENTO',
+        'ACR-AREAS DE CONSERVACION REGIONAL',
+        'BPP-BOSQUE DE PRODUCCION PERMANENTE',
+      ];
+
+      this.mapa.layers.forEach((layer) => {
+        const esCultivo = layer.title === 'POLIGONOS DE CULTIVO';
+        const esSerfor = capasSerfor.includes(layer.title || '');
+        const esSistema = layer.id === this.highlightLayer.id || layer.id === this.coordinateMarkerLayer.id;
+
+        // Se mantienen visibles solo Cultivos, SERFOR y las capas internas del sistema (resaltado/marcadores)
+        layer.visible = esCultivo || esSerfor || esSistema;
+      });
+
       // --- Overlay ---
       let overlay = document.getElementById("loading-overlay-cultivo") as HTMLDivElement | null;
       if (!overlay) {
