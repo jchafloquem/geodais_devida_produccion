@@ -3,7 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { GeovisorSharedService, OficinaStats } from '../../../../services/geovisor.service';
-import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import { FeatureLayer, Graphic } from '../../../../interfaces/arcgis-imports';
 import { environment } from 'src/environments/environment';
 
 
@@ -31,9 +31,8 @@ export class FiltrosComponent implements OnInit {
   public stats: OficinaStats | null = null;
   public isStatsLoading = false;
 
-  private pirdaisLayer = new FeatureLayer({
-    url: `${environment.apiUrl}/mapas/capa/1`,
-  });
+  // Para guardar el estado de visibilidad de las capas antes de aplicar el filtro
+  private _savedLayerState: Map<string, boolean> = new Map();
 
   /**
    * Hook del ciclo de vida de Angular. Se ejecuta al inicializar el componente.
@@ -64,10 +63,80 @@ export class FiltrosComponent implements OnInit {
    * Si hay una oficina seleccionada, solicita al servicio hacer zoom a su ubicación
    * y dispara el cálculo de sus estadísticas.
    */
-  buscarOficina(): void {
+  async buscarOficina(): Promise<void> {
     if (this.selectedOficina) {
-      this._geovisorSharedService.zoomToOficinaZonal(this.selectedOficina);
-      this.cargarEstadisticas(this.selectedOficina);
+      const oficina = this.selectedOficina;
+      const map = this._geovisorSharedService.mapa;
+      const view = this._geovisorSharedService.view;
+
+      // 0. Gestión de Capas: Guardar estado y activar modo "Enfoque"
+      if (this._savedLayerState.size === 0) {
+        map.layers.forEach((l: any) => {
+          // Ignoramos capas gráficas internas (como highlights o marcadores) para no romper la UI
+          if (l.type !== 'graphics') {
+            this._savedLayerState.set(l.id, l.visible);
+          }
+        });
+      }
+
+      // Apagar todas las capas excepto las relevantes para el filtro
+      map.layers.forEach((l: any) => {
+        if (l.type === 'graphics') return;
+        const title = l.title?.toUpperCase() || '';
+        l.visible = (title === 'POLIGONOS DE CULTIVO' || title === 'OFICINAS ZONALES');
+      });
+
+      // URL directa para asegurar funcionamiento independiente del servicio
+      //const SERVICE_URL = "https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer";
+      const SERVICE_URL = `${environment.apiUrl}/mapas/capa`;
+
+      // 1. Filtro Visual: Capa de Polígonos (Capa 1)
+      const polyLayer = map.layers.find((l: any) => l.title === 'POLIGONOS DE CULTIVO') as any;
+      if (polyLayer) {
+        const sublayer = polyLayer.findSublayerById(1);
+        if (sublayer) {
+          sublayer.definitionExpression = `UPPER(oficina_zonal) = '${oficina.toUpperCase()}'`;
+          polyLayer.visible = true;
+        }
+      }
+
+      // 2. Filtro Visual: Capa de Oficinas (Capa 0) - ¡Sorpresa!
+      // Mostramos solo el límite de la oficina seleccionada para dar contexto.
+      const officeLayer = map.layers.find((l: any) => l.title === 'OFICINAS ZONALES') as any;
+      if (officeLayer) {
+        const sublayer = officeLayer.findSublayerById(0);
+        if (sublayer) {
+          sublayer.definitionExpression = `UPPER(nombre) = '${oficina.toUpperCase()}'`;
+          officeLayer.visible = true; // Aseguramos que se vea
+        }
+      }
+
+      // 3. Zoom y Resaltado (Lógica local para robustez)
+      try {
+        const featureLayer = new FeatureLayer({ url: `${SERVICE_URL}/0` }); // Consultamos Capa 0 (Oficinas)
+        const query = featureLayer.createQuery();
+        query.where = `UPPER(nombre) = '${oficina.toUpperCase()}'`;
+        query.returnGeometry = true;
+        query.outFields = ["*"];
+
+        const results = await featureLayer.queryFeatures(query);
+
+        if (results.features.length > 0 && view) {
+          const feature = results.features[0];
+          // MEJORA: Usamos el 'extent' de la geometría expandido un 20% (1.2)
+          // Esto garantiza que se vea todo el ámbito de la oficina sin cortar los bordes.
+          if (feature.geometry && feature.geometry.extent) {
+            await view.goTo(feature.geometry.extent.expand(1.2), { duration: 1000 });
+          }
+        } else {
+           this._geovisorSharedService.showToast('No se encontró la ubicación de la oficina.', 'warning');
+        }
+      } catch (error) {
+        console.error("Error al ubicar oficina:", error);
+      }
+
+      // 4. Cargar Estadísticas
+      await this.cargarEstadisticas(oficina);
     } else {
       this._geovisorSharedService.showToast('Por favor, seleccione una oficina zonal.', 'info', true);
     }
@@ -84,7 +153,7 @@ export class FiltrosComponent implements OnInit {
     this.stats = null;
     this.isStatsLoading = true;
     try {
-      const calculatedStats = await this.calcularEstadisticasOficina(oficina);
+      const calculatedStats = await this._geovisorSharedService.getStatsForOficina(oficina);
 
       // Si no se encuentran polígonos, mostrar un mensaje, pero seguir mostrando las tarjetas con valor 0.
       if (calculatedStats.totalFamilias === 0 && calculatedStats.totalHectareas === 0) {
@@ -103,95 +172,6 @@ export class FiltrosComponent implements OnInit {
   }
 
   /**
-   * Realiza la consulta al servicio de ArcGIS para obtener los datos de una oficina
-   * y calcula las estadísticas de hectáreas y familias.
-   * Utiliza paginación para manejar grandes volúmenes de datos y normaliza los
-   * nombres de los cultivos para asegurar la consistencia del conteo.
-   * @param oficina El nombre de la oficina zonal.
-   * @returns Una promesa que resuelve a un objeto `OficinaStats` con los datos calculados.
-   * @private
-   * @async
-   */
-  private async calcularEstadisticasOficina(oficina: string): Promise<OficinaStats> {
-    const oficinaUpper = oficina.trim().toUpperCase();
-    const whereClause = `UPPER(oficina_zonal) = '${oficinaUpper}'`;
-
-    // Se replica la lógica del dashboard para asegurar consistencia en los cálculos.
-    // Esto implica descargar los registros y procesarlos en el cliente para manejar
-    // posibles inconsistencias en los datos de 'tipo_cultivo'.
-
-    try {
-      const allFeatures: __esri.Graphic[] = [];
-      const query = this.pirdaisLayer.createQuery();
-      query.where = whereClause;
-      query.outFields = ["dni_participante", "tipo_cultivo", "area_cultivo"];
-      query.returnGeometry = false;
-
-      // Paginación para manejar el límite de transferencia de registros del servidor.
-      const pageSize = 2000;
-      let start = 0;
-      let hasMore = true;
-      while (hasMore) {
-        query.start = start;
-        query.num = pageSize;
-        const featureSet = await this.pirdaisLayer.queryFeatures(query);
-        allFeatures.push(...featureSet.features);
-        start += featureSet.features.length;
-        hasMore = featureSet.exceededTransferLimit === true;
-      }
-
-      if (allFeatures.length === 0) {
-        return { totalHectareas: 0, hectareasCacao: 0, hectareasCafe: 0, totalFamilias: 0, familiasCacao: 0, familiasCafe: 0, familiasAmbos: 0 };
-      }
-
-      const dnisCacao = new Set<string>();
-      const dnisCafe = new Set<string>();
-      const dnisTotal = new Set<string>();
-      let totalHectareas = 0;
-      let hectareasCacao = 0;
-      let hectareasCafe = 0;
-
-      allFeatures.forEach(feature => {
-        const attrs = feature.attributes;
-        const dni = attrs.dni_participante;
-        const area = attrs.area_cultivo || 0;
-        // Lógica de normalización robusta, igual a la del dashboard.
-        const cultivoRaw = (attrs.tipo_cultivo || "")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .trim();
-
-        totalHectareas += area;
-        if (dni) dnisTotal.add(dni);
-
-        if (cultivoRaw.includes("cacao")) {
-          hectareasCacao += area;
-          if (dni) dnisCacao.add(dni);
-        }
-        if (cultivoRaw.includes("cafe")) {
-          hectareasCafe += area;
-          if (dni) dnisCafe.add(dni);
-        }
-      });
-
-      const familiasAmbos = [...dnisCacao].filter(dni => dnisCafe.has(dni)).length;
-
-      return {
-        totalHectareas,
-        hectareasCacao,
-        hectareasCafe,
-        totalFamilias: dnisTotal.size,
-        familiasCacao: dnisCacao.size,
-        familiasCafe: dnisCafe.size,
-        familiasAmbos: familiasAmbos
-      };
-    } catch (error) {
-      return { totalHectareas: 0, hectareasCacao: 0, hectareasCafe: 0, totalFamilias: 0, familiasCacao: 0, familiasCafe: 0, familiasAmbos: 0 };
-    }
-  }
-
-  /**
    * Restablece el filtro.
    * Limpia la oficina seleccionada, quita cualquier resaltado del mapa
    * y oculta el panel de estadísticas.
@@ -200,5 +180,31 @@ export class FiltrosComponent implements OnInit {
     this.selectedOficina = null;
     this._geovisorSharedService.clearHighlights();
     this.stats = null;
+
+    const map = this._geovisorSharedService.mapa;
+
+    // Restaurar el estado de visibilidad de las capas (si se guardó previamente)
+    if (this._savedLayerState.size > 0) {
+      this._savedLayerState.forEach((visible, layerId) => {
+        const layer = map.findLayerById(layerId);
+        if (layer) layer.visible = visible;
+      });
+      this._savedLayerState.clear();
+    }
+
+    // Restaurar Polígonos (Capa 1)
+    const polyLayer = map.layers.find((l: any) => l.title === 'POLIGONOS DE CULTIVO') as any;
+    if (polyLayer) {
+      const sublayer = polyLayer.findSublayerById(1);
+      if (sublayer) sublayer.definitionExpression = '1=1';
+    }
+
+    // Restaurar Oficinas (Capa 0)
+    const officeLayer = map.layers.find((l: any) => l.title === 'OFICINAS ZONALES') as any;
+    if (officeLayer) {
+      const sublayer = officeLayer.findSublayerById(0);
+      if (sublayer) sublayer.definitionExpression = '1=1';
+      officeLayer.visible = false; // Ocultamos la capa de oficinas al limpiar
+    }
   }
 }
