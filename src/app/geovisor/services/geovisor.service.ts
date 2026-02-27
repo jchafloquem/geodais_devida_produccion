@@ -486,6 +486,14 @@ export class GeovisorSharedService {
         snapToZoom: false,
       },
       padding: { top: 0 },
+      popup: {
+        dockEnabled: true,
+        dockOptions: {
+          buttonEnabled: true,
+          breakpoint: false,
+          position: 'bottom-right',
+        },
+      },
       ui: {
         components: [],
       },
@@ -509,6 +517,49 @@ export class GeovisorSharedService {
 
     //Ver la escala en el mapa
     this.view.when(() => {
+      // Inyectar estilo para desplazar SOLO el popup a la izquierda sin afectar los botones
+      const styleId = 'popup-offset-style';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `
+          .esri-popup--is-docked-bottom-right .esri-popup__main-container {
+            margin-right: 60px !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      // Evento para abrir popup al hacer clic en polígonos de cultivo
+      this.view!.on('click', (event) => {
+        this.view!.hitTest(event).then((response) => {
+          // Verificar si se hizo clic en un gráfico con popup existente (ej. marcadores)
+          const graphicHit = response.results.find(
+            (result) => result.type === 'graphic' && (result as any).graphic.popupTemplate
+          );
+          if (graphicHit) return;
+
+          // Si no, consultar la capa de cultivos
+          const layerUrl = `${this.restSISCOD}/1`;
+          const layer = new FeatureLayer({ url: layerUrl });
+          const query = layer.createQuery();
+          query.geometry = event.mapPoint;
+          query.spatialRelationship = 'intersects';
+          query.returnGeometry = true;
+          query.outFields = ['*'];
+
+          layer.queryFeatures(query).then((results) => {
+            if (results.features.length > 0) {
+              results.features.forEach((f) => (f.popupTemplate = popupPoligonoCultivo));
+              this.view!.openPopup({
+                features: results.features,
+                location: event.mapPoint,
+              });
+            }
+          });
+        });
+      });
+
       this.actualizarSelectCapas();
       this.mapa.layers.on('change', () => {
         this.actualizarSelectCapas();
