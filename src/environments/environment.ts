@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: '/geodais/api'
+  apiUrl: 'http://localhost:8080/geodais/api'
 };

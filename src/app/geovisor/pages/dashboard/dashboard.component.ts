@@ -143,7 +143,7 @@ interface CultivoDepartamento {
 export class DashboardComponent implements AfterViewInit {
   /** URL del servicio de features de ArcGIS que contiene los datos de los cultivos. */
   private PROXY_MAP_BASE: string;
-  private readonly PROD_MAP_BASE = 'https://sistemas.devida.gob.pe/geodais/api/mapas/capa/1';
+  private readonly PROD_MAP_BASE = `https://sistemas.devida.gob.pe/geodais/api/mapas/capa/1`;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,

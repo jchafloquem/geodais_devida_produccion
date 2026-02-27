@@ -2,6 +2,7 @@ import { ElementRef, Injectable } from '@angular/core';
 //Libreria actual de ArcGIS 4.33
 import '@arcgis/map-components/components/arcgis-search';
 import { LayerConfig } from '../interfaces/layerConfig';
+import { environment } from 'src/environments/environment';
 import esriConfig from '@arcgis/core/config';
 import proj4 from 'proj4';
 import {
@@ -106,7 +107,7 @@ export class GeovisorSharedService {
    * Se utiliza una URL de proxy para ofuscar el endpoint original y centralizar la gestión.
    * El proxy debe apuntar a: https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer
    */
-  public readonly restSISCOD = 'https://sistemas.devida.gob.pe/geodais/api/mapas/dpm-pirdais-cultivos-produccion';
+  public restSISCOD = `${environment.apiUrl}/mapas/capa`;
   public restCaribSurvey = {
     serviceBase:
       'https://services8.arcgis.com/tPY1NaqA2ETpJ86A/ArcGIS/rest/services',
@@ -412,10 +413,11 @@ export class GeovisorSharedService {
     }
     // --- FIN DE LA MEJORA ---
     this.layers.forEach((layerConfig) => {
-      const hasValidLayerId = /\/\d+$/.test(layerConfig.url);
-      const isMapImage = /\/MapServer$/.test(layerConfig.url);
+      // Priorizar el tipo definido en la configuración, si no existe, inferir por la URL
+      const isFeature = layerConfig.type === 'feature' || (!layerConfig.type && /\/\d+$/.test(layerConfig.url));
+      const isMapImage = layerConfig.type === 'map-image' || (!layerConfig.type && /\/MapServer$/.test(layerConfig.url));
       let layer: __esri.Layer;
-      if (hasValidLayerId) {
+      if (isFeature) {
         // 🔹 Es un FeatureLayer
         const layerOptions: __esri.FeatureLayerProperties = {
           url: layerConfig.url,

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { GeovisorSharedService, OficinaStats } from '../../../../services/geovisor.service';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import { environment } from 'src/environments/environment';
 
 
 /**
@@ -31,7 +32,7 @@ export class FiltrosComponent implements OnInit {
   public isStatsLoading = false;
 
   private pirdaisLayer = new FeatureLayer({
-    url: "https://siscod.devida.gob.pe/server/rest/services/DPM_PIRDAIS_CULTIVOS_PRODUCCION/MapServer/1"
+    url: `${environment.apiUrl}/mapas/capa/1`,
   });
 
   /**

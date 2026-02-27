@@ -3,11 +3,13 @@
     "target": "https://wsautenticacionside.devida.gob.pe",
     "secure": false,
     "changeOrigin": true
-  }
-,
+  },
   "/geodais/api": {
-    "target": "https://sisqa.devida.gob.pe",
+    "target": "http://localhost:8080",
     "secure": false,
-    "changeOrigin": true
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/geodais": ""
+    }
   }
 }
