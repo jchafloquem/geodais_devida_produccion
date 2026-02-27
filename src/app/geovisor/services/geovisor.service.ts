@@ -125,6 +125,17 @@ export class GeovisorSharedService {
   };
   public layers: LayerConfig[] = [
     {
+      type: 'webtile',
+      title: 'Monitoreo Satelital Planet NICFI',
+      url: 'https://tiles.planet.com/basemaps/v1/planet-tiles/series/planet_medres_analytic_monthly/gpn/{level}/{col}/{row}.png?api_key=PLAK2f3550ea95b046d5a8cc091fb51d6283',
+      
+      visible: false,
+      opacity: 1,
+      minScale: 0,
+      maxScale: 0,
+      group: 'IMAGENES SATELITALES',
+    },
+    {
       type: 'map-image',
       title: 'POLIGONOS DE CULTIVO',
       url: `${this.restSISCOD}`,
@@ -460,12 +471,17 @@ export class GeovisorSharedService {
         layer = new MapImageLayer(layerOptions);
       } else {
         // 🔹 Es un WebTileLayer
-        layer = new WebTileLayer({
+        const opts: __esri.WebTileLayerProperties = {
           urlTemplate: layerConfig.url,
           title: layerConfig.title,
           visible: layerConfig.visible,
           opacity: layerConfig.opacity ?? 1,
-        });
+        };
+        // Asignar ID específico para la capa de Planet para fácil acceso
+        if (layerConfig.title === 'Monitoreo Satelital Planet NICFI') {
+          opts.id = 'planet_nicfi';
+        }
+        layer = new WebTileLayer(opts);
       }
       this.mapa.add(layer);
     });
@@ -2307,7 +2323,8 @@ export class GeovisorSharedService {
         'ZA-ZONAS DE AMORTIGUAMIENTO',
         'ACR-AREAS DE CONSERVACION REGIONAL',
         'VISITAS DE MONITOREO',
-        'POLIGONOS DE CULTIVO' // excluido solo si no quieres analizarlo
+        'POLIGONOS DE CULTIVO', // excluido solo si no quieres analizarlo
+        'MONITOREO SATELITAL PLANET NICFI'
       ];
 
       this.mapa.layers.toArray().forEach((lyr) => {
@@ -2336,5 +2353,23 @@ export class GeovisorSharedService {
           });
         }
       });
+    }
+
+    /**
+     * Actualiza la capa de Planet NICFI para mostrar el mosaico de un mes y año específicos.
+     * @param anio Año en formato 'YYYY' (ej. '2023')
+     * @param mes Mes en formato 'MM' (ej. '09')
+     */
+    public actualizarMesPlanet(anio: string, mes: string): void {
+      // Buscamos la capa por su ID único para mayor robustez
+      const planetLayer = this.mapa.findLayerById('planet_nicfi') as WebTileLayer;
+
+      if (planetLayer) {
+        // Construimos la URL para el mosaico mensual específico usando el formato estándar de Planet.
+        // Se corrige el nombre de la serie a 'planet_medres_analytic...'
+        planetLayer.urlTemplate = `https://tiles.planet.com/basemaps/v1/planet-tiles/planet_medres_analytic_${anio}-${mes}_mosaic/gmap/{level}/{col}/{row}.png?api_key=PLAK6c2798d15fd8404d8858d9bbff07690a`;
+        planetLayer.refresh();
+        this.showToast(`Capa Planet actualizada a ${mes}/${anio}`, 'success');
+      }
     }
 }
