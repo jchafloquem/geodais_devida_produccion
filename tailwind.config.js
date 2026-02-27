@@ -27,8 +27,8 @@ module.exports = {
 				'6xl': '3.5rem',
 			},
 			colors: {
-				primary: '#0D9BD7',
-				secondary: '#0DA642',
+				primary: '#0DA642',
+        secondary: '#0D9BD7',
 				accent: '#323232',
 				default: '#e6f2f8',
 				success: '#078152',
