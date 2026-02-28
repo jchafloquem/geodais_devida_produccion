@@ -8,6 +8,7 @@ import { FabContainerTopComponent } from '../../components/fab-container-top/fab
 import { InfoCoordenadasComponent } from '../../components/info-coordenadas/info-coordenadas.component';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthStateService } from '../../../auth/services/auth-state.service';
+import { ObservatorioComponent } from '../../components/observatorio/observatorio.component';
 
 
 @Component({
@@ -17,8 +18,9 @@ import { AuthStateService } from '../../../auth/services/auth-state.service';
     RouterModule,
     NavbarComponent,
     SidebarComponent,
-    FabContainerTopComponent,
+    //FabContainerTopComponent,
     InfoCoordenadasComponent,
+    ObservatorioComponent,
     CommonModule,
     MatIconModule,
   ],

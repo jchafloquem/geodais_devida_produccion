@@ -4,16 +4,25 @@
  * que funciona mejor que '100vh' en móviles.
 */
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column; /* Apilamos navbar y contenido principal verticalmente */
   height: 100%;
-  height: 100%;
+  width: 100%;
   position: relative;
   user-select: none;
   -webkit-user-drag: none;
 }
 
+/* Nuevo contenedor para el área principal (mapa + resumen) */
+.content-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex: 1; /* Ocupa el espacio restante debajo del navbar */
+  overflow: hidden; /* Evita que el contenido se desborde */
+}
+
 .map-container {
-  width: 100%;
+  flex: 1; /* El mapa ocupa todo el espacio disponible restante */
   height: 100%;
   overflow: hidden; /* Refuerzo: Asegura que el contenedor del mapa no se desborde */
   position: relative;
@@ -50,3 +59,16 @@
  * desde el padre. Esto es necesario para ajustar su posición
  * respetando las áreas seguras del iPhone.
 */
+
+/* Estilos para el panel de resumen a la derecha */
+.summary-container {
+  width: 600px; /* Ancho aumentado para mejor visualización */
+  min-width: 320px;
+  height: 100%;
+  background-color: #ffffff;
+  border-left: 1px solid #e0e0e0;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.08); /* Sombra suave para separarlo del mapa */
+  z-index: 10;
+  overflow-y: auto; /* Scroll si el contenido es muy largo */
+  position: relative;
+}

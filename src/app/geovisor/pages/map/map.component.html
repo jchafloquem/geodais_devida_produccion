@@ -1,16 +1,29 @@
-<app-navbar></app-navbar>
-<app-fab-container-top class="print:hidden"></app-fab-container-top>
-<div class="relative h-full w-full z-0">
-  <div #mapViewNode class="map-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
-  <!-- Bloque de usuario en esquina inferior izquierda -->
-  <div *ngIf="usuario"
-    class="hidden sm:flex absolute bottom-14 left-[100px] z-50 bg-[#323232] bg-opacity-95 p-3 rounded-lg items-center gap-3 text-sm print:hidden shadow-[0_0_15px_rgba(255,255,255,0.4)]">
-    <mat-icon class="text-white w-10 h-10 text-4xl leading-none">account_circle</mat-icon>
-    <div class="text-left leading-tight">
-      <div class="font-semibold text-white">{{ usuario.NombreCompleto }}</div>
-      <div class="text-sm text-white/70">Tiempo en sesión: {{ tiempoSesion }}</div>
+
+<!-- <app-fab-container-top class="print:hidden"></app-fab-container-top> -->
+
+<!-- Contenedor principal que alinea el mapa y el resumen en una fila, debajo del navbar -->
+<div class="content-wrapper">
+
+  <!-- Contenedor del mapa y sus widgets superpuestos -->
+  <div class="map-container">
+
+    <div #mapViewNode class="map-view">
+      <app-navbar></app-navbar>
     </div>
+    <!-- Bloque de usuario en esquina inferior izquierda -->
+    <div *ngIf="usuario"
+      class="hidden sm:flex absolute bottom-14 left-[100px] z-50 bg-[#323232] bg-opacity-95 p-3 rounded-lg items-center gap-3 text-sm print:hidden shadow-[0_0_15px_rgba(255,255,255,0.4)]">
+      <mat-icon class="text-white w-10 h-10 text-4xl leading-none">account_circle</mat-icon>
+      <div class="text-left leading-tight">
+        <div class="font-semibold text-white">{{ usuario.NombreCompleto }}</div>
+        <div class="text-sm text-white/70">Tiempo en sesión: {{ tiempoSesion }}</div>
+      </div>
+    </div>
+    <app-sidebar class="print:hidden z-10"></app-sidebar>
+    <app-info-coordenadas class="print:hidden"></app-info-coordenadas>
   </div>
-  <app-sidebar class="print:hidden z-10"></app-sidebar>
-  <app-info-coordenadas class="print:hidden"></app-info-coordenadas>
+  <!-- 2. El contenedor del resumen (Derecha) -->
+  <div class="summary-container">
+    <app-observatorio class="print:hidden"></app-observatorio> <!-- Tu componente de resumen aquí -->
+  </div>
 </div>

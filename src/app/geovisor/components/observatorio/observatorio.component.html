@@ -1,0 +1,70 @@
+<div class="flex flex-col h-full w-full bg-gray-50">
+  <!-- Navbar con color secondary -->
+  <div class="flex justify-between items-center px-4 py-2 bg-secondary text-white shadow-md shrink-0 z-10">
+      <div
+
+    title="Reajustar vista del mapa"
+    class="text-center text-xl lg:text-2xl font-bold text-white cursor-pointer select-none"
+    style="
+      font-family: 'Roboto', sans-serif;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    "
+  >
+      NIVEL NACIONAL
+  </div>
+    <div class="flex gap-1">
+      <button mat-icon-button aria-label="Descargar resumen">
+        <mat-icon class="text-white">download</mat-icon>
+      </button>
+      <button mat-icon-button aria-label="Imprimir resumen">
+        <mat-icon class="text-white">print</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="p-4 overflow-y-auto flex-grow">
+    <!-- Card Resumen General (Estilo Observatorio PPA) -->
+    <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 mb-4 overflow-hidden">
+      <div class="flex flex-row divide-x divide-gray-100">
+
+        <!-- Sección 1: Productores -->
+        <div class="flex-1 flex flex-col items-center justify-center py-6 px-2 hover:bg-gray-50 transition-colors cursor-default group">
+            <div class="mb-2 p-2 bg-green-50 rounded-full group-hover:bg-green-100 transition-colors">
+              <mat-icon class="text-secondary !w-8 !h-8 text-[32px] leading-none">groups</mat-icon>
+            </div>
+            <div class="text-2xl font-extrabold text-gray-800">{{ totalProductores | number:'1.0-0' }}</div>
+            <div class="text-[10px] sm:text-[11px] text-gray-500 font-bold tracking-wider uppercase mt-1 text-center">Productores</div>
+        </div>
+
+        <!-- Sección 2: Parcelas -->
+        <div class="flex-1 flex flex-col items-center justify-center py-6 px-2 hover:bg-gray-50 transition-colors cursor-default group">
+            <div class="mb-2 p-2 bg-blue-50 rounded-full group-hover:bg-blue-100 transition-colors">
+              <mat-icon class="text-secondary !w-8 !h-8 text-[32px] leading-none">grid_view</mat-icon>
+            </div>
+            <div class="text-2xl font-extrabold text-gray-800">{{ totalParcelas | number:'1.0-0' }}</div>
+            <div class="text-[10px] sm:text-[11px] text-gray-500 font-bold tracking-wider uppercase mt-1 text-center">Parcelas</div>
+        </div>
+
+        <!-- Sección 3: Superficie -->
+        <div class="flex-1 flex flex-col items-center justify-center py-6 px-2 hover:bg-gray-50 transition-colors cursor-default group">
+            <div class="mb-2 p-2 bg-orange-50 rounded-full group-hover:bg-orange-100 transition-colors">
+              <mat-icon class="text-secondary !w-8 !h-8 text-[32px] leading-none">landscape</mat-icon>
+            </div>
+            <div class="text-2xl font-extrabold text-gray-800">{{ totalSuperficie | number:'1.0-0' }}</div>
+            <div class="text-[10px] sm:text-[11px] text-gray-500 font-bold tracking-wider uppercase mt-1 text-center">Superficie (Ha)</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Gráfico de Barras por Departamento -->
+    <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 mb-4 p-4">
+      <h3 class="text-gray-700 font-bold text-sm mb-4 uppercase tracking-wide border-b pb-2">Distribución por Departamento</h3>
+      <div class="relative h-64 w-full">
+        <canvas #graficoDeptos></canvas>
+      </div>
+    </div>
+
+    <p class="text-gray-500 text-sm italic text-center mt-10">Seleccione un elemento en el mapa para ver más detalles.</p>
+  </div>
+</div>
