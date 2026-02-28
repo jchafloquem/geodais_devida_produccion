@@ -196,25 +196,6 @@ export class GeovisorSharedService {
     },
     {
       type: 'map-image',
-      title: 'COMUNIDADES NATIVAS',
-      url: `https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/OCAPAS_SERNANP/MapServer`,
-      visible: false,
-      opacity: 0.5,
-      minScale: 0,
-      maxScale: 0,
-      group: '(SERFOR)',
-      sublayers: [
-        {
-          id: 27,
-          visible: true,
-          labelsVisible: true,
-          minScale: 0,
-          maxScale: 0,
-        },
-      ],
-    },
-    {
-      type: 'map-image',
       title: 'ZA-ZONAS DE AMORTIGUAMIENTO',
       url: `https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/OCAPAS_SERNANP/MapServer`,
       visible: false,
