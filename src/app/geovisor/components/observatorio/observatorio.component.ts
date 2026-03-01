@@ -87,6 +87,9 @@ export class ObservatorioComponent implements AfterViewInit {
   // URL del servicio de datos
   private readonly PROD_MAP_BASE = `${environment.apiUrl}/mapas/capa/1`;
 
+  // Año actual para el footer
+  public currentYear: number = new Date().getFullYear();
+
   ngAfterViewInit() {
     this.cargarDatosObservatorio();
   }

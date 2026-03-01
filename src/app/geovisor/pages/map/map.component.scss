@@ -87,7 +87,7 @@
 /* Botón para ocultar/mostrar el panel del observatorio */
 .observatorio-toggle-btn {
   position: absolute;
-  top: 10%;
+  top: 12%;
   right: 600px; /* Posición inicial = ancho del panel */
   transform: translateY(-50%);
   z-index: 11; /* Por encima del panel de resumen */
