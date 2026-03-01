@@ -2422,11 +2422,13 @@ export class GeovisorSharedService {
     private async createOverviewMap(): Promise<void> {
       if (!this.view) return;
 
+      const isMobile = window.innerWidth < 768;
+
       // Crear contenedor principal (wrapper)
       const overviewDiv = document.createElement('div');
       overviewDiv.id = 'overviewDiv';
-      overviewDiv.style.width = '150px';
-      overviewDiv.style.height = '150px';
+      overviewDiv.style.width = isMobile ? '20px' : '150px';
+      overviewDiv.style.height = isMobile ? '20px' : '150px';
       overviewDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       overviewDiv.style.zIndex = '1';
       overviewDiv.style.backgroundColor = 'white';
@@ -2437,6 +2439,7 @@ export class GeovisorSharedService {
       const mapDiv = document.createElement('div');
       mapDiv.style.width = '100%';
       mapDiv.style.height = '100%';
+      mapDiv.style.visibility = isMobile ? 'hidden' : 'visible';
       overviewDiv.appendChild(mapDiv);
 
       // Botón de minimizar/expandir
@@ -2452,10 +2455,10 @@ export class GeovisorSharedService {
       toggleBtn.style.alignItems = 'center';
       toggleBtn.style.justifyContent = 'center';
       toggleBtn.style.backgroundColor = 'white';
-      toggleBtn.title = "Minimizar";
-      toggleBtn.innerHTML = '<span class="esri-icon-minus" style="font-size: 12px;"></span>';
+      toggleBtn.title = isMobile ? "Expandir" : "Minimizar";
+      toggleBtn.innerHTML = isMobile ? '<span class="esri-icon-plus" style="font-size: 12px;"></span>' : '<span class="esri-icon-minus" style="font-size: 12px;"></span>';
 
-      let isMinimized = false;
+      let isMinimized = isMobile;
       toggleBtn.onclick = () => {
         isMinimized = !isMinimized;
         if (isMinimized) {
