@@ -2414,7 +2414,7 @@ export class GeovisorSharedService {
     private async createOverviewMap(): Promise<void> {
       if (!this.view) return;
 
-      // Crear contenedor para el mapa de vista general
+      // Crear contenedor principal (wrapper)
       const overviewDiv = document.createElement('div');
       overviewDiv.id = 'overviewDiv';
       overviewDiv.style.width = '150px';
@@ -2422,6 +2422,49 @@ export class GeovisorSharedService {
       overviewDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       overviewDiv.style.zIndex = '1';
       overviewDiv.style.backgroundColor = 'white';
+      overviewDiv.style.position = 'relative';
+      overviewDiv.style.transition = 'width 0.3s, height 0.3s'; // Animación suave
+
+      // Contenedor interno para el mapa
+      const mapDiv = document.createElement('div');
+      mapDiv.style.width = '100%';
+      mapDiv.style.height = '100%';
+      overviewDiv.appendChild(mapDiv);
+
+      // Botón de minimizar/expandir
+      const toggleBtn = document.createElement('div');
+      toggleBtn.className = 'esri-widget--button';
+      toggleBtn.style.position = 'absolute';
+      toggleBtn.style.top = '0';
+      toggleBtn.style.left = '0';
+      toggleBtn.style.width = '20px';
+      toggleBtn.style.height = '20px';
+      toggleBtn.style.zIndex = '10';
+      toggleBtn.style.display = 'flex';
+      toggleBtn.style.alignItems = 'center';
+      toggleBtn.style.justifyContent = 'center';
+      toggleBtn.style.backgroundColor = 'white';
+      toggleBtn.title = "Minimizar";
+      toggleBtn.innerHTML = '<span class="esri-icon-minus" style="font-size: 12px;"></span>';
+
+      let isMinimized = false;
+      toggleBtn.onclick = () => {
+        isMinimized = !isMinimized;
+        if (isMinimized) {
+          overviewDiv.style.width = '20px';
+          overviewDiv.style.height = '20px';
+          mapDiv.style.visibility = 'hidden';
+          toggleBtn.innerHTML = '<span class="esri-icon-plus" style="font-size: 12px;"></span>';
+          toggleBtn.title = "Expandir";
+        } else {
+          overviewDiv.style.width = '150px';
+          overviewDiv.style.height = '150px';
+          mapDiv.style.visibility = 'visible';
+          toggleBtn.innerHTML = '<span class="esri-icon-minus" style="font-size: 12px;"></span>';
+          toggleBtn.title = "Minimizar";
+        }
+      };
+      overviewDiv.appendChild(toggleBtn);
 
       // Ocultar atribución en el mapa pequeño para ahorrar espacio
       const style = document.createElement('style');
@@ -2432,11 +2475,11 @@ export class GeovisorSharedService {
       this.view.ui.add(overviewDiv, 'bottom-right');
 
       const overviewMap = new EsriMap({
-        basemap: 'topo-vector'
+        basemap: 'streets'
       });
 
       this.overviewView = new MapView({
-        container: overviewDiv,
+        container: mapDiv,
         map: overviewMap,
         constraints: {
           rotationEnabled: false
