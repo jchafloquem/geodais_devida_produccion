@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import { environment } from 'src/environments/environment';
 
 const pseudo3DPlugin = {
   id: 'pseudo3D',
@@ -84,7 +85,7 @@ export class ObservatorioComponent implements AfterViewInit {
   public totalSuperficie: number = 0;
 
   // URL del servicio de datos
-  private readonly PROD_MAP_BASE = `https://sistemas.devida.gob.pe/geodais/api/mapas/capa/1`;
+  private readonly PROD_MAP_BASE = `${environment.apiUrl}/mapas/capa/1`;
 
   ngAfterViewInit() {
     this.cargarDatosObservatorio();
