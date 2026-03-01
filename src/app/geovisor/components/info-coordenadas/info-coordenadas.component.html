@@ -1,4 +1,7 @@
-<div class="absolute bottom-0 left-1/2 -translate-x-1/2 z-50 w-max">
+<div class="absolute bottom-0 left-1/2 -translate-x-1/2 z-50 w-max flex flex-col items-center">
+	<div class="w-full text-[11px] text-center px-1 text-white mb-1" style="text-shadow: 1px 1px 2px black, 0 0 1em black, 0 0 0.2em black">
+		Escala: 1: {{ _geovisorSharedService.scale }}
+	</div>
 	<div class="bg-secondary rounded-t-lg w-full grid grid-cols-2 m:grid-cols-3 lg:grid-cols-6 justify-center place-items-center text-[12px] text-white">
 		<div
 			class="bg-primary border-0 border-t border-l border-b border-solid border-[#e6f2f8] text-white w-full text-center rounded-tl-lg px-1">
@@ -20,10 +23,5 @@
 		<div class="border-0 border-t border-l border-r border-b border-solid border-[#e6f2f8] w-full text-center px-1">
 			Norte: {{ _geovisorSharedService.utmNorth }}
 		</div>
-	</div>
-</div>
-<div class="absolute bottom-0 right-1 z-50 w-fit">
-	<div class="w-full text-[11px] text-center px-1 text-white" style="text-shadow: 1px 1px 2px black, 0 0 1em black, 0 0 0.2em black">
-		Escala: 1: {{ _geovisorSharedService.scale }}
 	</div>
 </div>

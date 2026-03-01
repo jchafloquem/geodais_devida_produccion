@@ -381,6 +381,7 @@ export class GeovisorSharedService {
   public utmNorth = '00.00';
   public scale = '00.00';
   private scaleWatcher: __esri.WatchHandle | null = null;
+  private overviewView: MapView | null = null;
   public legend!: Legend;
 
   constructor(private tourService: TourService) {
@@ -888,6 +889,9 @@ export class GeovisorSharedService {
     window.addEventListener('resize', toggleAnalisisCultivoWidget);
     //Fin de Widgets
 
+    // Inicializar Overview Map
+    this.createOverviewMap();
+
     this.legend = new Legend({
       view: this.view,
       container: document.createElement('div'),
@@ -1332,6 +1336,11 @@ export class GeovisorSharedService {
       if (this.scaleWatcher) {
         this.scaleWatcher.remove();
         this.scaleWatcher = null;
+      }
+
+      if (this.overviewView) {
+        this.overviewView.destroy();
+        this.overviewView = null;
       }
 
       if (this.view) {
@@ -2400,5 +2409,88 @@ export class GeovisorSharedService {
         planetLayer.refresh();
         this.showToast(`Capa Planet actualizada a ${mes}/${anio}`, 'success');
       }
+    }
+
+    private async createOverviewMap(): Promise<void> {
+      if (!this.view) return;
+
+      // Crear contenedor para el mapa de vista general
+      const overviewDiv = document.createElement('div');
+      overviewDiv.id = 'overviewDiv';
+      overviewDiv.style.width = '150px';
+      overviewDiv.style.height = '150px';
+      overviewDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      overviewDiv.style.zIndex = '1';
+      overviewDiv.style.backgroundColor = 'white';
+
+      // Ocultar atribución en el mapa pequeño para ahorrar espacio
+      const style = document.createElement('style');
+      style.innerHTML = `#overviewDiv .esri-attribution { display: none; }`;
+      overviewDiv.appendChild(style);
+
+      // Añadir a la UI en la esquina inferior derecha
+      this.view.ui.add(overviewDiv, 'bottom-right');
+
+      const overviewMap = new EsriMap({
+        basemap: 'topo-vector'
+      });
+
+      this.overviewView = new MapView({
+        container: overviewDiv,
+        map: overviewMap,
+        constraints: {
+          rotationEnabled: false
+        },
+        ui: {
+          components: [] // Sin widgets
+        }
+      });
+
+      // Deshabilitar interacciones
+      this.overviewView.on("key-down", (event) => {
+        const prohibitedKeys = ["+", "-", "Shift", "_", "="];
+        if (prohibitedKeys.indexOf(event.key) !== -1) {
+          event.stopPropagation();
+        }
+      });
+      this.overviewView.on("mouse-wheel", (event) => event.stopPropagation());
+      this.overviewView.on("double-click", (event) => event.stopPropagation());
+      this.overviewView.on("drag", (event) => event.stopPropagation());
+      this.overviewView.on("hold", (event) => event.stopPropagation());
+
+      await this.overviewView.when();
+
+      // Crear gráfico de extensión
+      const extentGraphic = new Graphic({
+        geometry: undefined,
+        symbol: {
+          type: "simple-fill",
+          color: [0, 0, 0, 0.3],
+          outline: {
+            color: [255, 255, 255, 1],
+            width: 1
+          }
+        } as any
+      });
+
+      this.overviewView.graphics.add(extentGraphic);
+
+      // Sincronizar extensión
+      reactiveUtils.watch(
+        () => this.view?.extent,
+        (extent) => {
+          if (extent && this.overviewView) {
+            // Actualizar extensión del overview (zoom alejado)
+            this.overviewView.goTo({
+              center: extent.center,
+              scale: this.view!.scale * 2 * Math.max(this.view!.width / this.overviewView.width, this.view!.height / this.overviewView.height)
+            }, { duration: 0 });
+
+            // Actualizar gráfico
+            extentGraphic.geometry = extent;
+          }
+        },
+        { initial: true }
+      );
     }
 }
