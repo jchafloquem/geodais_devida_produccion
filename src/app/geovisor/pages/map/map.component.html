@@ -1,12 +1,10 @@
-<app-navbar></app-navbar>
-
 <!-- <app-fab-container-top class="print:hidden"></app-fab-container-top> -->
-
 <!-- Contenedor principal que alinea el mapa y el resumen en una fila, debajo del navbar -->
 <div class="content-wrapper">
   <!-- Contenedor del mapa y sus widgets superpuestos -->
   <div class="map-container">
     <div #mapViewNode class="map-view">
+      <app-navbar></app-navbar>
     </div>
     <!-- Bloque de usuario en esquina inferior izquierda -->
     <div *ngIf="usuario"
@@ -20,12 +18,10 @@
     <app-sidebar class="print:hidden z-10"></app-sidebar>
     <app-info-coordenadas class="print:hidden"></app-info-coordenadas>
   </div>
-
   <!-- Botón para ocultar/mostrar el observatorio -->
   <button (click)="toggleObservatorio()" class="observatorio-toggle-btn" [class.is-open]="isObservatorioVisible" mat-icon-button>
     <mat-icon>{{ isObservatorioVisible ? 'chevron_right' : 'chevron_left' }}</mat-icon>
   </button>
-
   <!-- 2. El contenedor del resumen (Derecha) -->
   <div class="summary-container" [class.is-hidden]="!isObservatorioVisible">
     <app-observatorio class="print:hidden"></app-observatorio> <!-- Tu componente de resumen aquí -->
