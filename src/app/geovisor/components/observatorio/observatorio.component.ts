@@ -5,7 +5,6 @@ import { MatButtonModule } from '@angular/material/button';
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
-import StatisticDefinition from '@arcgis/core/rest/support/StatisticDefinition.js';
 
 const pseudo3DPlugin = {
   id: 'pseudo3D',
@@ -69,6 +68,16 @@ export class ObservatorioComponent implements AfterViewInit {
   @ViewChild('graficoDeptos') graficoDeptos!: ElementRef<HTMLCanvasElement>;
   private chart: Chart | null = null;
 
+  // --- Propiedades para el gráfico dinámico ---
+  public activeChartView: 'parcelas' | 'productores' | 'superficie' = 'parcelas';
+  public chartTitle: string = 'Distribución de Parcelas por Departamento';
+  public isLoading: boolean = true;
+
+  // Almacenes de datos para el gráfico
+  private datosGraficoParcelas: { labels: string[], values: number[] } = { labels: [], values: [] };
+  private datosGraficoProductores: { labels: string[], values: number[] } = { labels: [], values: [] };
+  private datosGraficoSuperficie: { labels: string[], values: number[] } = { labels: [], values: [] };
+
   // Variables para los indicadores
   public totalProductores: number = 0;
   public totalParcelas: number = 0;
@@ -85,41 +94,35 @@ export class ObservatorioComponent implements AfterViewInit {
    * Carga los datos del FeatureLayer y actualiza tanto los indicadores como el gráfico.
    */
   async cargarDatosObservatorio() {
+    this.isLoading = true;
     const layer = new FeatureLayer({ url: this.PROD_MAP_BASE });
 
-    // Ejecutamos las consultas en paralelo para optimizar el tiempo de carga
-    this.calcularIndicadores(layer);
-    this.generarGraficoDepartamentos(layer);
-  }
-
-  async calcularIndicadores(layer: FeatureLayer) {
     try {
-      // 1. Total de Parcelas (Conteo simple)
-      this.totalParcelas = await layer.queryFeatureCount({ where: '1=1' });
-
-      // 2. Total de Superficie (Suma estadística)
-      const statDef = new StatisticDefinition({
-        onStatisticField: 'area_cultivo',
-        outStatisticFieldName: 'total_area',
-        statisticType: 'sum'
-      });
-      const query = layer.createQuery();
-      query.where = '1=1';
-      query.outStatistics = [statDef];
-      const resultSuperficie = await layer.queryFeatures(query);
-      if (resultSuperficie.features.length > 0) {
-        this.totalSuperficie = resultSuperficie.features[0].attributes['total_area'] || 0;
+      const totalFeatures = await layer.queryFeatureCount({ where: '1=1' });
+      if (totalFeatures === 0) {
+        this.totalParcelas = 0;
+        this.totalProductores = 0;
+        this.totalSuperficie = 0;
+        this.isLoading = false;
+        return;
       }
+      this.totalParcelas = totalFeatures;
 
-      // 3. Total de Productores (DNIs únicos) - Requiere paginación manual
+      // --- Contenedores para todos los cálculos ---
       const pageSize = 2000;
-      const dnis = new Set<string>();
       let fetched = 0;
+      // Para indicadores totales
+      const dnisGlobales = new Set<string>();
+      let areaGlobal = 0;
+      // Para gráficos por departamento
+      const parcelasPorDepto: Record<string, number> = {};
+      const superficiePorDepto: Record<string, number> = {};
+      const productoresPorDepto: Record<string, Set<string>> = {};
 
-      while (true) {
+      while (fetched < totalFeatures) {
         const result = await layer.queryFeatures({
           where: '1=1',
-          outFields: ['dni_participante'],
+          outFields: ['dni_participante', 'area_cultivo', 'departamento'],
           returnGeometry: false,
           start: fetched,
           num: pageSize
@@ -127,57 +130,97 @@ export class ObservatorioComponent implements AfterViewInit {
 
         if (!result.features.length) break;
 
-        result.features.forEach(f => {
-          const dni = f.attributes['dni_participante'];
-          if (dni) dnis.add(dni);
+        result.features.forEach(feature => {
+          const { dni_participante, area_cultivo, departamento } = feature.attributes;
+
+          // 1. Cálculos para indicadores globales
+          if (dni_participante) dnisGlobales.add(dni_participante);
+          if (area_cultivo) areaGlobal += area_cultivo;
+
+          // 2. Cálculos para gráficos por departamento
+          if (departamento) {
+            // Parcelas
+            parcelasPorDepto[departamento] = (parcelasPorDepto[departamento] || 0) + 1;
+            // Superficie
+            if (area_cultivo) {
+              superficiePorDepto[departamento] = (superficiePorDepto[departamento] || 0) + area_cultivo;
+            }
+            // Productores
+            if (dni_participante) {
+              if (!productoresPorDepto[departamento]) {
+                productoresPorDepto[departamento] = new Set<string>();
+              }
+              productoresPorDepto[departamento].add(dni_participante);
+            }
+          }
         });
 
         fetched += result.features.length;
-        if (fetched >= this.totalParcelas) break;
       }
-      this.totalProductores = dnis.size;
+
+      // Asignar indicadores globales
+      this.totalProductores = dnisGlobales.size;
+      this.totalSuperficie = areaGlobal;
+
+      // Procesar y almacenar datos para gráficos
+      const parcelasEntries = Object.entries(parcelasPorDepto).sort((a, b) => b[1] - a[1]);
+      this.datosGraficoParcelas = { labels: parcelasEntries.map(e => e[0]), values: parcelasEntries.map(e => e[1]) };
+
+      const superficieEntries = Object.entries(superficiePorDepto).sort((a, b) => b[1] - a[1]);
+      this.datosGraficoSuperficie = { labels: superficieEntries.map(e => e[0]), values: superficieEntries.map(e => e[1]) };
+
+      const productoresEntries = Object.entries(productoresPorDepto).map(([depto, dnis]) => [depto, dnis.size] as [string, number]).sort((a, b) => b[1] - a[1]);
+      this.datosGraficoProductores = { labels: productoresEntries.map(e => e[0]), values: productoresEntries.map(e => e[1]) };
+
+      // Cargar el gráfico inicial
+      this.actualizarGrafico();
 
     } catch (error) {
-      console.error('Error al calcular indicadores del observatorio:', error);
+      console.error('Error al cargar datos del observatorio:', error);
+    } finally {
+      this.isLoading = false;
     }
   }
 
-  async generarGraficoDepartamentos(layer: FeatureLayer) {
+  /**
+   * Cambia la vista activa del gráfico y lo redibuja.
+   * @param vista El tipo de datos a mostrar: 'parcelas', 'productores' o 'superficie'.
+   */
+  public cambiarVistaGrafico(vista: 'parcelas' | 'productores' | 'superficie') {
+    this.activeChartView = vista;
+    this.actualizarGrafico();
+  }
+
+  /**
+   * Redibuja el gráfico de barras con los datos correspondientes a la vista activa.
+   */
+  private actualizarGrafico() {
     if (!this.graficoDeptos) return;
     const ctx = this.graficoDeptos.nativeElement;
 
-    // Obtener conteo por departamento usando estadísticas del servidor (más eficiente)
-    // Si el servidor no soporta groupByFieldsForStatistics, usaríamos paginación manual como en el Dashboard.
-    // Asumiremos paginación manual para consistencia y robustez con el Dashboard.
-    const conteoPorDepto: Record<string, number> = {};
-    const pageSize = 2000;
-    const total = await layer.queryFeatureCount({ where: '1=1' });
-    let fetched = 0;
+    let data: { labels: string[], values: number[] };
+    let max_x: number | undefined = undefined;
+    let formatter = (v: number) => v.toLocaleString('es-PE');
 
-    while (fetched < total) {
-      const result = await layer.queryFeatures({
-        where: '1=1',
-        outFields: ['departamento'],
-        returnGeometry: false,
-        start: fetched,
-        num: pageSize,
-      });
-
-      if (!result.features.length) break;
-
-      result.features.forEach(feature => {
-        const depto = feature.attributes.departamento;
-        if (depto) {
-          conteoPorDepto[depto] = (conteoPorDepto[depto] || 0) + 1;
-        }
-      });
-
-      fetched += result.features.length;
+    switch (this.activeChartView) {
+      case 'productores':
+        data = this.datosGraficoProductores;
+        this.chartTitle = 'Distribución de Productores por Departamento';
+        max_x = undefined; // Dejar que se ajuste automáticamente
+        break;
+      case 'superficie':
+        data = this.datosGraficoSuperficie;
+        this.chartTitle = 'Distribución de Superficie (Ha) por Departamento';
+        max_x = undefined;
+        formatter = (v: number) => v.toLocaleString('es-PE', { maximumFractionDigits: 0 }) + ' Ha';
+        break;
+      case 'parcelas':
+      default:
+        data = this.datosGraficoParcelas;
+        this.chartTitle = 'Distribución de Parcelas por Departamento';
+        max_x = 15000;
+        break;
     }
-
-    const entries = Object.entries(conteoPorDepto).sort((a, b) => b[1] - a[1]);
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
 
     if (this.chart) {
       this.chart.destroy();
@@ -186,15 +229,15 @@ export class ObservatorioComponent implements AfterViewInit {
     this.chart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels,
+        labels: data.labels,
         datasets: [
           {
             label: 'Registros',
-            data: values,
+            data: data.values,
             backgroundColor: '#88B268',
             borderColor: '#6A8A50',
             borderWidth: 2,
-            barThickness: 20,
+            barThickness: 15,
           },
         ],
       },
@@ -208,6 +251,7 @@ export class ObservatorioComponent implements AfterViewInit {
         scales: {
           x: {
             beginAtZero: true,
+            max: max_x,
             ticks: { font: { size: 10, weight: 'bold' } },
           },
           y: {
@@ -221,7 +265,7 @@ export class ObservatorioComponent implements AfterViewInit {
             align: 'right',
             color: '#000',
             font: { weight: 'bold', size: 10 },
-            formatter: (v: number) => v.toLocaleString('es-PE')
+            formatter: formatter
           },
         },
       },

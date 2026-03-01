@@ -28,30 +28,39 @@
       <div class="flex flex-row divide-x divide-gray-100">
 
         <!-- Sección 1: Productores -->
-        <div class="flex-1 flex flex-col items-center justify-center py-6 px-2 hover:bg-gray-50 transition-colors cursor-default group">
+        <div class="flex-1 flex flex-col items-center justify-center py-6 px-2 transition-colors cursor-pointer group"
+             (click)="cambiarVistaGrafico('productores')"
+             [ngClass]="activeChartView === 'productores' ? 'bg-blue-50' : 'hover:bg-gray-50'">
             <div class="mb-2 p-2 bg-green-50 rounded-full group-hover:bg-green-100 transition-colors">
               <mat-icon class="text-secondary !w-8 !h-8 text-[32px] leading-none">groups</mat-icon>
             </div>
             <div class="text-2xl font-extrabold text-gray-800">{{ totalProductores | number:'1.0-0' }}</div>
-            <div class="text-[10px] sm:text-[11px] text-gray-500 font-bold tracking-wider uppercase mt-1 text-center">Productores</div>
+            <div class="text-[10px] sm:text-[11px] text-gray-500 font-bold tracking-wider uppercase mt-1 text-center"
+                 [ngClass]="{'text-blue-700': activeChartView === 'productores'}">Productores</div>
         </div>
 
         <!-- Sección 2: Parcelas -->
-        <div class="flex-1 flex flex-col items-center justify-center py-6 px-2 hover:bg-gray-50 transition-colors cursor-default group">
+        <div class="flex-1 flex flex-col items-center justify-center py-6 px-2 transition-colors cursor-pointer group"
+             (click)="cambiarVistaGrafico('parcelas')"
+             [ngClass]="activeChartView === 'parcelas' ? 'bg-blue-50' : 'hover:bg-gray-50'">
             <div class="mb-2 p-2 bg-blue-50 rounded-full group-hover:bg-blue-100 transition-colors">
               <mat-icon class="text-secondary !w-8 !h-8 text-[32px] leading-none">grid_view</mat-icon>
             </div>
             <div class="text-2xl font-extrabold text-gray-800">{{ totalParcelas | number:'1.0-0' }}</div>
-            <div class="text-[10px] sm:text-[11px] text-gray-500 font-bold tracking-wider uppercase mt-1 text-center">Parcelas</div>
+            <div class="text-[10px] sm:text-[11px] text-gray-500 font-bold tracking-wider uppercase mt-1 text-center"
+                 [ngClass]="{'text-blue-700': activeChartView === 'parcelas'}">Parcelas</div>
         </div>
 
         <!-- Sección 3: Superficie -->
-        <div class="flex-1 flex flex-col items-center justify-center py-6 px-2 hover:bg-gray-50 transition-colors cursor-default group">
+        <div class="flex-1 flex flex-col items-center justify-center py-6 px-2 transition-colors cursor-pointer group"
+             (click)="cambiarVistaGrafico('superficie')"
+             [ngClass]="activeChartView === 'superficie' ? 'bg-blue-50' : 'hover:bg-gray-50'">
             <div class="mb-2 p-2 bg-orange-50 rounded-full group-hover:bg-orange-100 transition-colors">
               <mat-icon class="text-secondary !w-8 !h-8 text-[32px] leading-none">landscape</mat-icon>
             </div>
-            <div class="text-2xl font-extrabold text-gray-800">{{ totalSuperficie | number:'1.0-0' }}</div>
-            <div class="text-[10px] sm:text-[11px] text-gray-500 font-bold tracking-wider uppercase mt-1 text-center">Superficie (Ha)</div>
+            <div class="text-2xl font-extrabold text-gray-800">{{ totalSuperficie | number:'1.0-2' }}</div>
+            <div class="text-[10px] sm:text-[11px] text-gray-500 font-bold tracking-wider uppercase mt-1 text-center"
+                 [ngClass]="{'text-blue-700': activeChartView === 'superficie'}">Superficie (Ha)</div>
         </div>
 
       </div>
@@ -59,9 +68,13 @@
 
     <!-- Gráfico de Barras por Departamento -->
     <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 mb-4 p-4">
-      <h3 class="text-gray-700 font-bold text-sm mb-4 uppercase tracking-wide border-b pb-2">Distribución por Departamento</h3>
-      <div class="relative h-64 w-full">
-        <canvas #graficoDeptos></canvas>
+      <h3 class="text-gray-700 font-bold text-sm mb-4 uppercase tracking-wide border-b pb-2">{{ chartTitle }}</h3>
+      <div class="relative h-[600px] w-full flex items-center justify-center">
+        <div *ngIf="isLoading" class="text-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary mx-auto"></div>
+          <p class="mt-3 text-gray-500">Calculando datos...</p>
+        </div>
+        <canvas #graficoDeptos [class.hidden]="isLoading"></canvas>
       </div>
     </div>
 
