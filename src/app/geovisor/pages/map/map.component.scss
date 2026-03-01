@@ -62,13 +62,49 @@
 
 /* Estilos para el panel de resumen a la derecha */
 .summary-container {
-  width: 600px; /* Ancho aumentado para mejor visualización */
+  width: 600px; /* Ancho del panel */
   min-width: 320px;
   height: 100%;
   background-color: #ffffff;
   border-left: 1px solid #e0e0e0;
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.08); /* Sombra suave para separarlo del mapa */
   z-index: 10;
-  overflow-y: auto; /* Scroll si el contenido es muy largo */
   position: relative;
+  transition: all 0.3s ease-in-out;
+  flex-shrink: 0; /* Evita que el panel se encoja */
+
+  /* Cuando está oculto */
+  &.is-hidden {
+    width: 0;
+    min-width: 0;
+    transform: translateX(100%);
+    border-left: none;
+    box-shadow: none;
+    overflow: hidden;
+  }
+}
+
+/* Botón para ocultar/mostrar el panel del observatorio */
+.observatorio-toggle-btn {
+  position: absolute;
+  top: 10%;
+  right: 600px; /* Posición inicial = ancho del panel */
+  transform: translateY(-50%);
+  z-index: 11; /* Por encima del panel de resumen */
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-right: none;
+  border-radius: 8px 0 0 8px !important;
+  width: 28px !important;
+  height: 80px !important;
+  box-shadow: -4px 0 10px rgba(0,0,0,0.06);
+  transition: right 0.3s ease-in-out;
+
+  /* Cuando el panel está oculto, el botón se pega a la derecha */
+  &:not(.is-open) {
+    right: 0;
+    border-right: 1px solid #e0e0e0;
+    border-left: none;
+    border-radius: 0 8px 8px 0 !important;
+  }
 }

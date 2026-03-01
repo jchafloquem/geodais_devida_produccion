@@ -37,6 +37,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private sesionInicio!: number;
   private intervaloSesion!: ReturnType<typeof setInterval>;
   public toogle = false;
+  public isObservatorioVisible = true;
 
   @ViewChild('mapViewNode', { static: true }) private mapViewEl!: ElementRef;
 
@@ -91,6 +92,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Limpia el intervalo de sesión
     clearInterval(this.intervaloSesion);
+  }
+
+  toggleObservatorio(): void {
+    this.isObservatorioVisible = !this.isObservatorioVisible;
   }
 
 }
