@@ -408,7 +408,7 @@ export const cultivosRenderer = new UniqueValueRenderer({
         type: 'simple-fill',
         color: '#734C24', // Marrón
         outline: {
-          color: 'yellow',
+          color: '#4C7300',
           width: 1,
         },
       } as any,
@@ -420,7 +420,7 @@ export const cultivosRenderer = new UniqueValueRenderer({
         type: 'simple-fill',
         color: '#4C7300', // Verde Oscuro
         outline: {
-          color: 'white',
+          color: '#734C24',
           width: 1,
         },
       } as any,
