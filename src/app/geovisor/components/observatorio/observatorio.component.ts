@@ -69,7 +69,7 @@ export class ObservatorioComponent implements AfterViewInit {
   private chart: Chart | null = null;
 
   // --- Propiedades para el gráfico dinámico ---
-  public activeChartView: 'parcelas' | 'productores' | 'superficie' = 'parcelas';
+  public activeChartView: 'parcelas' | 'productores' | 'superficie' = 'productores';
   public chartTitle: string = 'Distribución de Parcelas por Departamento';
   public isLoading: boolean = true;
 
@@ -206,12 +206,12 @@ export class ObservatorioComponent implements AfterViewInit {
       case 'productores':
         data = this.datosGraficoProductores;
         this.chartTitle = 'Distribución de Productores por Departamento';
-        max_x = undefined; // Dejar que se ajuste automáticamente
+        max_x = 15000; // Dejar que se ajuste automáticamente
         break;
       case 'superficie':
         data = this.datosGraficoSuperficie;
         this.chartTitle = 'Distribución de Superficie (Ha) por Departamento';
-        max_x = undefined;
+        max_x = 15000;
         formatter = (v: number) => v.toLocaleString('es-PE', { maximumFractionDigits: 0 }) + ' Ha';
         break;
       case 'parcelas':
