@@ -489,7 +489,7 @@ export class GeovisorSharedService {
         dockOptions: {
           buttonEnabled: true,
           breakpoint: false,
-          position: 'bottom-right',
+          position: 'top-right',
         },
       },
       ui: {
@@ -521,7 +521,15 @@ export class GeovisorSharedService {
         const style = document.createElement('style');
         style.id = styleId;
         style.innerHTML = `
+          .esri-popup__main-container {
+            transform: scale(0.75);
+          }
+          .esri-popup--is-docked-top-left .esri-popup__main-container {
+            transform-origin: top left;
+            margin-left: 60px !important;
+          }
           .esri-popup--is-docked-bottom-right .esri-popup__main-container {
+            transform-origin: bottom right;
             margin-right: 60px !important;
           }
         `;
