@@ -2162,6 +2162,23 @@ export class DashboardComponent implements AfterViewInit {
       const labels = entries.map(e => e[0]);
       const values = entries.map(e => e[1]);
 
+      // 🔹 Colores por Departamento para mejorar la visualización
+      const colorMap: Record<string, string> = {
+        'CUSCO': '#FEEFD8',
+        'SAN MARTIN': '#FFBEBE',
+        'HUANUCO': '#B7D9FE',
+        'JUNIN': '#FFC0B6',
+        'UCAYALI': '#D6F9FD',
+        'PUNO': '#C2BBFE',
+        'AYACUCHO': '#FED2F3',
+        'PASCO': '#FEFEB9',
+        'LORETO': '#CAFEDA',
+        'CAJAMARCA': '#E2F0CB',
+        'AMAZONAS': '#FF9AA2',
+        'MADRE DE DIOS': '#E0BBE4'
+      };
+      const backgroundColors = labels.map(dept => colorMap[dept] || '#88B268');
+
       this.charts.push(new Chart(ctx, {
         type: 'bar', // Gráfico de barras verticales
         data: {
@@ -2170,9 +2187,11 @@ export class DashboardComponent implements AfterViewInit {
             {
               label: 'Registros por Departamento',
               data: values,
-              backgroundColor: '#88B268',
+              backgroundColor: backgroundColors,
               borderColor: '#6A8A50',
               borderWidth: 2,
+              barThickness: 50,      // Ancho fijo para evitar que ocupen todo el espacio
+              maxBarThickness: 80,   // Ancho máximo permitido
             },
           ],
         },
