@@ -2423,12 +2423,13 @@ export class GeovisorSharedService {
       if (!this.view) return;
 
       const isMobile = window.innerWidth < 768;
+      const minimizedSize = '32px'; // Tamaño más amigable para táctil
 
       // Crear contenedor principal (wrapper)
       const overviewDiv = document.createElement('div');
       overviewDiv.id = 'overviewDiv';
-      overviewDiv.style.width = isMobile ? '20px' : '150px';
-      overviewDiv.style.height = isMobile ? '20px' : '150px';
+      overviewDiv.style.width = isMobile ? minimizedSize : '150px';
+      overviewDiv.style.height = isMobile ? minimizedSize : '150px';
       overviewDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       overviewDiv.style.zIndex = '1';
       overviewDiv.style.backgroundColor = 'white';
@@ -2448,30 +2449,30 @@ export class GeovisorSharedService {
       toggleBtn.style.position = 'absolute';
       toggleBtn.style.top = '0';
       toggleBtn.style.left = '0';
-      toggleBtn.style.width = '20px';
-      toggleBtn.style.height = '20px';
+      toggleBtn.style.width = minimizedSize;
+      toggleBtn.style.height = minimizedSize;
       toggleBtn.style.zIndex = '10';
       toggleBtn.style.display = 'flex';
       toggleBtn.style.alignItems = 'center';
       toggleBtn.style.justifyContent = 'center';
       toggleBtn.style.backgroundColor = 'white';
       toggleBtn.title = isMobile ? "Expandir" : "Minimizar";
-      toggleBtn.innerHTML = isMobile ? '<span class="esri-icon-plus" style="font-size: 12px;"></span>' : '<span class="esri-icon-minus" style="font-size: 12px;"></span>';
+      toggleBtn.innerHTML = isMobile ? '<span class="esri-icon-plus" style="font-size: 16px;"></span>' : '<span class="esri-icon-minus" style="font-size: 16px;"></span>';
 
       let isMinimized = isMobile;
       toggleBtn.onclick = () => {
         isMinimized = !isMinimized;
         if (isMinimized) {
-          overviewDiv.style.width = '20px';
-          overviewDiv.style.height = '20px';
+          overviewDiv.style.width = minimizedSize;
+          overviewDiv.style.height = minimizedSize;
           mapDiv.style.visibility = 'hidden';
-          toggleBtn.innerHTML = '<span class="esri-icon-plus" style="font-size: 12px;"></span>';
+          toggleBtn.innerHTML = '<span class="esri-icon-plus" style="font-size: 16px;"></span>';
           toggleBtn.title = "Expandir";
         } else {
           overviewDiv.style.width = '150px';
           overviewDiv.style.height = '150px';
           mapDiv.style.visibility = 'visible';
-          toggleBtn.innerHTML = '<span class="esri-icon-minus" style="font-size: 12px;"></span>';
+          toggleBtn.innerHTML = '<span class="esri-icon-minus" style="font-size: 16px;"></span>';
           toggleBtn.title = "Minimizar";
         }
       };

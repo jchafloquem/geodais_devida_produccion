@@ -29,6 +29,7 @@ export default class LoginComponent implements OnInit, OnDestroy {
 	});
 
   public loginError: string | null = null;
+  public passwordVisible = false;
 
   private readonly backgroundImages = [
     'assets/images/wallpapers/wallpaper1.png',
@@ -116,6 +117,10 @@ export default class LoginComponent implements OnInit, OnDestroy {
         this._cdr.detectChanges();
       }, columnIntervalDuration);
     });
+  }
+
+  public togglePasswordVisibility(): void {
+    this.passwordVisible = !this.passwordVisible;
   }
 
   /**
