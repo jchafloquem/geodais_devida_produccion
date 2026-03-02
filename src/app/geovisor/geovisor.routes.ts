@@ -4,7 +4,7 @@ import { privateGuard, publicGuard } from '../auth/guards/auth.guard';
 export default [
 			{
 				path: 'map',
-        title:'GeoCultivos DAIS',
+        title:'GeoCULTIVOS DAIS',
         canActivate: [privateGuard()],
 				loadComponent: () => import('./pages/map/map.component').then(m => m.MapComponent),
 			},

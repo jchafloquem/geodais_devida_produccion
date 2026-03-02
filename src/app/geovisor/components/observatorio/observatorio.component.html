@@ -68,7 +68,12 @@
 
     <!-- Gráfico de Barras por Departamento -->
     <div class="w-full bg-white rounded-xl shadow-sm border border-gray-200 mb-4 p-4">
-      <h3 class="text-gray-700 font-bold text-sm mb-4 uppercase tracking-wide border-b pb-2">{{ chartTitle }}</h3>
+      <div class="flex justify-between items-center border-b pb-2 mb-4">
+        <h3 class="text-gray-700 font-bold text-sm uppercase tracking-wide">{{ chartTitle }}</h3>
+        <button mat-icon-button (click)="descargarGrafico()" title="Descargar Gráfico">
+          <mat-icon>download</mat-icon>
+        </button>
+      </div>
       <div class="relative h-[600px] w-full flex items-center justify-center">
         <div *ngIf="isLoading" class="text-center">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary mx-auto"></div>

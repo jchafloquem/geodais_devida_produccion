@@ -196,6 +196,18 @@ export class ObservatorioComponent implements AfterViewInit {
   }
 
   /**
+   * Descarga el gráfico actual como una imagen PNG.
+   */
+  public descargarGrafico() {
+    if (this.chart) {
+      const link = document.createElement('a');
+      link.href = this.chart.toBase64Image('image/png', 1.0);
+      link.download = `Observatorio-${this.activeChartView}.png`;
+      link.click();
+    }
+  }
+
+  /**
    * Redibuja el gráfico de barras con los datos correspondientes a la vista activa.
    */
   private actualizarGrafico() {
