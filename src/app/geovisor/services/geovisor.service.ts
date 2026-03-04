@@ -127,7 +127,7 @@ export class GeovisorSharedService {
     {
       type: 'webtile',
       title: 'Monitoreo Satelital Planet NICFI',
-      url: 'https://tiles.planet.com/basemaps/v1/planet-tiles/series/planet_medres_analytic_monthly/gpn/{level}/{col}/{row}.png?api_key=PLAK2f3550ea95b046d5a8cc091fb51d6283',
+      url: 'https://api.planet.com/basemaps/v1/mosaics?api_key={PLAK57460d516e5e4d4f9763984ed83176db}',
 
       visible: false,
       opacity: 1,

@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: '/geodais/api'
+  apiUrl: 'https://sisqa.devida.gob.pe/geodais/api'
 };

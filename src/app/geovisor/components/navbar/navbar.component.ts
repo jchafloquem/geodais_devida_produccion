@@ -25,11 +25,21 @@ export class NavbarComponent implements AfterViewInit {
 	private _router = inject(Router);
 
   public _geovisorSharedService = inject(GeovisorSharedService);
+  public showLogoutModal = false;
 
 	logout(): void {
+		this.showLogoutModal = true;
+	}
+
+	confirmLogout(): void {
+		this.showLogoutModal = false;
 		this._authState.logout().subscribe(() => {
 			this._router.navigateByUrl('auth/welcome');
 		});
+	}
+
+	cancelLogout(): void {
+		this.showLogoutModal = false;
 	}
 
 	reajustarMapa(): void {

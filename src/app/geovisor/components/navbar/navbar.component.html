@@ -66,3 +66,59 @@
     </button>
   </div>
 </div>
+
+<!-- Modal de Confirmación de Logout -->
+@if (showLogoutModal) {
+<div
+  class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/50 p-4 backdrop-blur-sm"
+>
+  <div
+    class="w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-gray-900/5 transition-all"
+  >
+    <!-- Contenido -->
+    <div class="p-6 text-center">
+      <div
+        class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100"
+      >
+        <svg
+          class="h-6 w-6 text-red-600"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
+          />
+        </svg>
+      </div>
+      <h3 class="text-lg font-semibold leading-6 text-gray-900">
+        Cerrar Sesión
+      </h3>
+      <p class="mt-2 text-sm text-gray-500">
+        ¿Estás seguro de que deseas salir del sistema?
+      </p>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex gap-3 border-t border-gray-100 bg-gray-50 px-6 py-3">
+      <button
+        (click)="cancelLogout()"
+        type="button"
+        class="flex-1 justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
+      >
+        Cancelar
+      </button>
+      <button
+        (click)="confirmLogout()"
+        type="button"
+        class="flex-1 justify-center rounded-lg bg-secondary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+      >
+        Sí, Salir
+      </button>
+    </div>
+  </div>
+</div>
+}
