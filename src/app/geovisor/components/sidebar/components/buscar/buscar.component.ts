@@ -42,5 +42,6 @@ export class BuscarComponent {
     this.searchPerformed = false;
     inputElement.value = '';
     inputElement.focus();
+    this.geovisorService.clearCoordinateMarker();
   }
 }
