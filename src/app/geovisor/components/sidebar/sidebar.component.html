@@ -1,26 +1,25 @@
 <div class="absolute top-[64px] z-50 h-[calc(100%-65px)] w-[48px] bg-secondary flex flex-row border">
   <div class="z-50 bg-[#323232] w-[48px] flex flex-col items-start justify-between">
     <div class="flex flex-col gap-0 p-0">
-      <button
-        *ngFor="let item of menuItems"
-        mat-icon-button
-        color="accent"
-        [ngClass]="{
-          'text-white bg-primary rounded-none': subMenu === item.key
-        }"
-        (click)="clickToogleMenu(item.key)"
-        [attr.aria-label]="item.label"
-        [title]="item.label"
-        class="w-full justify-start">
-        <mat-icon class="material-icons-round">{{ item.icon }}</mat-icon>
-      </button>
+      @for (item of menuItems; track item.key) {
+        <button
+          mat-icon-button
+          color="accent"
+          [ngClass]="{
+            'text-white bg-primary rounded-none': subMenu === item.key
+          }"
+          (click)="clickToogleMenu(item.key)"
+          [attr.aria-label]="item.label"
+          [title]="item.label"
+          class="w-full justify-start">
+          <mat-icon class="material-icons-round">{{ item.icon }}</mat-icon>
+        </button>
+      }
     </div>
 
     <div>
       <button mat-icon-button class="bg-primary text-white rounded-none" color="primary" (click)="clickToogleMenu()">
-        <mat-icon class="material-icons-round">{{
-          this.toogleMenu ? "chevron_left" : "chevron_right"
-          }}</mat-icon>
+        <mat-icon class="material-icons-round">{{ toogleMenu ? "chevron_left" : "chevron_right" }}</mat-icon>
       </button>
     </div>
   </div>
@@ -34,22 +33,34 @@
       </span>
     </div>
     <div class="overflow-y-auto overflow-x-hidden max-h-[calc(100%-48px)]">
-      @if (subMenu==='capas') {
-      <app-capas class="h-full"></app-capas>
-      } @if (subMenu==='leyendas') {
-      <app-leyenda class="h-full"></app-leyenda>
-      } @if (subMenu==='buscar') {
-      <app-buscar class="h-full"></app-buscar>
-      } @if (subMenu==='resumen') {
-      <app-resumen class="h-full"></app-resumen>
-      } @if (subMenu==='coordenadas') {
-      <app-coordenadas class="h-full"></app-coordenadas>
-      } @if (subMenu==='filtros') {
-      <app-filtros class="h-full"></app-filtros>
-      } @if (subMenu==='manual') {
-      <app-manual class="h-full"></app-manual>
-      } @if (subMenu==='acerca') {
-      <app-acerca class="h-full"></app-acerca>
+      @switch (subMenu) {
+        @case ('observatorio') {
+          <app-observa class="h-full"></app-observa>
+        }
+        @case ('capas') {
+          <app-capas class="h-full"></app-capas>
+        }
+        @case ('leyendas') {
+          <app-leyenda class="h-full"></app-leyenda>
+        }
+        @case ('buscar') {
+          <app-buscar class="h-full"></app-buscar>
+        }
+        @case ('resumen') {
+          <app-resumen class="h-full"></app-resumen>
+        }
+        @case ('coordenadas') {
+          <app-coordenadas class="h-full"></app-coordenadas>
+        }
+        @case ('filtros') {
+          <app-filtros class="h-full"></app-filtros>
+        }
+        @case ('manual') {
+          <app-manual class="h-full"></app-manual>
+        }
+        @case ('acerca') {
+          <app-acerca class="h-full"></app-acerca>
+        }
       }
     </div>
   </div>

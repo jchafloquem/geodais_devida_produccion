@@ -1,11 +1,13 @@
-import { Component, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, AfterViewInit, ViewChild, ElementRef, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import { environment } from 'src/environments/environment';
+import { GeovisorSharedService } from '../../services/geovisor.service';
 
 const pseudo3DPlugin = {
   id: 'pseudo3D',
@@ -65,9 +67,12 @@ const pseudo3DPlugin = {
   templateUrl: './observatorio.component.html',
   styleUrl: './observatorio.component.scss'
 })
-export class ObservatorioComponent implements AfterViewInit {
+export class ObservatorioComponent implements AfterViewInit, OnInit, OnDestroy {
+  public _geovisorSharedService = inject(GeovisorSharedService);
   @ViewChild('graficoDeptos') graficoDeptos!: ElementRef<HTMLCanvasElement>;
   private chart: Chart | null = null;
+  private dataViewSubscription: Subscription | null = null;
+  public currentDataView: 'departamento' | 'oficina' = 'departamento';
 
   // --- Propiedades para el gráfico dinámico ---
   public activeChartView: 'parcelas' | 'productores' | 'superficie' = 'productores';
@@ -78,6 +83,7 @@ export class ObservatorioComponent implements AfterViewInit {
   private datosGraficoParcelas: { labels: string[], values: number[] } = { labels: [], values: [] };
   private datosGraficoProductores: { labels: string[], values: number[] } = { labels: [], values: [] };
   private datosGraficoSuperficie: { labels: string[], values: number[] } = { labels: [], values: [] };
+  private datosGraficoProductoresOficina: { labels: string[], values: number[] } = { labels: [], values: [] };
 
   // Variables para los indicadores
   public totalProductores: number = 0;
@@ -89,6 +95,17 @@ export class ObservatorioComponent implements AfterViewInit {
 
   // Año actual para el footer
   public currentYear: number = new Date().getFullYear();
+
+  ngOnInit() {
+    this.dataViewSubscription = this._geovisorSharedService.observatorioDataView$.subscribe(view => {
+      this.currentDataView = view;
+      this.actualizarGrafico();
+    });
+  }
+
+  ngOnDestroy() {
+    this.dataViewSubscription?.unsubscribe();
+  }
 
   ngAfterViewInit() {
     this.cargarDatosObservatorio();
@@ -122,11 +139,12 @@ export class ObservatorioComponent implements AfterViewInit {
       const parcelasPorDepto: Record<string, number> = {};
       const superficiePorDepto: Record<string, number> = {};
       const productoresPorDepto: Record<string, Set<string>> = {};
+      const productoresPorOficina: Record<string, Set<string>> = {};
 
       while (fetched < totalFeatures) {
         const result = await layer.queryFeatures({
           where: '1=1',
-          outFields: ['dni_participante', 'area_cultivo', 'departamento'],
+          outFields: ['dni_participante', 'area_cultivo', 'departamento', 'oficina_zonal'],
           returnGeometry: false,
           start: fetched,
           num: pageSize
@@ -135,7 +153,7 @@ export class ObservatorioComponent implements AfterViewInit {
         if (!result.features.length) break;
 
         result.features.forEach(feature => {
-          const { dni_participante, area_cultivo, departamento } = feature.attributes;
+          const { dni_participante, area_cultivo, departamento, oficina_zonal } = feature.attributes;
 
           // 1. Cálculos para indicadores globales
           if (dni_participante) dnisGlobales.add(dni_participante);
@@ -157,6 +175,15 @@ export class ObservatorioComponent implements AfterViewInit {
               productoresPorDepto[departamento].add(dni_participante);
             }
           }
+
+          // 3. Cálculos para gráficos por oficina zonal (Solo Productores/Familias)
+          if (oficina_zonal && dni_participante) {
+            const oz = oficina_zonal;
+            if (!productoresPorOficina[oz]) {
+              productoresPorOficina[oz] = new Set<string>();
+            }
+            productoresPorOficina[oz].add(dni_participante);
+          }
         });
 
         fetched += result.features.length;
@@ -175,6 +202,9 @@ export class ObservatorioComponent implements AfterViewInit {
 
       const productoresEntries = Object.entries(productoresPorDepto).map(([depto, dnis]) => [depto, dnis.size] as [string, number]).sort((a, b) => b[1] - a[1]);
       this.datosGraficoProductores = { labels: productoresEntries.map(e => e[0]), values: productoresEntries.map(e => e[1]) };
+
+      const productoresOficinaEntries = Object.entries(productoresPorOficina).map(([oz, dnis]) => [oz, dnis.size] as [string, number]).sort((a, b) => b[1] - a[1]);
+      this.datosGraficoProductoresOficina = { labels: productoresOficinaEntries.map(e => e[0]), values: productoresOficinaEntries.map(e => e[1]) };
 
       // Cargar el gráfico inicial
       this.actualizarGrafico();
@@ -218,24 +248,30 @@ export class ObservatorioComponent implements AfterViewInit {
     let max_x: number | undefined = undefined;
     let formatter = (v: number) => v.toLocaleString('es-PE');
 
-    switch (this.activeChartView) {
-      case 'productores':
-        data = this.datosGraficoProductores;
-        this.chartTitle = 'Distribución de Productores por Departamento';
-        max_x = 15000; // Dejar que se ajuste automáticamente
-        break;
-      case 'superficie':
-        data = this.datosGraficoSuperficie;
-        this.chartTitle = 'Distribución de Superficie (Ha) por Departamento';
-        max_x = 15000;
-        formatter = (v: number) => v.toLocaleString('es-PE', { maximumFractionDigits: 0 }) + ' Ha';
-        break;
-      case 'parcelas':
-      default:
-        data = this.datosGraficoParcelas;
-        this.chartTitle = 'Distribución de Parcelas por Departamento';
-        max_x = 15000;
-        break;
+    if (this.currentDataView === 'oficina') {
+      data = this.datosGraficoProductoresOficina;
+      this.chartTitle = 'Distribución de Familias por Oficina Zonal';
+      max_x = 16000; // Dejar automático para oficinas
+    } else {
+      switch (this.activeChartView) {
+        case 'productores':
+          data = this.datosGraficoProductores;
+          this.chartTitle = 'Distribución de Productores por Departamento';
+          max_x = 16000; // Dejar que se ajuste automáticamente
+          break;
+        case 'superficie':
+          data = this.datosGraficoSuperficie;
+          this.chartTitle = 'Distribución de Superficie (Ha) por Departamento';
+          max_x = 16000;
+          formatter = (v: number) => v.toLocaleString('es-PE', { maximumFractionDigits: 0 }) + ' Ha';
+          break;
+        case 'parcelas':
+        default:
+          data = this.datosGraficoParcelas;
+          this.chartTitle = 'Distribución de Parcelas por Departamento';
+          max_x = 16000;
+          break;
+      }
     }
 
     if (this.chart) {

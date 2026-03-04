@@ -1,4 +1,5 @@
 import { ElementRef, Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 //Libreria actual de ArcGIS 4.33
 import '@arcgis/map-components/components/arcgis-search';
 import { LayerConfig } from '../interfaces/layerConfig';
@@ -64,6 +65,12 @@ export class GeovisorSharedService {
   private highlightLayer = new GraphicsLayer({ id: 'highlight-overlaps' });
   private previousLayerVisibility: Map<string, boolean> = new Map();
   private _oficinasZonalesCache: { nombre: string }[] | null = null;
+  public observatorioMode: 'full' | 'chartOnly' = 'full';
+
+  public observatorioDataView$ = new BehaviorSubject<'departamento' | 'oficina'>('departamento');
+  public setObservatorioDataView(view: 'departamento' | 'oficina') {
+    this.observatorioDataView$.next(view);
+  }
 
   //Método auxiliar para mostrar los mensajes toast.
     public showToast(

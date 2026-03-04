@@ -1,45 +1,49 @@
+import { AcercaComponent } from './components/acerca/acerca.component';
+import { BuscarComponent } from './components/buscar/buscar.component';
+import { CapasComponent } from './components/capas/capas.component';
 import { CommonModule, NgClass } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { GeovisorSharedService } from '../../services/geovisor.service';
-import { CapasComponent } from './components/capas/capas.component';
-import { LeyendaComponent } from './components/leyenda/leyenda.component';
-import { BuscarComponent } from './components/buscar/buscar.component';
-import { AcercaComponent } from './components/acerca/acerca.component';
-import { ResumenComponent } from './components/resumen/resumen.component';
 import { CoordenadasComponent } from './components/coordenadas/coordenadas.component';
 import { FiltrosComponent } from './components/filtros/filtros.component';
+import { GeovisorSharedService } from '../../services/geovisor.service';
+import { LeyendaComponent } from './components/leyenda/leyenda.component';
 import { ManualComponent } from './components/manual/manual.component';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { ObservaComponent } from './components/observa/observa.component';
+import { ResumenComponent } from './components/resumen/resumen.component';
 
 
 @Component({
   selector: 'app-sidebar',
-  imports: [CommonModule,
+  imports: [
+    AcercaComponent,
+    BuscarComponent,
+    CapasComponent,
+    CommonModule,
+    CoordenadasComponent,
+    FiltrosComponent,
+    LeyendaComponent,
+    ManualComponent,
+    MatButtonModule,
     MatIconModule,
     NgClass,
-    MatButtonModule,
-    CapasComponent,
-    LeyendaComponent,
-    BuscarComponent,
-    CoordenadasComponent,
+    ObservaComponent,
     ResumenComponent,
-    FiltrosComponent,
-    ManualComponent,
-    AcercaComponent,
   ],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
 export class SidebarComponent {
   public _geovisorSharedService = inject(GeovisorSharedService);
-  public subMenu: 'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'| 'filtros'|'manual'|'acerca' = 'capas';
+  public subMenu: 'observatorio' |'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'| 'filtros'|'manual'|'acerca' = 'observatorio';
   public toogleMenu = false;
   public menuItems: {
-    key: 'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'|'filtros'|'manual'|'acerca';
+    key: 'observatorio'|'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'|'filtros'|'manual'|'acerca';
     icon: string;
     label: string;
   }[] = [
+      { key: 'observatorio', icon: 'satellite_alt', label: 'Observatorio' },
       { key: 'capas', icon: 'layers', label: 'Capas' },
       { key: 'leyendas', icon: 'view_list', label: 'Leyendas' },
       { key: 'buscar', icon: 'search', label: 'Buscar' },
@@ -50,7 +54,7 @@ export class SidebarComponent {
       { key: 'acerca', icon: 'info', label: 'Acerca de' },
     ];
 
-  clickToogleMenu(filtro?: 'capas' | 'leyendas' | 'buscar' |'resumen' |'coordenadas'| 'filtros'|'manual'|'acerca'): void {
+  clickToogleMenu(filtro?: 'observatorio'|'capas' | 'leyendas' | 'buscar' |'resumen' |'coordenadas'| 'filtros'|'manual'|'acerca'): void {
     if (filtro == undefined) {
       this.toogleMenu = !this.toogleMenu;
     } else {
@@ -64,4 +68,3 @@ export class SidebarComponent {
     }
   }
 }
-
