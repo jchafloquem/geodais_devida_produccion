@@ -48,8 +48,8 @@ export class SidebarComponent {
       { key: 'leyendas', icon: 'view_list', label: 'Leyendas' },
       { key: 'buscar', icon: 'search', label: 'Buscar' },
       { key: 'resumen', icon: 'summarize', label: 'Resumen' },
-      { key: 'coordenadas', icon: 'explore', label: 'Coordenadas' },
       { key: 'filtros', icon: 'filter_alt', label: 'Filtros' },
+      { key: 'coordenadas', icon: 'explore', label: 'Coordenadas' },
       { key: 'manual', icon: 'auto_stories', label: 'Manual' },
       { key: 'acerca', icon: 'info', label: 'Acerca de' },
     ];
