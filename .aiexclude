@@ -1,0 +1,31 @@
+# Ignorar dependencias pesadas
+node_modules/
+vendor/
+
+# Ignorar archivos de compilación y salida (Angular/Ionic/Java)
+dist/
+www/
+out-tsc/
+bin/
+target/
+.angular/
+.gradle/
+
+# Ignorar archivos de configuración del IDE que Gemini no necesita leer
+.vscode/
+.idea/
+.settings/
+.project
+.classpath
+
+# Ignorar archivos de datos pesados (JSON/CSV/GeoJSON)
+*.json
+!package.json
+!tsconfig.json
+*.csv
+*.geojson
+
+# Ignorar documentación y logs
+*.md
+*.log
+/docs/

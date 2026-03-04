@@ -84,6 +84,8 @@ export class ObservatorioComponent implements AfterViewInit, OnInit, OnDestroy {
   private datosGraficoProductores: { labels: string[], values: number[] } = { labels: [], values: [] };
   private datosGraficoSuperficie: { labels: string[], values: number[] } = { labels: [], values: [] };
   private datosGraficoProductoresOficina: { labels: string[], values: number[] } = { labels: [], values: [] };
+  private datosGraficoParcelasOficina: { labels: string[], values: number[] } = { labels: [], values: [] };
+  private datosGraficoSuperficieOficina: { labels: string[], values: number[] } = { labels: [], values: [] };
 
   // Variables para los indicadores
   public totalProductores: number = 0;
@@ -139,6 +141,8 @@ export class ObservatorioComponent implements AfterViewInit, OnInit, OnDestroy {
       const parcelasPorDepto: Record<string, number> = {};
       const superficiePorDepto: Record<string, number> = {};
       const productoresPorDepto: Record<string, Set<string>> = {};
+      const parcelasPorOficina: Record<string, number> = {};
+      const superficiePorOficina: Record<string, number> = {};
       const productoresPorOficina: Record<string, Set<string>> = {};
 
       while (fetched < totalFeatures) {
@@ -176,13 +180,22 @@ export class ObservatorioComponent implements AfterViewInit, OnInit, OnDestroy {
             }
           }
 
-          // 3. Cálculos para gráficos por oficina zonal (Solo Productores/Familias)
-          if (oficina_zonal && dni_participante) {
+          // 3. Cálculos para gráficos por oficina zonal
+          if (oficina_zonal) {
             const oz = oficina_zonal;
-            if (!productoresPorOficina[oz]) {
-              productoresPorOficina[oz] = new Set<string>();
+            // Parcelas
+            parcelasPorOficina[oz] = (parcelasPorOficina[oz] || 0) + 1;
+            // Superficie
+            if (area_cultivo) {
+              superficiePorOficina[oz] = (superficiePorOficina[oz] || 0) + area_cultivo;
             }
-            productoresPorOficina[oz].add(dni_participante);
+            // Productores
+            if (dni_participante) {
+              if (!productoresPorOficina[oz]) {
+                productoresPorOficina[oz] = new Set<string>();
+              }
+              productoresPorOficina[oz].add(dni_participante);
+            }
           }
         });
 
@@ -198,13 +211,19 @@ export class ObservatorioComponent implements AfterViewInit, OnInit, OnDestroy {
       this.datosGraficoParcelas = { labels: parcelasEntries.map(e => e[0]), values: parcelasEntries.map(e => e[1]) };
 
       const superficieEntries = Object.entries(superficiePorDepto).sort((a, b) => b[1] - a[1]);
-      this.datosGraficoSuperficie = { labels: superficieEntries.map(e => e[0]), values: superficieEntries.map(e => e[1]) };
+      this.datosGraficoSuperficie = { labels: superficieEntries.map(e => e[0]), values: superficieEntries.map(e => Math.round(e[1])) };
 
       const productoresEntries = Object.entries(productoresPorDepto).map(([depto, dnis]) => [depto, dnis.size] as [string, number]).sort((a, b) => b[1] - a[1]);
       this.datosGraficoProductores = { labels: productoresEntries.map(e => e[0]), values: productoresEntries.map(e => e[1]) };
 
       const productoresOficinaEntries = Object.entries(productoresPorOficina).map(([oz, dnis]) => [oz, dnis.size] as [string, number]).sort((a, b) => b[1] - a[1]);
       this.datosGraficoProductoresOficina = { labels: productoresOficinaEntries.map(e => e[0]), values: productoresOficinaEntries.map(e => e[1]) };
+
+      const parcelasOficinaEntries = Object.entries(parcelasPorOficina).sort((a, b) => b[1] - a[1]);
+      this.datosGraficoParcelasOficina = { labels: parcelasOficinaEntries.map(e => e[0]), values: parcelasOficinaEntries.map(e => e[1]) };
+
+      const superficieOficinaEntries = Object.entries(superficiePorOficina).sort((a, b) => b[1] - a[1]);
+      this.datosGraficoSuperficieOficina = { labels: superficieOficinaEntries.map(e => e[0]), values: superficieOficinaEntries.map(e => Math.round(e[1])) };
 
       // Cargar el gráfico inicial
       this.actualizarGrafico();
@@ -249,9 +268,25 @@ export class ObservatorioComponent implements AfterViewInit, OnInit, OnDestroy {
     let formatter = (v: number) => v.toLocaleString('es-PE');
 
     if (this.currentDataView === 'oficina') {
-      data = this.datosGraficoProductoresOficina;
-      this.chartTitle = 'Distribución de Familias por Oficina Zonal';
-      max_x = 16000; // Dejar automático para oficinas
+      switch (this.activeChartView) {
+        case 'productores':
+          data = this.datosGraficoProductoresOficina;
+          this.chartTitle = 'Distribución de Familias por Oficina Zonal';
+          max_x = 16000;
+          break;
+        case 'superficie':
+          data = this.datosGraficoSuperficieOficina;
+          this.chartTitle = 'Distribución de Superficie (Ha) por Oficina Zonal';
+          max_x = 16000;
+          formatter = (v: number) => v.toLocaleString('es-PE', { maximumFractionDigits: 0 }) + ' Ha';
+          break;
+        case 'parcelas':
+        default:
+          data = this.datosGraficoParcelasOficina;
+          this.chartTitle = 'Distribución de Parcelas por Oficina Zonal';
+          max_x = 16000;
+          break;
+      }
     } else {
       switch (this.activeChartView) {
         case 'productores':
