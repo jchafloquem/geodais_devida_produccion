@@ -1027,27 +1027,74 @@ export class GeovisorSharedService {
       return;
     }
 
-    // Captura la geometría en una `const`. El análisis de flujo de control de TypeScript
-    // puede inferir correctamente que no es nula dentro de la clausura de la promesa.
     const geometry = result.feature.geometry;
+
+    // Limpiar marcadores de búsquedas anteriores
+    this.coordinateMarkerLayer.removeAll();
+
+    // Asegurar que la capa de marcadores esté siempre encima de las demás capas
+    this.mapa.reorder(this.coordinateMarkerLayer, this.mapa.layers.length - 1);
 
     this.view.goTo({
       target: result.feature,
       zoom: 18
     }).then(() => {
-      // También es una buena práctica verificar si la vista aún existe antes de usarla.
       if (!this.view) {
         return;
       }
+
+      let popupLocation: __esri.Point | undefined;
+
+      // Si es un polígono, calcula el centroide para el marcador y el popup.
+      if (geometry.type === 'polygon') {
+        const polygon = geometry as __esri.Polygon;
+        popupLocation = polygon.centroid ?? undefined;
+
+        if (popupLocation) {
+          // Personalizar el icono según la actividad (Cacao, Café, Oficina, etc.)
+          let markerColor = [37, 99, 235]; // Azul (Default)
+          const attrs = result.feature.attributes || {};
+          const cultivo = attrs['tipo_cultivo'] || attrs['TIPO_CULTIVO'] || '';
+
+          if (result.layerName === 'OFICINA ZONAL') {
+            markerColor = [255, 140, 0]; // Naranja
+          } else if (/cacao/i.test(cultivo)) {
+            markerColor = [139, 69, 19]; // Marrón Cacao
+          } else if (/cafe/i.test(cultivo)) {
+            markerColor = [160, 82, 45]; // Marrón Café
+          } else if (result.layerName === 'CULTIVOS') {
+            markerColor = [34, 139, 34]; // Verde Genérico
+          }
+
+          const markerSymbol = new SimpleMarkerSymbol({
+            color: markerColor,
+            outline: {
+              color: [255, 255, 255], // Blanco
+              width: 1,
+            },
+            size: '26px',
+            // SVG Path de un Pin de Mapa
+            path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+            yoffset: 12 // Ajuste vertical para que la punta coincida con el centroide
+          });
+
+          const pointGraphic = new Graphic({
+            geometry: popupLocation,
+            symbol: markerSymbol,
+          });
+
+          this.coordinateMarkerLayer.add(pointGraphic);
+        }
+      } else if (geometry.type === 'point') {
+        popupLocation = geometry as __esri.Point;
+      }
+
       this.view.openPopup({
         features: [result.feature],
-        location: geometry.type === 'point'
-            ? (geometry as __esri.Point)
-            : (geometry as __esri.Polygon).centroid ?? undefined,
+        location: popupLocation,
       });
 
       // Forzar un reflow para arreglar glitches de renderizado en Safari después del zoom/popup.
-      // Se usa un setTimeout para asegurar que el DOM se haya actualizado.
       setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
     });
   }
