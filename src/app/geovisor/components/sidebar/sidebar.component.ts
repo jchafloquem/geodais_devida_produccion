@@ -51,7 +51,7 @@ export class SidebarComponent {
       { key: 'buscar', icon: 'search', label: 'Buscar' },
       { key: 'resumen', icon: 'summarize', label: 'Resumen' },
       { key: 'filtros', icon: 'filter_alt', label: 'Filtros' },
-      { key: 'reniec', icon: 'filter_alt', label: 'Filtros' },
+      { key: 'reniec', icon: 'swipe', label: 'Consulta RENIEC' },
       { key: 'coordenadas', icon: 'explore', label: 'Coordenadas' },
       { key: 'manual', icon: 'auto_stories', label: 'Manual' },
       { key: 'acerca', icon: 'info', label: 'Acerca de' },

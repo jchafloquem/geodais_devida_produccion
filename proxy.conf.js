@@ -36,7 +36,9 @@ const PROXY_CONFIG = {
     "logLevel": "debug"
   },
   "/sispide-backend": {
-    "target": target,
+    // Cuando se ejecuta en local (el target es localhost), esta regla fuerza
+    // que las peticiones a /sispide-backend vayan al servidor de producción.
+    "target": target.includes('localhost') ? "https://sistemas.devida.gob.pe" : target,
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

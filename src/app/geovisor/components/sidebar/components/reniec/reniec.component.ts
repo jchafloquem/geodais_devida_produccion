@@ -13,7 +13,7 @@ import { switchMap } from 'rxjs';
 })
 export class ReniecComponent {
   // Datos iniciales
-  dni: string = '10645147';
+  dni: string = '';
 
   // Variables de estado para la vista
   resultado: any = null;
@@ -43,10 +43,12 @@ export class ReniecComponent {
       })
     ).subscribe({
       next: (data) => {
+        //console.log('Datos recibidos:', data);
         this.resultado = data;
         this.cargando = false;
       },
       error: (err) => {
+        console.error('Error en el flujo de consulta RENIEC:', err);
         this.cargando = false;
         if (err.message.includes('No se recibió un token válido')) {
           this.error = err.message;
