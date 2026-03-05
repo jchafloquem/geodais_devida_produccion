@@ -35,6 +35,12 @@ const PROXY_CONFIG = {
     "changeOrigin": true,
     "logLevel": "debug"
   },
+  "/sispide-backend": {
+    "target": target,
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
   "/geodais/api": {
     "target": target,
     "secure": false,

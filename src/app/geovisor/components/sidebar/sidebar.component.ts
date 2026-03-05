@@ -12,6 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ObservaComponent } from './components/observa/observa.component';
 import { ResumenComponent } from './components/resumen/resumen.component';
+import { ReniecComponent } from './components/reniec/reniec.component';
 
 
 @Component({
@@ -30,16 +31,17 @@ import { ResumenComponent } from './components/resumen/resumen.component';
     NgClass,
     ObservaComponent,
     ResumenComponent,
+    ReniecComponent
   ],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
 export class SidebarComponent {
   public _geovisorSharedService = inject(GeovisorSharedService);
-  public subMenu: 'observatorio' |'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'| 'filtros'|'manual'|'acerca' = 'observatorio';
+  public subMenu: 'observatorio' |'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'| 'filtros'|'reniec'|'manual'|'acerca' = 'observatorio';
   public toogleMenu = false;
   public menuItems: {
-    key: 'observatorio'|'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'|'filtros'|'manual'|'acerca';
+    key: 'observatorio'|'capas' | 'leyendas' |'buscar'| 'resumen' |'coordenadas'|'filtros'|'reniec'|'manual'|'acerca';
     icon: string;
     label: string;
   }[] = [
@@ -49,12 +51,13 @@ export class SidebarComponent {
       { key: 'buscar', icon: 'search', label: 'Buscar' },
       { key: 'resumen', icon: 'summarize', label: 'Resumen' },
       { key: 'filtros', icon: 'filter_alt', label: 'Filtros' },
+      { key: 'reniec', icon: 'filter_alt', label: 'Filtros' },
       { key: 'coordenadas', icon: 'explore', label: 'Coordenadas' },
       { key: 'manual', icon: 'auto_stories', label: 'Manual' },
       { key: 'acerca', icon: 'info', label: 'Acerca de' },
     ];
 
-  clickToogleMenu(filtro?: 'observatorio'|'capas' | 'leyendas' | 'buscar' |'resumen' |'coordenadas'| 'filtros'|'manual'|'acerca'): void {
+  clickToogleMenu(filtro?: 'observatorio'|'capas' | 'leyendas' | 'buscar' |'resumen' |'coordenadas'| 'filtros'|'reniec'|'manual'|'acerca'): void {
     if (filtro == undefined) {
       this.toogleMenu = !this.toogleMenu;
     } else {
